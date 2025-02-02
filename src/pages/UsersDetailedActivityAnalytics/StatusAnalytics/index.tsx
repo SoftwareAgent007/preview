@@ -1,8 +1,8 @@
 import { Card } from "@/components/ui/card";
 
-const Dashboard = () => {
+const StatusAnalytics = () => {
   return (
-    <div className="w-full bg-gray-50 p-6">
+    <div className="w-full bg-gray-50">
       <div className="mx-auto" style={{ maxWidth: `${import.meta.env.VITE_MAX_WIDTH || 1200}px` }}>
         <div className="flex gap-6 mb-6">
           <Card className="flex-1 p-6 h-30">
@@ -45,6 +45,6 @@ const Dashboard = () => {
   );
 };
 
-export default Dashboard;
+export default StatusAnalytics;
 
 

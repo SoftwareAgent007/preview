@@ -1,10 +1,8 @@
 import BreadcrumbsNavigation from "@/components/common/BreadcrumbsNavigation";
-import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { BREADCRUMB_PATHS, ROUTES } from "@/routes/routes.constant";
-import { Download } from "lucide-react";
 
-const Dashboard = () => {
+const UserActivityAnalytics = () => {
   return (
     <div className="w-full min-h-screen bg-gray-50 p-6">
       <div className="mx-auto" style={{ maxWidth: `${import.meta.env.VITE_MAX_WIDTH}px` }}>
@@ -43,6 +41,6 @@ const Dashboard = () => {
   );
 };
 
-export default Dashboard;
+export default UserActivityAnalytics;
 
 

@@ -24,14 +24,14 @@ const UsersDetailedActivityAnalytics = () => {
       <div className="mx-auto" style={{ maxWidth: `${import.meta.env.VITE_MAX_WIDTH || 1200}px` }}>
         <div className="flex justify-between items-center mb-6">
           <BreadcrumbsNavigation items={BREADCRUMB_PATHS[getBreadcrumbPath()]} />
-        </div>
-
-        <div className="flex items-center justify-between items-center mb-6 px-6">
-          <UsersDetailedNavigation />
           <Button variant="outline" className="flex items-center">
             <Download className="h-4 w-4" />
             Export Full Report
           </Button>
+        </div>
+
+        <div className="flex items-center justify-between items-center mb-6 px-6">
+          <UsersDetailedNavigation />
         </div>
         <Outlet />
       </div>

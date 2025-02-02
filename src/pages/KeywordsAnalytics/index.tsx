@@ -2,10 +2,10 @@ import BreadcrumbsNavigation from "@/components/common/BreadcrumbsNavigation";
 import { Card } from "@/components/ui/card";
 import { BREADCRUMB_PATHS, ROUTES } from "@/routes/routes.constant";
 
-const Dashboard = () => {
+const KeywordsAnalytics = () => {
   return (
     <div className="w-full min-h-screen bg-gray-50 p-6">
-      <div className="mx-auto" style={{ maxWidth: `${import.meta.env.VITE_MAX_WIDTH}px` }}>
+      <div className="mx-auto" style={{ maxWidth: `${import.meta.env.VITE_MAX_WIDTH || 1200}px` }}>
         <div className="flex justify-between items-center mb-6">
           <BreadcrumbsNavigation items={BREADCRUMB_PATHS[ROUTES.KEYWORD_ANALYTICS]} />
         </div>
@@ -41,6 +41,6 @@ const Dashboard = () => {
   );
 };
 
-export default Dashboard;
+export default KeywordsAnalytics;
 
 

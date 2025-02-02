@@ -8,11 +8,13 @@ import GamingAnalytics from "./pages/UsersDetailedActivityAnalytics/GamingAnalyt
 import PresenceAnalytics from "./pages/UsersDetailedActivityAnalytics/PresenceAnalytics/index"
 import UsersDetailedActivityAnalytics from "./pages/UsersDetailedActivityAnalytics/index.tsx"
 import MusicMetrics from "./pages/MusicMetrics/index"
+import Header from "./components/common/Header.tsx"
 
 function App() {
   return (
     <ThemeProvider defaultTheme="dark" storageKey="vite-ui-theme">
       <BrowserRouter>
+        <Header />
         <Routes>
           <Route path="/" element={<Dashboard />}/>
           <Route path="keyword-analytics" element={<KeywordAnalytics />} />

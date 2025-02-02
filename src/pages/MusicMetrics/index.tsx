@@ -2,7 +2,7 @@ import BreadcrumbsNavigation from "@/components/common/BreadcrumbsNavigation";
 import { Card } from "@/components/ui/card";
 import { BREADCRUMB_PATHS, ROUTES } from "@/routes/routes.constant";
 
-const Dashboard = () => {
+const MusicMetrics = () => {
   return (
     <div className="w-full min-h-screen bg-gray-50 p-6">
       <div className="mx-auto" style={{ maxWidth: `${import.meta.env.VITE_MAX_WIDTH || 1200}px` }}>
@@ -46,6 +46,6 @@ const Dashboard = () => {
   );
 };
 
-export default Dashboard;
+export default MusicMetrics;
 
 

@@ -11,7 +11,7 @@ import { BreadcrumbsNavigationProps } from '@/common/interfaces/Breadcrumbs.inte
 
 const BreadcrumbsNavigation: FC<BreadcrumbsNavigationProps> = ({ items }) => {
   return (
-    <Breadcrumb>
+    <Breadcrumb className="pl-10 h-10">
       <BreadcrumbList>
         {items.map((item, index) => (
           <div key={index} className="flex items-center">

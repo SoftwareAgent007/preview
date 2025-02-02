@@ -1,8 +1,31 @@
 import BreadcrumbsNavigation from "@/components/common/BreadcrumbsNavigation";
-import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
 import { BREADCRUMB_PATHS, ROUTES } from "@/routes/routes.constant";
 import { Download } from "lucide-react";
+
+const mockData = {
+  totalUsers: {
+    count: 24892,
+    change: 12,
+    isIncrease: true
+  },
+  activeUsers: {
+    current: 1234,
+    sevenDays: 5432,
+    thirtyDays: 12456
+  },
+  totalMessages: {
+    count: 892381,
+    change: 8,
+    isIncrease: true
+  },
+  totalReactions: {
+    count: 234567,
+    change: 15,
+    isIncrease: false
+  }
+};
 
 const Dashboard = () => {
   return (
@@ -18,16 +41,41 @@ const Dashboard = () => {
 
         <div className="flex gap-6 mb-6">
           <Card className="flex-1 p-6 h-30">
-            <div className="h-full flex items-center justify-center text-gray-500">Card 1</div>
+            <div className="h-full flex flex-col items-center justify-center">
+              <span className="text-gray-500 text-sm">Total Users</span>
+              <span className="text-2xl font-bold">{mockData.totalUsers.count.toLocaleString()}</span>
+              <span className={`text-sm ${mockData.totalUsers.isIncrease ? 'text-green-500' : 'text-red-500'}`}>
+                {mockData.totalUsers.change}% increase
+              </span>
+            </div>
           </Card>
           <Card className="flex-1 p-6 h-30">
-            <div className="h-full flex items-center justify-center text-gray-500">Card 2</div>
+            <div className="h-full flex flex-col items-center justify-center">
+              <span className="text-gray-500 text-sm">Active Users</span>
+              <span className="text-2xl font-bold">{mockData.activeUsers.current.toLocaleString()}</span>
+              <div className="text-sm text-gray-400">
+                <div>7d: {mockData.activeUsers.sevenDays.toLocaleString()}</div>
+                <div>30d: {mockData.activeUsers.thirtyDays.toLocaleString()}</div>
+              </div>
+            </div>
           </Card>
           <Card className="flex-1 p-6 h-30">
-            <div className="h-full flex items-center justify-center text-gray-500">Card 2</div>
+            <div className="h-full flex flex-col items-center justify-center">
+              <span className="text-gray-500 text-sm">Total Messages</span>
+              <span className="text-2xl font-bold">{mockData.totalMessages.count.toLocaleString()}</span>
+              <span className={`text-sm ${mockData.totalMessages.isIncrease ? 'text-green-500' : 'text-red-500'}`}>
+                {mockData.totalMessages.change}% increase
+              </span>
+            </div>
           </Card>
           <Card className="flex-1 p-6 h-30">
-            <div className="h-full flex items-center justify-center text-gray-500">Card 2</div>
+            <div className="h-full flex flex-col items-center justify-center">
+              <span className="text-gray-500 text-sm">Total Reactions</span>
+              <span className="text-2xl font-bold">{mockData.totalReactions.count.toLocaleString()}</span>
+              <span className={`text-sm ${mockData.totalReactions.isIncrease ? 'text-green-500' : 'text-red-500'}`}>
+                {mockData.totalReactions.change}% decrease
+              </span>
+            </div>
           </Card>
         </div>
 
@@ -77,5 +125,3 @@ const Dashboard = () => {
 };
 
 export default Dashboard;
-
-
