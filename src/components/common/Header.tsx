@@ -1,18 +1,17 @@
-import { useState } from "react";
-import { useNavigate, useLocation } from "react-router-dom";
-import { Calendar, ChevronDown, Home, KeyRound, Users, Music2, Bell, User, LogOut, SwitchCamera, Search } from "lucide-react";
-import { Button } from "@/components/ui/button";
-import { Card } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { ROUTES, BREADCRUMB_PATHS } from "@/routes/routes.constant";
-import { DatePickerWithRange } from "../ui/data-rande-picker";
 import {
   Avatar,
   AvatarFallback,
   AvatarImage,
-} from "@/components/ui/avatar"
+} from "@/components/ui/avatar";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { BREADCRUMB_PATHS, ROUTES } from "@/routes/routes.constant";
+import { Bell, Home, KeyRound, LogOut, Music2, Search, SwitchCamera, Users } from "lucide-react";
+import { useState } from "react";
+import { useLocation, useNavigate } from "react-router-dom";
+import { DatePickerWithRange } from "../ui/data-rande-picker";
 
 const Header = () => {
   const navigate = useNavigate();
