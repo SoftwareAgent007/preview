@@ -8,7 +8,7 @@ import {
   useActivities
 } from '../fetchData';
 
-export const useDashboardData = (period: 'day' | 'week' | 'month' | 'year' = 'day') => {
+export const useDashboardData = (period: 'day' | 'week' | 'month' | 'year' = 'year') => {
   const { data: users, loading: usersLoading } = useUsers();
   const { data: messages, loading: messagesLoading } = useMessageMatches();
   const { data: reactions, loading: reactionsLoading } = useReactions();
@@ -119,7 +119,7 @@ export const useDashboardData = (period: 'day' | 'week' | 'month' | 'year' = 'da
     if (!presences) {
       // Generate fake timeline data for the period
       const timeline = [];
-      for (let i = 0; i < periodDays; i++) {
+      for (let i = 0; i < 365; i++) {
         const date = new Date(today);
         date.setDate(date.getDate() - i);
         timeline.push({

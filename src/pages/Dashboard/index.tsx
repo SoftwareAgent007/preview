@@ -2,9 +2,12 @@ import BreadcrumbsNavigation from "@/components/common/BreadcrumbsNavigation";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { BREADCRUMB_PATHS, ROUTES } from "@/routes/routes.constant";
-import { Download } from "lucide-react";
+import { Download, Users } from "lucide-react";
 import { useDashboardData } from "@/hooks/analytics/useDashboardData";
 import TrendIndicator from "@/components/common/TrendIndicator";
+import AreaLineChart from "@/components/charts/AreaLineChart";
+import HorizontalBarChart from "@/components/charts/HorizontalBarChart";
+// import { useEffect, useState } from "react";
 
 const Dashboard = () => {
   const {
@@ -19,6 +22,7 @@ const Dashboard = () => {
     messageFrequency,
     peakActivityTime,
     totalGameTime,
+    hourlyActivity,
     activeListeners,
     keywordStats,
     isLoading
@@ -27,6 +31,18 @@ const Dashboard = () => {
   if (isLoading) {
     return <div>Loading...</div>;
   }
+
+  // const [graphWidth, setGraphWidth] = useState(100);
+  // const [graphHeight, setGraphHeight] = useState(100);
+
+  // useEffect(() => {
+      // const resizeObserver = new ResizeObserver((event) => {
+      //     setGraphWidth(event[0].contentBoxSize[0].inlineSize);
+      //     setGraphHeight(event[0].contentBoxSize[0].blockSize);
+      // });
+
+      // resizeObserver.observe(document.querySelectorAll(".chart-parent"));
+  // });
 
   return (
     <div className="w-full min-h-screen bg-gray-50 p-6">
@@ -74,10 +90,8 @@ const Dashboard = () => {
           <Card className="flex-1 p-6 h-100">
             <div className="h-full flex flex-col">
               <span className="text-gray-500 text-lg font-bold mb-4">User Activity</span>
-              <div className="flex justify-between">
-                <pre className="text-sm">
-                  {JSON.stringify(userActivityTimeline, null, 2)}
-                </pre>
+              <div className="chart-parent flex justify-between">
+                <AreaLineChart data={userActivityTimeline} width={543} height={300}/>
               </div>
             </div>
           </Card>
@@ -85,9 +99,7 @@ const Dashboard = () => {
             <div className="h-full flex flex-col">
               <span className="text-gray-500 text-lg font-bold mb-4">Message Activity</span>
               <div className="flex justify-between">
-                <pre className="text-sm">
-                  {JSON.stringify(messageFrequency, null, 2)}
-                </pre>
+                <AreaLineChart data={messageFrequency} width={543} height={300} graphColor="#b1c4f5" />
               </div>
             </div>
           </Card>
@@ -97,23 +109,53 @@ const Dashboard = () => {
           <Card className="w-[35%] p-6 h-70">
             <div className="h-full flex flex-col">
               <span className="text-gray-500 text-lg font-bold mb-4">Current Activities</span>
-              <div className="flex justify-between mb-2">
-                <span>Spotify Listeners</span>
-                <span>{currentActivities.spotifyListeners}</span>
+              <div className="grid grid-cols-6 bg-blue-100/40 mb-5 rounded-xl">
+                <div className="flex items-center justify-center p-4">
+                  <img src="https://storage.googleapis.com/pr-newsroom-wp/1/2023/05/Spotify_Primary_Logo_RGB_Green.png" alt="Spotify Logo" className="w-8 h-8" />
+                </div>
+                <div className="col-span-5 p-4">
+                  <div>
+                    <span className="text-xl font-bold text-gray-600">Spotify Listeners</span>
+                  </div>
+                  <div className="flex items-center">
+                    <span className="text-gray-600 font-medium mr-2">{currentActivities.spotifyListeners}</span>
+                    <span className="text-gray-500 font-medium">users</span>
+                  </div>
+                </div>
               </div>
-              <div className="flex justify-between">
-                <span>Active Gamers</span>
-                <span>{currentActivities.gamers}</span>
+              <div className="grid grid-cols-6 bg-blue-100/40 rounded-xl">
+                <div className="flex items-center justify-center p-4">
+                  <Users className="w-8 h-8 text-gray-600" />
+                </div>
+                <div className="col-span-5 p-4">
+                  <div>
+                    <span className="text-xl font-bold text-gray-600">Active Gamers</span>
+                  </div>
+                  <div className="flex items-center">
+                    <span className="text-gray-600 font-medium mr-2">{currentActivities.gamers}</span>
+                    <span className="text-gray-500 font-medium">users</span>
+                  </div>
+                </div>
               </div>
             </div>
           </Card>
-          <Card className="w-[35%] p-6 h-70">
+          <Card className="w-[35%] p-4 h-70">
             <div className="h-full flex flex-col">
-              <span className="text-gray-500 text-lg font-bold mb-4">Top Keywords</span>
+              <span className="text-gray-500 text-sm font-bold mb-2">Top Keywords</span>
               {topKeywords.map((keyword, index) => (
-                <div key={index} className="flex justify-between mb-2">
-                  <span>{keyword.keyword}</span>
-                  <span>{keyword.count} matches</span>
+                <div key={index} className="grid grid-cols-6 bg-blue-100/40 mb-1 rounded-xl">
+                  <div className="flex items-center justify-center p-2">
+                    <span className="text-gray-600 text-3xl">#</span>
+                  </div>
+                  <div className="col-span-5 p-2">
+                    <div>
+                      <span className="text-lg font-bold text-gray-600">{keyword.keyword}</span>
+                    </div>
+                    <div className="flex items-center">
+                      <span className="text-gray-600 font-medium mr-1">{keyword.count}</span>
+                      <span className="text-gray-500 font-medium">matches</span>
+                    </div>
+                  </div>
                 </div>
               ))}
             </div>
@@ -122,9 +164,12 @@ const Dashboard = () => {
             <div className="h-full flex flex-col">
               <span className="text-gray-500 text-lg font-bold mb-4">Top Users</span>
               {topUsers.map((user, index) => (
-                <div key={index} className="flex justify-between mb-2">
-                  <span>{user.user}</span>
-                  <span>{user.messageCount} messages</span>
+                <div key={index} className="flex items-center mb-2 p-2 rounded-lg bg-blue-100/40">
+                  <Users className="w-8 h-8 text-gray-600 mr-3" />
+                  <div className="flex justify-between w-full">
+                    <span className="font-medium text-gray-700">{user.user}</span>
+                    <span className="text-gray-500">{user.messageCount} messages</span>
+                  </div>
                 </div>
               ))}
             </div>
@@ -132,10 +177,10 @@ const Dashboard = () => {
         </div>
 
         <div className="flex justify-between gap-6">
-          <Card className="flex-1 p-6 h-100">
+          <Card className="flex-1 p-6 h-150">
             <div className="h-full flex flex-col">
               <span className="text-gray-500 text-lg font-bold mb-4">Hourly Activity</span>
-              {/* Here you could add a chart using hourlyActivity data */}
+              <HorizontalBarChart data={hourlyActivity} height={500} width={600} />
             </div>
           </Card>
           <div className="flex-1 grid grid-cols-2 h-60 gap-6">
