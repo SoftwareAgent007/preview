@@ -6,8 +6,11 @@ import { Download, Users } from "lucide-react";
 import { useDashboardData } from "@/hooks/analytics/useDashboardData";
 import TrendIndicator from "@/components/common/TrendIndicator";
 import AreaLineChart from "@/components/charts/AreaLineChart";
-import HorizontalBarChart from "@/components/charts/HorizontalBarChart";
-// import { useEffect, useState } from "react";
+import HorizontalBarChart from "@/components/charts/hourActivity/HorizontalBarChart";
+import ListElement from "@/components/ui/list-element";
+import UserActivityTimeline from "@/components/charts/userActivityTimeline/userActivityTimelineChart";
+import MessageFrequencyChart from "@/components/charts/userActivityTimeline/messageFrequencyChart";
+import { useRef, useEffect, useState } from "react";
 
 const Dashboard = () => {
   const {
@@ -28,25 +31,40 @@ const Dashboard = () => {
     isLoading
   } = useDashboardData('month'); // Using month period for better data view
 
+  const fontSize = {
+    amountTitle: 'text-2xl font-bold',
+    cardTitle: 'text-sm font-medium',
+    defaultInfo: 'text-sm text-gray-500',
+  };
+
+  const wrapperRef = useRef<HTMLDivElement | null>(null);
+  const [graphWidth, setGraphWidth] = useState(0);
+
+  const updateGraphWidth = () => {
+    if (wrapperRef.current) {
+      setGraphWidth(wrapperRef.current.offsetWidth / 2.3);
+    }
+  };
+
+  useEffect(() => {
+    window.addEventListener('resize', updateGraphWidth);
+    return () => window.removeEventListener('resize', updateGraphWidth);
+  }, []);
+
+  useEffect(() => {
+    if (!isLoading && wrapperRef.current) {
+      console.log("wrapperRef.current?.offsetHeight", wrapperRef.current.offsetHeight);
+      updateGraphWidth();
+    }  
+  }, [isLoading, wrapperRef.current]);
+
   if (isLoading) {
     return <div>Loading...</div>;
   }
 
-  // const [graphWidth, setGraphWidth] = useState(100);
-  // const [graphHeight, setGraphHeight] = useState(100);
-
-  // useEffect(() => {
-      // const resizeObserver = new ResizeObserver((event) => {
-      //     setGraphWidth(event[0].contentBoxSize[0].inlineSize);
-      //     setGraphHeight(event[0].contentBoxSize[0].blockSize);
-      // });
-
-      // resizeObserver.observe(document.querySelectorAll(".chart-parent"));
-  // });
-
   return (
     <div className="w-full min-h-screen bg-gray-50 p-6">
-      <div className="mx-auto" style={{ maxWidth: `${import.meta.env.VITE_MAX_WIDTH || 1200}px` }}>
+      <div id="dashboard-wrapper" ref={wrapperRef} className="block mx-auto" style={{ maxWidth: `${import.meta.env.VITE_MAX_WIDTH || 1200}px` }}>
         <div className="flex justify-between items-center mb-6">
           <BreadcrumbsNavigation items={BREADCRUMB_PATHS[ROUTES.DASHBOARD]} />
           <Button variant="outline" className="flex items-center gap-2">
@@ -88,20 +106,10 @@ const Dashboard = () => {
 
         <div className="flex gap-6 mb-6">
           <Card className="flex-1 p-6 h-100">
-            <div className="h-full flex flex-col">
-              <span className="text-gray-500 text-lg font-bold mb-4">User Activity</span>
-              <div className="chart-parent flex justify-between">
-                <AreaLineChart data={userActivityTimeline} width={543} height={300}/>
-              </div>
-            </div>
+            <UserActivityTimeline width={graphWidth} />
           </Card>
           <Card className="flex-1 p-6 h-100">
-            <div className="h-full flex flex-col">
-              <span className="text-gray-500 text-lg font-bold mb-4">Message Activity</span>
-              <div className="flex justify-between">
-                <AreaLineChart data={messageFrequency} width={543} height={300} graphColor="#b1c4f5" />
-              </div>
-            </div>
+            <MessageFrequencyChart width={graphWidth} />
           </Card>
         </div>
 
@@ -109,54 +117,24 @@ const Dashboard = () => {
           <Card className="w-[35%] p-6 h-70">
             <div className="h-full flex flex-col">
               <span className="text-gray-500 text-lg font-bold mb-4">Current Activities</span>
-              <div className="grid grid-cols-6 bg-blue-100/40 mb-5 rounded-xl">
-                <div className="flex items-center justify-center p-4">
-                  <img src="https://storage.googleapis.com/pr-newsroom-wp/1/2023/05/Spotify_Primary_Logo_RGB_Green.png" alt="Spotify Logo" className="w-8 h-8" />
-                </div>
-                <div className="col-span-5 p-4">
-                  <div>
-                    <span className="text-xl font-bold text-gray-600">Spotify Listeners</span>
-                  </div>
-                  <div className="flex items-center">
-                    <span className="text-gray-600 font-medium mr-2">{currentActivities.spotifyListeners}</span>
-                    <span className="text-gray-500 font-medium">users</span>
-                  </div>
-                </div>
-              </div>
-              <div className="grid grid-cols-6 bg-blue-100/40 rounded-xl">
-                <div className="flex items-center justify-center p-4">
-                  <Users className="w-8 h-8 text-gray-600" />
-                </div>
-                <div className="col-span-5 p-4">
-                  <div>
-                    <span className="text-xl font-bold text-gray-600">Active Gamers</span>
-                  </div>
-                  <div className="flex items-center">
-                    <span className="text-gray-600 font-medium mr-2">{currentActivities.gamers}</span>
-                    <span className="text-gray-500 font-medium">users</span>
-                  </div>
-                </div>
-              </div>
+              <ListElement logo={<Users className="w-8 h-8 text-gray-600" />} title="Active Gamers" description={`${currentActivities.gamers} users`} />
+              <ListElement 
+                logo={<img src="https://storage.googleapis.com/pr-newsroom-wp/1/2023/05/Spotify_Primary_Logo_RGB_Green.png" alt="Spotify Logo" className="w-8 h-8" />} 
+                title="Spotify Listeners" 
+                description={`${currentActivities.spotifyListeners} users`} 
+              />
             </div>
           </Card>
           <Card className="w-[35%] p-4 h-70">
             <div className="h-full flex flex-col">
               <span className="text-gray-500 text-sm font-bold mb-2">Top Keywords</span>
               {topKeywords.map((keyword, index) => (
-                <div key={index} className="grid grid-cols-6 bg-blue-100/40 mb-1 rounded-xl">
-                  <div className="flex items-center justify-center p-2">
-                    <span className="text-gray-600 text-3xl">#</span>
-                  </div>
-                  <div className="col-span-5 p-2">
-                    <div>
-                      <span className="text-lg font-bold text-gray-600">{keyword.keyword}</span>
-                    </div>
-                    <div className="flex items-center">
-                      <span className="text-gray-600 font-medium mr-1">{keyword.count}</span>
-                      <span className="text-gray-500 font-medium">matches</span>
-                    </div>
-                  </div>
-                </div>
+                <ListElement 
+                  key={index} 
+                  logo={<span className="text-gray-600 text-3xl">#</span>} 
+                  title={keyword.keyword} 
+                  description={`${keyword.count} matches`} 
+                />
               ))}
             </div>
           </Card>
@@ -164,13 +142,13 @@ const Dashboard = () => {
             <div className="h-full flex flex-col">
               <span className="text-gray-500 text-lg font-bold mb-4">Top Users</span>
               {topUsers.map((user, index) => (
-                <div key={index} className="flex items-center mb-2 p-2 rounded-lg bg-blue-100/40">
-                  <Users className="w-8 h-8 text-gray-600 mr-3" />
-                  <div className="flex justify-between w-full">
-                    <span className="font-medium text-gray-700">{user.user}</span>
-                    <span className="text-gray-500">{user.messageCount} messages</span>
-                  </div>
-                </div>
+                <ListElement 
+                  key={index} 
+                  logo={<Users className="w-8 h-8 text-gray-600" />} 
+                  title={user.user} 
+                  description={`${user.messageCount} messages`} 
+                  backgroundColor="" // Turn off background
+                />
               ))}
             </div>
           </Card>

@@ -8,19 +8,18 @@ interface DataPoint {
 
 interface AreaLineChartProps {
   data: DataPoint[];
-  width?: number;
+  width: number;
   height?: number;
   graphColor?: string;
 }
 
 const AreaLineChart: React.FC<AreaLineChartProps> = ({ 
   data, 
-  width = 500, 
+  width, 
   height = 300,
   graphColor = "#3498db"
 }) => {
   
-  console.log('data',data)
   const svgRef = useRef<SVGSVGElement>(null);
 
   useEffect(() => {
