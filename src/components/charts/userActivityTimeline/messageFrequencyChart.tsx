@@ -27,7 +27,7 @@ const MessageFrequencyChart: React.FC<MessageFrequencyChartProps> = ({ width = 5
                 <AreaLineChart
                     data={messageFrequency}
                     width={width}
-                    height={450}
+                    height={300}
                     graphColor="#b1c4f5"
                 />
             </div>

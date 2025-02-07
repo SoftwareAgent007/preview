@@ -1,13 +1,12 @@
-import BreadcrumbsNavigation from "@/components/common/BreadcrumbsNavigation";
-import { Card } from "@/components/ui/card";
-import { BREADCRUMB_PATHS, ROUTES } from "@/routes/routes.constant";
-import { useKeywordsAnalytics } from "@/hooks/analytics/useKeywordsAnalytics";
-import { useState } from "react";
-import TrendIndicator from "@/components/common/TrendIndicator";
 import MessageFrequencyChart from "@/components/charts/userActivityTimeline/messageFrequencyChart";
-import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
+import BreadcrumbsNavigation from "@/components/common/BreadcrumbsNavigation";
+import TrendIndicator from "@/components/common/TrendIndicator";
+import { Card } from "@/components/ui/card";
+import { useKeywordsAnalytics } from "@/hooks/analytics/useKeywordsAnalytics";
+import { BREADCRUMB_PATHS, ROUTES } from "@/routes/routes.constant";
+import { useState } from "react";
 import KeywordsList from "./components/keywordsList";
+import DataTableComponent from "@/components/common/DataTable";
 
 const KeywordsAnalytics = () => {
   const {
@@ -73,62 +72,23 @@ const KeywordsAnalytics = () => {
         </div>
 
         <div className="grid grid-cols-2 gap-6 mb-6">
-            <Card className="flex-1 p-6">
-                <MessageFrequencyChart />
-            </Card>
+          <Card className="flex-1 p-6">
+              <MessageFrequencyChart />
+          </Card>
           
           <KeywordsList activeKeywords={activeKeywords} />
         </div>
 
         <div className="w-full gap-6">
           <Card className="p-6 h-150">
-            <div className="flex flex-col">
-              <h2 className="text-lg font-bold mb-4">Keywords List</h2>
-              <input
-                type="text"
-                placeholder="Search keywords..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                className="mb-4 p-2 border border-gray-300 rounded"
-              />
-              <table className="min-w-full border-collapse border border-gray-300">
-                <thead>
-                  <tr>
-                    <th className="border border-gray-300 p-2">Keyword</th>
-                    <th className="border border-gray-300 p-2">Volume</th>
-                    <th className="border border-gray-300 p-2">Active Actions</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {displayedKeywords.map((keyword) => (
-                    <tr key={keyword.id}>
-                      <td className="border border-gray-300 p-2">{keyword.keyword}</td>
-                      <td className="border border-gray-300 p-2">{keyword.volume}</td>
-                      <td className="border border-gray-300 p-2">
-                        <button className="text-red-500">Delete</button>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-              <div className="flex justify-between mt-4">
-                <button
-                  onClick={() => setCurrentPage((prev) => Math.max(prev - 1, 1))}
-                  disabled={currentPage === 1}
-                  className="p-2 bg-gray-300 rounded"
-                >
-                  Previous
-                </button>
-                <span>Page {currentPage} of {totalPages}</span>
-                <button
-                  onClick={() => setCurrentPage((prev) => Math.min(prev + 1, totalPages))}
-                  disabled={currentPage === totalPages}
-                  className="p-2 bg-gray-300 rounded"
-                >
-                  Next
-                </button>
-              </div>
-            </div>
+            <DataTableComponent 
+              displayedKeywords={displayedKeywords} 
+              searchTerm={searchTerm} 
+              setSearchTerm={setSearchTerm} 
+              currentPage={currentPage} 
+              setCurrentPage={setCurrentPage} 
+              totalPages={totalPages} 
+            />
           </Card>
         </div>
       </div>

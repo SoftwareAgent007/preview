@@ -21,7 +21,7 @@ export const useKeywordsAnalytics = (period: 'day' | 'week' | 'month' | 'year' =
 
 
   const activeKeywords = useMemo(() => {
-    return keywords?.filter(keyword => keyword.active).slice(0, 25) || [];
+    return keywords?.filter(keyword => keyword.active) || [];
   }, [keywords]);
 
   const matchesTimeline = useMemo(() => {

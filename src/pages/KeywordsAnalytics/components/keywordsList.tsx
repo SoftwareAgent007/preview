@@ -23,15 +23,17 @@ const KeywordsList: React.FC<KeywordsListProps> = ({ activeKeywords }) => {
   return (
     <Card className="p-6">
       <div className="flex flex-col">
-        <h2 className="text-lg font-bold mb-4">Keywords List</h2>
-        <div className="grid grid-cols-5 gap-4">
+        <div className="flex justify-between items-center mb-4">
+          <h2 className="text-lg font-bold">Keywords List</h2>
+          <Button className="p-2 bg-blue-500 rounded" onClick={openModal}>Add Keyword</Button>
+        </div>
+        <div className="max-h-70 overflow-y-scroll flex flex-wrap gap-2 pr-2">
           {activeKeywords.map((keyword) => (
-            <Badge key={keyword.id.toString()} className="bg-blue-100 border p-4 rounded shadow">
+            <Badge key={keyword.id.toString()} className="text-md bg-blue-100 border p-2 rounded shadow">
               <span className="font-bold">{keyword.keyword}</span>
             </Badge>
           ))}
         </div>
-        <Button className="mt-4 p-2 bg-blue-500 rounded" onClick={openModal}>Add Keyword</Button>
       </div>
       {isModalOpen && ReactDOM.createPortal(
         <div className="fixed inset-0 bg-black/50 flex justify-center items-center z-50">
