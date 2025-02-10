@@ -34,7 +34,7 @@ const ActiveKeywordsList: React.FC<KeywordsListProps> = ({ activeKeywords }) => 
       <div className="keywords-container overflow-y-hidden">
         <div className="overflow-y-scroll max-h-80 flex flex-wrap gap-2 pr-2 pb-5">
           {activeKeywords.map((keyword) => (
-            <Badge key={keyword.id.toString()} className="text-md bg-blue-100 border p-2 rounded shadow">
+            <Badge key={keyword.id.toString()} className="text-md font-light bg-blue-100 border p-1 m-1 rounded shadow">
               <span className="font-bold">{keyword.keyword}</span>
             </Badge>
           ))}

@@ -24,6 +24,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Trash } from "lucide-react";
+import { Badge } from "../ui/badge";
 
 export type Keyword = {
   id: bigint;
@@ -59,7 +60,11 @@ const columns: ColumnDef<Keyword>[] = [
       <div className="text-left font-bold">Active</div>
     ),
     cell: ({ row }) => (
-      <div className="text-left">{row.original.active.toString()}</div>
+      <div className="text-left">
+        <Badge className={`text-white ${row.original.active ? 'bg-green-500' : 'bg-red-500'}`}>
+          {row.original.active ? 'Active' : 'Inactive'}
+        </Badge>
+      </div>
     ),
   },
   {
@@ -83,6 +88,8 @@ const DataTableComponent = ({
   setCurrentPage,
   totalPages,
   totalKeywords,
+  onPageSizeChange,
+  pageSize,
 }: {
   displayedKeywords: Keyword[];
   searchTerm: string;
@@ -91,14 +98,19 @@ const DataTableComponent = ({
   setCurrentPage: (page: number) => void;
   totalPages: number;
   totalKeywords: number;
+  onPageSizeChange: (size: number) => void;
+  pageSize: number;
 }) => {
-  const [pageSize, setPageSize] = React.useState("10");
-  
   const table = useReactTable({
     data: displayedKeywords,
     columns,
     getCoreRowModel: getCoreRowModel(),
     getPaginationRowModel: getPaginationRowModel(),
+    initialState: {
+      pagination: {
+        pageSize: pageSize,
+      },
+    },
   });
 
   // Generate page numbers for pagination
@@ -124,6 +136,13 @@ const DataTableComponent = ({
     return pageNumbers;
   };
 
+  const handlePageSizeChange = (value: string) => {
+    const newSize = parseInt(value, 10);
+    onPageSizeChange(newSize);
+    // Reset to first page when changing page size
+    setCurrentPage(1);
+  };
+
   return (
     <div className="flex flex-col">
       <div className="flex justify-between items-center mb-4">
@@ -134,8 +153,8 @@ const DataTableComponent = ({
         <div className="flex items-center gap-2">
           <span className="text-sm text-gray-500">Rows per page:</span>
           <Select
-            value={pageSize}
-            onValueChange={(value) => setPageSize(value)}
+            value={`${pageSize}`}
+            onValueChange={handlePageSizeChange}
           >
             <SelectTrigger className="w-[100px]">
               <SelectValue placeholder="10" />

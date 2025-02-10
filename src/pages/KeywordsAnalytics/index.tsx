@@ -20,7 +20,9 @@ const KeywordsAnalytics = () => {
   
   const [searchTerm, setSearchTerm] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
+  const [pageSize, setPageSize] = useState(10);
   const itemsPerPage = 5;
+
 
   const filteredKeywords = activeKeywords.filter(keyword =>
     keyword.keyword.toLowerCase().includes(searchTerm.toLowerCase())
@@ -88,7 +90,9 @@ const KeywordsAnalytics = () => {
               setSearchTerm={setSearchTerm} 
               currentPage={currentPage} 
               setCurrentPage={setCurrentPage} 
-              totalPages={totalPages} 
+              totalPages={totalPages}
+              onPageSizeChange={(newSize) => setPageSize(newSize)}
+              pageSize={pageSize}
             />
           </Card>
         </div>

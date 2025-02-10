@@ -1,5 +1,8 @@
 import { useState, useEffect } from 'react';
 import { faker } from '@faker-js/faker';
+import { ActiveRolesData, ActivityData, ActivityOverview, PeakActivityTime, TrendData } from '@/components/common/types/userAnalytic.types';
+
+// TODO: later implement here reusable fetch requests and add usage in hooks
 
 export const generateRandomData = {
   bigInt: () => BigInt(faker.string.numeric(15)), // Increased to 15 digits
@@ -112,7 +115,59 @@ export const generateRandomData = {
     createdAt: generateRandomData.date(),
     updatedAt: generateRandomData.date(),
   }),
-};
+  
+  generateTrendData(): TrendData {
+    return {
+      count: faker.number.int({ min: 100, max: 1000 }),
+      trend: faker.number.float({ min: -10, max: 10 }),
+    };
+  },
+
+  generatePeakActivityTime(): PeakActivityTime {
+    return {
+      peakTime: generateRandomData.date().toISOString(),
+      timezone: "UTC",
+      trend: faker.number.float({ min: -5, max: 5 }),
+    };
+  },
+
+  generateActiveRolesData(): ActiveRolesData[] {
+    return Array.from({ length: 7 }, () => ({
+      date: generateRandomData.date().toISOString().split("T")[0],
+      activityCount: faker.number.int({ min: 50, max: 500 }),
+    }));
+  },
+
+  generateActivityOverview(): ActivityOverview {
+    return {
+      owner: faker.number.int({ min: 1, max: 10 }),
+      admin: faker.number.int({ min: 5, max: 50 }),
+      user: faker.number.int({ min: 100, max: 1000 }),
+      moderator: faker.number.int({ min: 5, max: 50 }),
+    };
+  },
+
+  generateMockUserActivityData(): ActivityData {
+    return {
+      id: generateRandomData.bigInt(),
+      presenceId: generateRandomData.bigInt(),
+      presence: { id: generateRandomData.bigInt() }, // Assuming presence is an object with an id
+      type: faker.helpers.arrayElement(['spotify', 'gaming', 'other']),
+      sessionStart: generateRandomData.date(),
+      sessionEnd: generateRandomData.date(),
+      duration: 60 * 60 * 1000, // 1 hour in milliseconds
+      name: faker.commerce.productName(),
+      state: faker.lorem.word(),
+      details: faker.lorem.sentence(),
+      peakActivityTime: this.generatePeakActivityTime(),
+      onlineUsers: this.generateTrendData(),
+      avgSessionTime: { ...this.generateTrendData(), timezone: "UTC" },
+      playingNow: this.generateTrendData(),
+      activeRoles: this.generateActiveRolesData(),
+      activityOverview: this.generateActivityOverview(),
+    };
+  }
+}
 
 function createDataHook<T>(generateFn: () => T, count = 100) { // Increased default count
   return () => {
@@ -135,6 +190,7 @@ function createDataHook<T>(generateFn: () => T, count = 100) { // Increased defa
   };
 }
 
+export const useUsersActivityData = createDataHook(generateRandomData.generateMockUserActivityData);
 export const useUsers = createDataHook(generateRandomData.user);
 export const useKeywords = createDataHook(generateRandomData.keyword);
 export const useMessageMatches = createDataHook(generateRandomData.messageMatch);

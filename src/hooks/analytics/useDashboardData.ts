@@ -154,42 +154,119 @@ export const useDashboardData = (period: 'day' | 'week' | 'month' | 'year' = 'ye
   const messageFrequency = useMemo(() => {
     const today = new Date();
     const periodDays = {
-      'day': 1,
-      'week': 7, 
+      'day': 24, // Hours for day view
+      'week': 7,
       'month': 30,
       'year': 365
     }[period];
-
-    if (!messages) {
-      // Generate fake message frequency data for the period
+  
+    const generateRealisticData = () => {
       const frequency = [];
+      
+      // Base parameters
+      const baseValue = 15000; // Base message count
+      const dailyVariation = 3000; // Normal daily variation
+      const trendStrength = 0.3; // How strong the trend patterns are
+      const noiseStrength = 0.2; // How much random noise to add
+      
+      // Generate multiple trend components
+      const trends = {
+        // Weekly pattern (higher on weekdays, lower on weekends)
+        weekly: (date: Date) => {
+          const day = date.getDay();
+          return day === 0 || day === 6 ? -2000 : 1000;
+        },
+        // Monthly pattern (higher in middle of month)
+        monthly: (date: Date) => {
+          const day = date.getDate();
+          return Math.sin((day / 30) * Math.PI) * 1500;
+        },
+        // Time of day pattern (for day view)
+        hourly: (date: Date) => {
+          const hour = date.getHours();
+          // Lower at night (0-6), peak at noon and evening
+          if (hour >= 0 && hour < 6) return -5000;
+          if (hour >= 6 && hour < 12) return hour * 500;
+          if (hour >= 12 && hour < 18) return 4000 - (hour - 12) * 200;
+          return 2000 - (hour - 18) * 300;
+        }
+      };
+
+      // Generate smooth random walks for longer-term trends
+      const generateRandomWalk = (steps: number, volatility: number) => {
+        const walk = [0];
+        for (let i = 1; i < steps; i++) {
+          const previousValue = walk[i - 1];
+          const change = (Math.random() - 0.5) * volatility;
+          walk.push(previousValue + change);
+        }
+        return walk;
+      };
+
+      // Generate long-term trend
+      const longTermTrend = generateRandomWalk(periodDays, 200);
+
+      // Generate medium-term fluctuations
+      const mediumTermTrend = generateRandomWalk(periodDays, 500);
+
       for (let i = 0; i < periodDays; i++) {
         const date = new Date(today);
-        date.setDate(date.getDate() - i);
+        if (period === 'day') {
+          date.setHours(date.getHours() - i);
+        } else {
+          date.setDate(date.getDate() - i);
+        }
+
+        // Combine all components
+        let value = baseValue;
+
+        // Add trend components
+        if (period === 'day') {
+          value += trends.hourly(date);
+        } else {
+          value += trends.weekly(date);
+          value += trends.monthly(date);
+        }
+
+        // Add long-term and medium-term trends
+        value += longTermTrend[i] * trendStrength;
+        value += mediumTermTrend[i] * trendStrength;
+
+        // Add random noise
+        const noise = (Math.random() - 0.5) * dailyVariation * noiseStrength;
+        value += noise;
+
+        // Ensure value stays positive and reasonable
+        value = Math.max(Math.round(value), 5000);
+
         frequency.push({
-          date: date.toISOString().split('T')[0],
-          count: Math.floor(Math.random() * 1000) + 2000 // Random number between 2000-3000
+          date: period === 'day' 
+            ? `${date.toISOString().split(':')[0]}:00` 
+            : date.toISOString().split('T')[0],
+          count: value
         });
       }
-      return frequency.reverse();
-    }
+
+      return frequency;
+    };
     
     const periodMessages = messages.filter(m => new Date(m.matchedAt) >= getPeriodStart);
     const frequency: Record<string, number> = {};
     
-    // Initialize all dates in the period with base value
-    for (let i = 0; i < periodDays; i++) {
-      const date = new Date(today);
-      date.setDate(date.getDate() - i);
-      frequency[date.toISOString().split('T')[0]] = 2000; // Base value
-    }
-
+    // Initialize all dates in the period with realistic base values
+    const baseData = generateRealisticData();
+    baseData.forEach(({ date, count }) => {
+      frequency[date] = count;
+    });
+  
     // Add actual message data
     periodMessages.forEach(message => {
-      const date = message.matchedAt.toISOString().split('T')[0];
-      frequency[date] = (frequency[date] || 2000) + Math.floor(Math.random() * 200);
+      const date = period === 'day'
+        ? `${message.matchedAt.toISOString().split(':')[0]}:00`
+        : message.matchedAt.toISOString().split('T')[0];
+      frequency[date] = (frequency[date] || 15000) + Math.floor(Math.random() * 1000);
     });
-
+  
     return Object.entries(frequency)
       .map(([date, count]) => ({ date, count }))
       .sort((a, b) => a.date.localeCompare(b.date));
