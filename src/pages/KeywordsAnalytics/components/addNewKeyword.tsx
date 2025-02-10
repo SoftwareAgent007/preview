@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Button } from "@/components/ui/button";
-import LoadingText from '@/components/common/LoadingText';
+import Spinner from '@/components/common/LoadingSpinner';
 
 const existingKeywords = ['react', 'typescript', 'javascript'];
 
@@ -12,7 +12,8 @@ const KeywordModal: React.FC<{
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   const [debounceTimeout, setDebounceTimeout] = useState<NodeJS.Timeout | null>(null);
-  const [isValidKeyword, setIsValidKeyword] = useState(false); // New state for keyword validity
+  const [isValidKeyword, setIsValidKeyword] = useState(false);
+  const [availableMessage, setAvailableMessage] = useState('');
 
   const checkKeywordExists = (value: string): boolean => {
     return existingKeywords.includes(value.toLowerCase());
@@ -22,23 +23,27 @@ const KeywordModal: React.FC<{
     if (value.trim() === '') {
       setError('Keyword cannot be empty');
       setIsValidKeyword(false);
+      setAvailableMessage('');
       return false;
     }
 
     if (value.length < 2) {
       setError('Keyword must be at least 2 characters long');
       setIsValidKeyword(false);
+      setAvailableMessage('');
       return false;
     }
 
     if (checkKeywordExists(value)) {
       setError('This keyword already exists');
       setIsValidKeyword(false);
+      setAvailableMessage('');
       return false;
     }
 
     setError('');
-    setIsValidKeyword(true); // Set valid keyword state
+    setIsValidKeyword(true);
+    setAvailableMessage('Available to add');
     return true;
   };
 
@@ -50,17 +55,17 @@ const KeywordModal: React.FC<{
       clearTimeout(debounceTimeout);
     }
 
-    // Start loading when checking for existing keywords
     setLoading(true);
     const timeout = setTimeout(() => {
       if (value) {
         validateKeyword(value);
       } else {
         setError('');
-        setIsValidKeyword(false); // Reset validity if input is empty
+        setIsValidKeyword(false);
+        setAvailableMessage('');
       }
       setLoading(false);
-    }, 500); // Increased debounce time for checking existence
+    }, 500);
 
     setDebounceTimeout(timeout);
   };
@@ -77,7 +82,7 @@ const KeywordModal: React.FC<{
       <div className="bg-white p-6 rounded-lg shadow-lg max-w-sm w-full">
         <h2 className="text-2xl font-semibold mb-6 text-center">Add New Keyword</h2>
         
-        <div className="mb-6">
+        <div className={ (isValidKeyword && loading ? "mb-[0.84rem]" : "mb-6 ") + " mt-0" }>
           <input
             type="text"
             value={keyword}
@@ -87,8 +92,10 @@ const KeywordModal: React.FC<{
           />
           {error ? (
             <p className="text-red-500 text-sm mt-2">{error}</p>
-          ): (
-            isValidKeyword && loading ? <LoadingText /> : <div className="h-7" />
+          ) : availableMessage.length && !loading && isValidKeyword ? (
+            <p className="text-green-500 text-sm mt-2">{availableMessage}</p>
+          ) : (
+            isValidKeyword && loading ? <Spinner /> : <div className="h-7" />
           )}
         </div>
 
