@@ -1,34 +1,18 @@
-@layer base {
-  :root {
-    --shadcn-bg: #ffffff; /* Background color */
-    --shadcn-fg: #000000; /* Foreground color */
-    --shadcn-primary: #1a73e8; /* Primary color */
-    --shadcn-secondary: #fbbc05; /* Secondary color */
-    --shadcn-accent: #34a853; /* Accent color */
-    --shadcn-muted: #e0e0e0; /* Muted color */
-    --shadcn-border: #d1d1d1; /* Border color */
-    --shadcn-shadow: rgba(0, 0, 0, 0.1); /* Shadow color */
-  }
+.keywords-container {
+  position: relative;
+  max-height: 320px; 
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  padding-right: 8px;
+}
 
-  /* Global styles for buttons */
-  button {
-    background-color: var(--shadcn-primary);
-    color: var(--shadcn-bg);
-    border: 1px solid var(--shadcn-border);
-    transition: background-color 0.3s, color 0.3s;
-  }
-  
-  button:hover {
-    background-color: var(--shadcn-secondary);
-  }
-
-  /* Global styles for links */
-  a {
-    color: var(--shadcn-primary);
-    transition: color 0.3s;
-  }
-
-  a:hover {
-    color: var(--shadcn-accent);
-  }
+.fade-shadow {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  width: 100%;
+  height: 40px; 
+  background: linear-gradient(to top, rgba(255, 255, 255, 1), rgba(255, 255, 255, 0));
+  pointer-events: none; 
 }

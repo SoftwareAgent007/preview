@@ -3,12 +3,13 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import React, { useState } from "react";
 import ReactDOM from "react-dom";
+import KeywordModal from "./addNewKeyword";
 
 interface KeywordsListProps {
   activeKeywords: { id: bigint; keyword: string; createdAt: Date; active: boolean; guildId: bigint; }[];
 }
 
-const KeywordsList: React.FC<KeywordsListProps> = ({ activeKeywords }) => {
+const ActiveKeywordsList: React.FC<KeywordsListProps> = ({ activeKeywords }) => {
   const [isModalOpen, setIsModalOpen] = useState(false);
 
   const openModal = () => setIsModalOpen(true);
@@ -23,33 +24,33 @@ const KeywordsList: React.FC<KeywordsListProps> = ({ activeKeywords }) => {
   return (
     <Card className="p-6">
       <div className="flex flex-col">
-        <div className="flex justify-between items-center mb-4">
-          <h2 className="text-lg font-bold">Keywords List</h2>
-          <Button className="p-2 bg-blue-500 rounded" onClick={openModal}>Add Keyword</Button>
-        </div>
-        <div className="max-h-70 overflow-y-scroll flex flex-wrap gap-2 pr-2">
+      <div className="flex justify-left items-center mb-4">
+        <h2 className="text-lg font-bold mr-4">Active Keywords</h2>
+        <Button className="p-2 bg-blue-500 text-white text-sm font-light" onClick={openModal}>
+          Add Keyword
+        </Button>
+      </div>
+      
+      <div className="keywords-container overflow-y-hidden">
+        <div className="overflow-y-scroll max-h-80 flex flex-wrap gap-2 pr-2 pb-5">
           {activeKeywords.map((keyword) => (
             <Badge key={keyword.id.toString()} className="text-md bg-blue-100 border p-2 rounded shadow">
               <span className="font-bold">{keyword.keyword}</span>
             </Badge>
           ))}
         </div>
+        <div className="fade-shadow"></div>
       </div>
+    </div>
       {isModalOpen && ReactDOM.createPortal(
-        <div className="fixed inset-0 bg-black/50 flex justify-center items-center z-50">
-          <div className="bg-white p-4 rounded">
-            <h2 className="text-lg font-bold mb-4">Add New Keyword</h2>
-            <input type="text" placeholder="Enter keyword" className="border p-2 mb-4 w-full" />
-            <div className="flex justify-end">
-              <Button className="mr-2" onClick={closeModal}>Cancel</Button>
-              <Button className="bg-blue-500" onClick={handleAddKeyword}>Add</Button>
-            </div>
-          </div>
-        </div>,
+        <KeywordModal 
+          closeModal={closeModal} 
+          handleAddKeyword={handleAddKeyword} 
+        />,
         document.body
       )}
     </Card>
   );
 };
 
-export default KeywordsList;
+export default ActiveKeywordsList;

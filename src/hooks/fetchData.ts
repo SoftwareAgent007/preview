@@ -22,6 +22,7 @@ export const generateRandomData = {
     keyword: faker.word.noun(),
     createdAt: generateRandomData.date(),
     active: generateRandomData.boolean(),
+    matches: { count: faker.number.int() },
     guildId: generateRandomData.bigInt(),
   }),
 

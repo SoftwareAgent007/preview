@@ -7,6 +7,7 @@ import { BREADCRUMB_PATHS, ROUTES } from "@/routes/routes.constant";
 import { useState } from "react";
 import KeywordsList from "./components/keywordsList";
 import DataTableComponent from "@/components/common/DataTable";
+import ActiveKeywordsList from "./components/keywordsList";
 
 const KeywordsAnalytics = () => {
   const {
@@ -73,10 +74,10 @@ const KeywordsAnalytics = () => {
 
         <div className="grid grid-cols-2 gap-6 mb-6">
           <Card className="flex-1 p-6">
-              <MessageFrequencyChart />
+            <MessageFrequencyChart />
           </Card>
           
-          <KeywordsList activeKeywords={activeKeywords} />
+          <ActiveKeywordsList activeKeywords={activeKeywords} />
         </div>
 
         <div className="w-full gap-6">

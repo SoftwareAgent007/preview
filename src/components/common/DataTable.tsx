@@ -9,6 +9,13 @@ import {
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import {
   Table,
   TableBody,
   TableCell,
@@ -16,11 +23,12 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import { Trash } from "lucide-react";
 
 export type Keyword = {
   id: bigint;
   keyword: string;
-  volume: number;
+  matches: { count: number };
   createdAt: Date;
   active: boolean;
   guildId: bigint;
@@ -37,12 +45,21 @@ const columns: ColumnDef<Keyword>[] = [
     ),
   },
   {
-    accessorKey: "volume",
+    accessorKey: "matches.count",
     header: ({ column }) => (
-      <div className="text-left font-bold">Volume</div>
+      <div className="text-left font-bold">Matches Count</div>
     ),
     cell: ({ row }) => (
-      <div className="text-left">{row.getValue("volume")}</div>
+      <div className="text-left">{row.original.matches.count}</div>
+    ),
+  },
+  {
+    accessorKey: "active",
+    header: ({ column }) => (
+      <div className="text-left font-bold">Active</div>
+    ),
+    cell: ({ row }) => (
+      <div className="text-left">{row.original.active.toString()}</div>
     ),
   },
   {
@@ -52,55 +69,31 @@ const columns: ColumnDef<Keyword>[] = [
     ),
     cell: ({ row }) => (
       <Button variant="link" className="text-red-500 p-0">
-        Delete
+        <Trash/>
       </Button>
     ),
   },
 ];
 
-// Sample data for demonstration
-const sampleKeywords: Keyword[] = [
-  {
-    id: BigInt(1),
-    keyword: "react",
-    volume: 1000,
-    createdAt: new Date(),
-    active: true,
-    guildId: BigInt(1),
-  },
-  {
-    id: BigInt(2),
-    keyword: "typescript",
-    volume: 800,
-    createdAt: new Date(),
-    active: true,
-    guildId: BigInt(1),
-  },
-  {
-    id: BigInt(3),
-    keyword: "nextjs",
-    volume: 600,
-    createdAt: new Date(),
-    active: true,
-    guildId: BigInt(1),
-  },
-];
-
 const DataTableComponent = ({
-  displayedKeywords = sampleKeywords,
+  displayedKeywords = [],
   searchTerm,
   setSearchTerm,
   currentPage,
   setCurrentPage,
   totalPages,
+  totalKeywords,
 }: {
-  displayedKeywords?: Keyword[];
+  displayedKeywords: Keyword[];
   searchTerm: string;
   setSearchTerm: (term: string) => void;
   currentPage: number;
   setCurrentPage: (page: number) => void;
   totalPages: number;
+  totalKeywords: number;
 }) => {
+  const [pageSize, setPageSize] = React.useState("10");
+  
   const table = useReactTable({
     data: displayedKeywords,
     columns,
@@ -108,9 +101,55 @@ const DataTableComponent = ({
     getPaginationRowModel: getPaginationRowModel(),
   });
 
+  // Generate page numbers for pagination
+  const getPageNumbers = () => {
+    const pageNumbers = [];
+    if (totalPages <= 5) {
+      for (let i = 1; i <= totalPages; i++) {
+        pageNumbers.push(i);
+      }
+    } else {
+      if (currentPage <= 3) {
+        pageNumbers.push(1, 2, 3, 4, 5);
+      } else if (currentPage >= totalPages - 2) {
+        for (let i = totalPages - 4; i <= totalPages; i++) {
+          pageNumbers.push(i);
+        }
+      } else {
+        for (let i = currentPage - 2; i <= currentPage + 2; i++) {
+          pageNumbers.push(i);
+        }
+      }
+    }
+    return pageNumbers;
+  };
+
   return (
     <div className="flex flex-col">
-      <h2 className="text-lg font-bold mb-4">Keywords List</h2>
+      <div className="flex justify-between items-center mb-4">
+        <div>
+          <h2 className="text-lg font-bold">Keywords List</h2>
+          <span className="text-sm text-gray-500">Total keywords: {totalKeywords}</span>
+        </div>
+        <div className="flex items-center gap-2">
+          <span className="text-sm text-gray-500">Rows per page:</span>
+          <Select
+            value={pageSize}
+            onValueChange={(value) => setPageSize(value)}
+          >
+            <SelectTrigger className="w-[100px]">
+              <SelectValue placeholder="10" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="5">5</SelectItem>
+              <SelectItem value="10">10</SelectItem>
+              <SelectItem value="20">20</SelectItem>
+              <SelectItem value="50">50</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+      </div>
+      
       <Input
         type="text"
         placeholder="Search keywords..."
@@ -118,9 +157,10 @@ const DataTableComponent = ({
         onChange={(e) => setSearchTerm(e.target.value)}
         className="mb-4"
       />
+      
       <div className="rounded-md border">
         <Table>
-          <TableHeader>
+          <TableHeader className="bg-gray-50">
             {table.getHeaderGroups().map((headerGroup) => (
               <TableRow key={headerGroup.id}>
                 {headerGroup.headers.map((header) => (
@@ -160,26 +200,39 @@ const DataTableComponent = ({
           </TableBody>
         </Table>
       </div>
+      
       <div className="flex items-center justify-between space-x-2 py-4">
-        <Button
-          variant="outline"
-          size="sm"
-          onClick={() => setCurrentPage(Math.max(currentPage - 1, 1))}
-          disabled={currentPage === 1}
-        >
-          Previous
-        </Button>
-        <span className="text-sm">
-          Page {currentPage} of {totalPages}
-        </span>
-        <Button
-          variant="outline"
-          size="sm"
-          onClick={() => setCurrentPage(Math.min(currentPage + 1, totalPages))}
-          disabled={currentPage === totalPages}
-        >
-          Next
-        </Button>
+        <div className="flex items-center gap-2">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => setCurrentPage(Math.max(currentPage - 1, 1))}
+            disabled={currentPage === 1}
+          >
+            Previous
+          </Button>
+          
+          {getPageNumbers().map((pageNum) => (
+            <Button
+              key={pageNum}
+              variant={currentPage === pageNum ? "default" : "outline"}
+              size="sm"
+              onClick={() => setCurrentPage(pageNum)}
+              className="min-w-[32px]"
+            >
+              {pageNum}
+            </Button>
+          ))}
+          
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => setCurrentPage(Math.min(currentPage + 1, totalPages))}
+            disabled={currentPage === totalPages}
+          >
+            Next
+          </Button>
+        </div>
       </div>
     </div>
   );
