@@ -39,3 +39,12 @@ export interface ActivityData {
   activeRoles: ActiveRolesData[];
   activityOverview: ActivityOverview;
 }
+
+export type ChartData = {
+  data: { date: string; count: number }[];
+  color: string;
+};
+
+export type DataSet = {
+  [key: string]: ChartData;
+};

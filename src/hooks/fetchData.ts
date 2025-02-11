@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { faker } from '@faker-js/faker';
-import { ActiveRolesData, ActivityData, ActivityOverview, PeakActivityTime, TrendData } from '@/components/common/types/userAnalytic.types';
+import { ActiveRolesData, ActivityData, ActivityOverview, DataSet, PeakActivityTime, TrendData } from '@/components/common/types/userAnalytic.types';
 
 // TODO: later implement here reusable fetch requests and add usage in hooks
 
@@ -147,6 +147,26 @@ export const generateRandomData = {
     };
   },
 
+  generatePlayingStatisticGraphData(): DataSet {
+    const generateDataPoints = (days: number, min: number, max: number) => {
+      return Array.from({ length: days }, (_, index) => ({
+        date: new Date(2024, 0, index + 1).toISOString().split("T")[0],
+        count: faker.number.int({ min, max }),
+      }));
+    };
+
+    return {
+      activeUsers: {
+        data: generateDataPoints(5, 1000, 2000),
+        color: "#3498db",
+      },
+      playingNow: {
+        data: generateDataPoints(5, 700, 1200),
+        color: "#2ecc71",
+      },
+    };
+  },
+
   generateMockUserActivityData(): ActivityData {
     return {
       id: generateRandomData.bigInt(),
@@ -167,6 +187,7 @@ export const generateRandomData = {
       activityOverview: this.generateActivityOverview(),
     };
   }
+
 }
 
 function createDataHook<T>(generateFn: () => T, count = 100) { // Increased default count
@@ -190,6 +211,7 @@ function createDataHook<T>(generateFn: () => T, count = 100) { // Increased defa
   };
 }
 
+export const usePlayingStatisticGraphData = generateRandomData.generatePlayingStatisticGraphData;
 export const useUsersActivityData = createDataHook(generateRandomData.generateMockUserActivityData);
 export const useUsers = createDataHook(generateRandomData.user);
 export const useKeywords = createDataHook(generateRandomData.keyword);

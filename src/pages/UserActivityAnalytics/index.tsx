@@ -2,11 +2,13 @@ import BreadcrumbsNavigation from "@/components/common/BreadcrumbsNavigation";
 import { Card } from "@/components/ui/card";
 import { useUserActivityAnalytics } from "@/hooks/analytics/useUserActivityAnalytics";
 import { BREADCRUMB_PATHS, ROUTES } from "@/routes/routes.constant";
-import TrendIndicator from "@/components/common/TrendIndicator";
 import ActivityCharts from "@/components/charts/userActivityTimeline/expandedUserActivityCharts";
+import { usePlayingStatisticData } from "@/hooks/analytics/usePlayingStatisticData";
+import RolesChart from "@/components/charts/userActivityTimeline/userRolesChart";
 
 const UserActivityAnalytics = () => {
   const { activityStats } = useUserActivityAnalytics();
+  const { playingUserStats } = usePlayingStatisticData();
 
   return (
     <div className="w-full min-h-screen bg-gray-50 p-6">
@@ -42,11 +44,11 @@ const UserActivityAnalytics = () => {
           </Card>
         </div>
 
-        <div className="flex gap-6 mb-6">
-          <ActivityCharts/>
-          <Card className="flex-1 p-6 h-150">
-            <div className="h-full flex items-center justify-center text-gray-500">Additional Insights Card 2</div>
-          </Card>
+        <div className="flex-row gap-6">
+          <div className="mb-6">
+            <ActivityCharts data={playingUserStats}/>
+          </div>
+          <RolesChart/>
         </div>
       </div>
     </div>

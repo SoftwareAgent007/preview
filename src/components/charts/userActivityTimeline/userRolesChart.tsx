@@ -1,8 +1,7 @@
-import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
-import MultiLayerAreaChart from "../combinedAreaChart";
-import { DataSet } from "@/components/common/types/userAnalytic.types";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import CircleRoleChart from "../circleChartOfRoles";
 
-const ActivityCharts = (data: DataSet) => {
+const RolesChart = () => {
     return (
         <Card className="w-full max-w-4xl">
             <CardHeader>
@@ -24,11 +23,11 @@ const ActivityCharts = (data: DataSet) => {
                             </span>
                         </div>
                     </div>
-                    <MultiLayerAreaChart datasets={data.data} width={800} height={300} />
+                    <CircleRoleChart />
                 </div>
             </CardContent>
         </Card>
     );
 };
 
-export default ActivityCharts;
+export default RolesChart;
