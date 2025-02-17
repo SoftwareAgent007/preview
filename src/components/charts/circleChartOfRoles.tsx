@@ -1,25 +1,20 @@
 import { useEffect, useRef } from "react";
 import * as d3 from "d3";
 
-const mockData = [
-  { role: "Owner", percentage: 10 },
-  { role: "Admin", percentage: 20 },
-  { role: "User", percentage: 60 },
-  { role: "Moderator", percentage: 10 },
-];
+type RolesData = { role: string; count: number; percentage: number; color: string }[];
 
-const CircleRoleChart = () => {
-  const svgRef = useRef(null);
+const CircleRoleChart = ({ data }: { data: RolesData }) => {
+  const svgRef = useRef<SVGSVGElement>(null);
 
   useEffect(() => {
-    const width = 300;
-    const height = 300;
-    const radius = Math.min(width, height) / 2;
+    const width = 500;
+    const height = 500;
+    const margin = 50;
+    const radius = Math.min(width, height) / 2 - margin;
 
-    const color = d3.scaleOrdinal(["#FF5733", "#33FF57", "#3357FF", "#FF33A8"]);
-
-    const pie = d3.pie().value((d) => d.percentage);
-    const arc = d3.arc().innerRadius(0).outerRadius(radius);
+    const pie = d3.pie<{ percentage: number }>().value((d) => d.percentage);
+    const arcGenerator = d3.arc().innerRadius(0).outerRadius(radius);
+    const outerArc = d3.arc().innerRadius(radius).outerRadius(radius + 30);
 
     const svg = d3
       .select(svgRef.current)
@@ -28,31 +23,72 @@ const CircleRoleChart = () => {
       .append("g")
       .attr("transform", `translate(${width / 2}, ${height / 2})`);
 
-    const dataReady = pie(mockData);
+    const dataReady = pie(data);
 
+    // Draw pie slices
     svg
       .selectAll(".slice")
       .data(dataReady)
       .enter()
       .append("path")
-      .attr("d", arc)
-      .attr("fill", (d, i) => color(i))
-      .style("stroke", "#fff")
-      .style("stroke-width", "2px");
+      .attr("d", arcGenerator)
+      .attr("fill", (d) => d.data.color)
+      .attr("stroke", "white")
+      .style("stroke-width", "2px")
+      .style("opacity", 0.8);
 
-    svg
-      .selectAll(".text")
+    // Append text labels
+    const textLabels = svg
+      .selectAll(".role-text")
       .data(dataReady)
       .enter()
       .append("text")
-      .attr("transform", (d) => `translate(${arc.centroid(d)})`)
+      .attr("class", "role-text")
+      .attr("transform", (d) => {
+        const pos = outerArc.centroid(d);
+        return `translate(${pos})`;
+      })
       .attr("text-anchor", "middle")
-      .attr("font-size", "12px")
-      .attr("fill", "#fff")
-      .text((d) => d.data.role);
-  }, []);
+      .attr("font-size", "14px")
+      .attr("fill", "black");
 
-  return <svg ref={svgRef}></svg>;
+    textLabels
+      .append("tspan")
+      .attr("x", 0)
+      .attr("dy", "-5")
+      .attr("font-weight", "bold")
+      .attr("font-size", "20")
+      .attr("fill", "black") // Set text color to white for contrast
+      .attr("padding", "10px")
+      .attr("background", "white") // Add black background for labels
+      .text((d) => d.data.role);
+
+    textLabels
+      .append("tspan")
+      .attr("x", 0)
+      .attr("dy", "15")
+      .text((d) => `${d.data.count} (${d.data.percentage}%)`);
+
+    // Hover effect
+    svg
+      .selectAll("path")
+      .on("mouseover", function (event, d) {
+        d3.select(this)
+          .transition()
+          .duration(200)
+          .style("opacity", 1.0)
+          .style("filter", "drop-shadow(0px 0px 5px rgba(0,0,0,0.5))");
+      })
+      .on("mouseout", function () {
+        d3.select(this)
+          .transition()
+          .duration(200)
+          .style("opacity", 0.8)
+          .style("filter", "none");
+      });
+  }, [data]);
+
+  return <svg className="m-auto" ref={svgRef}></svg>;
 };
 
 export default CircleRoleChart;

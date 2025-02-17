@@ -21,7 +21,7 @@ const UserActivityAnalytics = () => {
           <Card className="flex-1 p-6 h-30">
             <div className="h-full flex flex-col items-left justify-center">
               <span className="text-gray-500 text-sm font-medium">Peak Activity Time</span>
-              <span className="text-2xl font-bold">{activityStats.peakActivityTime ? activityStats.peakActivityTime.peakTime : 'No data'}</span>
+              <span className="text-2xl font-bold">{activityStats.peakActivityTime ? activityStats.peakActivityTime : 'No data'}</span>
             </div>
           </Card>
           <Card className="flex-1 p-6 h-30">

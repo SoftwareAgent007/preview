@@ -22,12 +22,14 @@ export const useUserActivityAnalytics = (period: 'day' | 'week' | 'month' | 'yea
   const activityStats = useMemo(() => {
     if (!data) return { peakActivityTime: null, onlineUsers: 0, avgSessionTime: 0, playingNow: 0, activeRoles: [], activityOverview: null };
     
-    const periodActivities = data.filter(activity => {
-      const sessionStart = new Date(activity.sessionStart);
-      const sessionEnd = new Date(activity.sessionEnd);
-      return sessionStart >= getPeriodStart || sessionEnd >= getPeriodStart;
-    });
+    const periodActivities = data
+    // .filter(activity => {
+    //   const sessionStart = new Date(activity.sessionStart);
+    //   const sessionEnd = new Date(activity.sessionEnd);
+    //   return sessionStart >= getPeriodStart || sessionEnd >= getPeriodStart;
+    // });
     
+    console.log('periodActivities',periodActivities)
     return {
       peakActivityTime: periodActivities.length > 0 ? periodActivities[0].peakActivityTime : null,
       onlineUsers: periodActivities.reduce((acc, activity) => acc + activity.onlineUsers.count, 0),

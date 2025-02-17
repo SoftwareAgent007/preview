@@ -2,28 +2,28 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import CircleRoleChart from "../circleChartOfRoles";
 
 const RolesChart = () => {
+    
+    const mockData = [
+        { role: "Owner", count: 234, percentage: 10, color: "#FF5733" },
+        { role: "Admin",  count: 469, percentage: 20, color: "#33FF57" },
+        { role: "User",  count: 1407, percentage: 60, color: "#3357FF" },
+        { role: "Moderator",  count: 234, percentage: 10, color: "#FF33A8" },
+    ];
+
     return (
         <Card className="w-full max-w-4xl">
             <CardHeader>
                 <CardTitle>User Activity Overview</CardTitle>
             </CardHeader>
             <CardContent>
-                <div className="space-y-1">
-                    <div className="flex gap-4 mb-2">
-                        <div className="flex items-center gap-2">
-                            <div className="w-3 h-3 rounded-full bg-blue-500 opacity-20" />
-                            <span className="text-sm font-medium">
-                                Active Users
-                            </span>
+                <CircleRoleChart data={mockData} />
+                <div className="legend flex justify-center gap-8 mt-6 text-lg">
+                    {mockData.map((item) => (
+                        <div key={item.role} className="flex items-center gap-3">
+                            <div className="w-6 h-6 rounded-md" style={{ backgroundColor: item.color }} />
+                            <span className="text-lg font-medium">{item.role}</span>
                         </div>
-                        <div className="flex items-center gap-2">
-                            <div className="w-3 h-3 rounded-full bg-green-500 opacity-40" />
-                            <span className="text-sm font-medium">
-                                Playing Now
-                            </span>
-                        </div>
-                    </div>
-                    <CircleRoleChart />
+                    ))}
                 </div>
             </CardContent>
         </Card>

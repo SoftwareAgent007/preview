@@ -21,8 +21,6 @@ const Dashboard = () => {
     topKeywords,
     topUsers,
     currentActivities,
-    userActivityTimeline,
-    messageFrequency,
     peakActivityTime,
     totalGameTime,
     hourlyActivity,
