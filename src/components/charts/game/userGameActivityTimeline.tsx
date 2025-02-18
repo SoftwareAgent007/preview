@@ -1,8 +1,8 @@
-import { useDashboardData } from "@/hooks/analytics/useDashboardData";
 import AreaLineChart from "../AreaLineChart";
 import React, { useState } from "react";
 import ReactDOM from "react-dom";
 import { Expand, Minimize } from "lucide-react";
+import { useGamingAnalyticsResponse } from "@/hooks/fetchData";
 
 interface UserActivityTimelineProps {
     width?: number;
@@ -11,14 +11,14 @@ interface UserActivityTimelineProps {
 const UserActivityTimeline: React.FC<UserActivityTimelineProps> = ({
     width = 543,
 }) => {
-    const { userActivityTimeline } = useDashboardData("month");
+    const { userActivityTimeline } = useGamingAnalyticsResponse();
     const [isModalOpen, setIsModalOpen] = useState(false);
 
     const openModal = () => setIsModalOpen(true);
     const closeModal = () => setIsModalOpen(false);
 
     return (
-        <div className="flex flex-col">
+        <div className="h-full flex flex-col">
             <div className="text-gray-500 text-lg font-bold mb-4 cursor-pointer flex justify-between">
                 <span>User Activity</span>
                 <button onClick={openModal} style={{ padding: "4px" }}>

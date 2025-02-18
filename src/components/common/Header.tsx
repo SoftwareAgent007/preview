@@ -74,11 +74,14 @@ const Header = () => {
                     <Users className="h-5 w-5" />
                   </Button>
                 </PopoverTrigger>
-                <PopoverContent className="w-40 bg-white">
-                  <div className="flex flex-col space-y-1">
-                    <Button variant="ghost" onClick={() => navigate(ROUTES.USER_ACTIVITY_DETAILED_GAMING)}>Gaming</Button>
-                    <Button variant="ghost" onClick={() => navigate(ROUTES.USER_ACTIVITY_DETAILED_STATUS)}>Status</Button>
-                    <Button variant="ghost" onClick={() => navigate(ROUTES.USER_ACTIVITY_DETAILED_PRESENCE)}>Presence</Button>
+                <PopoverContent className="w-32 bg-white">
+                  <div className="flex flex-col items-left space-y-1 pl-2">
+                    <Button className="pl-0 text-left pr-14 font-bold" variant="ghost" onClick={() => navigate(ROUTES.USER_ACTIVITY)}>Main</Button>
+                    <div className="pl-0 border-l border-gray-300">
+                      <Button className="pr-10 pl-5" variant="ghost" onClick={() => navigate(ROUTES.USER_ACTIVITY_DETAILED_GAMING)}>Gaming</Button>
+                      <Button className="pr-10 pl-5" variant="ghost" onClick={() => navigate(ROUTES.USER_ACTIVITY_DETAILED_STATUS)}>Status</Button>
+                      <Button className="pr-10 pl-5" variant="ghost" onClick={() => navigate(ROUTES.USER_ACTIVITY_DETAILED_PRESENCE)}>Presence</Button>
+                    </div>
                   </div>
                 </PopoverContent>
               </Popover>

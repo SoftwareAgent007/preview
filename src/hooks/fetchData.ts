@@ -98,6 +98,44 @@ export const generateRandomData = {
     platformId: faker.string.uuid(),
   }),
 
+  generateGamingAnalyticsResponse: (startDate?: Date, endDate?: Date) => {
+    const randomDate = faker.date.past();
+    const date = startDate && randomDate < startDate ? startDate : (endDate && randomDate > endDate ? endDate : randomDate);
+    
+    const response = {
+      activeUsers: faker.number.int({ min: 50, max: 5000 }),
+      avgSessionTime: `${faker.number.int({ min: 10, max: 120 })}m`,
+      peakPlayers: faker.number.int({ min: 100, max: 10000 }),
+      totalGameTime: faker.number.int({ min: 1000, max: 1000000 }),
+      userActivityTimeline: generateRandomData.array(
+        () => ({
+          date: date.toISOString().split("T")[0],
+          count: faker.number.int({ min: 1, max: 1000 }),
+        }),
+        faker.number.int({ min: 10, max: 30 })
+      ),
+      activeRolesPlayingNow: generateRandomData.array(
+        () => ({
+          role: faker.helpers.arrayElement(['owner', 'admin', 'user', 'moderator']),
+          count: faker.number.int({ min: 1, max: 500 }),
+          percentage: (Math.random() * 100).toFixed(1),
+          color: faker.color.rgb(),
+        }),
+        4
+      ),
+      topGames: generateRandomData.array(
+        () => ({
+          game: faker.commerce.productName(),
+          hoursPlayed: faker.number.int({ min: 1, max: 500 }),
+        }),
+        faker.number.int({ min: 5, max: 15 })
+      ),
+    };
+
+    console.log('Generated Gaming Analytics Response:', response);
+    return response;
+  },
+
   otherActivity: () => ({
     id: generateRandomData.bigInt(),
     activityId: generateRandomData.bigInt(),
@@ -221,5 +259,6 @@ export const usePresences = createDataHook(generateRandomData.presence);
 export const useActivities = createDataHook(generateRandomData.activity);
 export const useSpotifyActivities = createDataHook(generateRandomData.spotifyActivity);
 export const useGamingActivities = createDataHook(generateRandomData.gamingActivity);
+export const useGamingAnalyticsResponse = generateRandomData.generateGamingAnalyticsResponse;
 export const useOtherActivities = createDataHook(generateRandomData.otherActivity);
 export const useArtists = createDataHook(generateRandomData.artist);

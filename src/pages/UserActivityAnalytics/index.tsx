@@ -12,7 +12,7 @@ const UserActivityAnalytics = () => {
 
   return (
     <div className="w-full min-h-screen bg-gray-50 p-6">
-      <div className="mx-auto" style={{ maxWidth: `${import.meta.env.VITE_MAX_WIDTH}px` }}>
+      <div className="mx-auto" style={{ maxWidth: `${import.meta.env.VITE_MAX_WIDTH || 1200}px` }}>
         <div className="flex justify-between items-center mb-6">
           <BreadcrumbsNavigation items={BREADCRUMB_PATHS[ROUTES.USER_ACTIVITY]} />
         </div>

@@ -176,7 +176,7 @@ const Dashboard = () => {
               <div className="h-full flex flex-col justify-between">
                 <span className="text-gray-500 text-sm font-medium">Total Game Time</span>
                 <div className="flex-1 flex items-center">
-                  <span className="text-2xl font-bold">{Math.round(totalGameTime)}h</span>
+                  <span className="text-2xl font-bold">h</span>
                 </div>
                 <div className="text-sm text-gray-500 flex-row justify-between">
                   <TrendIndicator value={8} unit="h" isPositive={true} />

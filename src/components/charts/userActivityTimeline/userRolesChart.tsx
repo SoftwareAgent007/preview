@@ -13,7 +13,7 @@ const RolesChart = () => {
     return (
         <Card className="w-full max-w-4xl">
             <CardHeader>
-                <CardTitle>User Activity Overview</CardTitle>
+                <CardTitle>Active Roles diagram</CardTitle>
             </CardHeader>
             <CardContent>
                 <CircleRoleChart data={mockData} />
