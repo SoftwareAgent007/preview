@@ -67,7 +67,7 @@ const HorizontalBarChartRelatedGenres: React.FC<HorizontalBarChartRelatedGenresP
       .attr("y", (d) => y(d.genre) + 3 || 0)
       .attr("width", (d) => x(d.count))
       .attr("height", y.bandwidth() / 1.5) // Thinner bars
-      .attr("fill", "#3498db")
+      .attr("fill", "#3B82F6")
       .attr("rx", 4)
       .attr("ry", 4);
 

@@ -1,4 +1,4 @@
-import AreaLineChart from "../AreaLineChart";
+import AreaLineChart from "../areaLineChart";
 import React, { useState } from "react";
 import ReactDOM from "react-dom";
 import { Expand, Minimize } from "lucide-react";

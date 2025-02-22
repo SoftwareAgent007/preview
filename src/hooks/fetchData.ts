@@ -136,6 +136,45 @@ export const generateRandomData = {
     return response;
   },
 
+  generatePresenceAnalyticsResponse: (startDate?: Date, endDate?: Date) => {
+    const randomDate = faker.date.past();
+    const date = startDate && randomDate < startDate ? startDate : (endDate && randomDate > endDate ? endDate : randomDate);
+    
+    return {
+      activeUsers: faker.number.int({ min: 50, max: 5000 }),
+      avgSessionTime: `${faker.number.int({ min: 10, max: 120 })}m`,
+      peakUsers: faker.number.int({ min: 100, max: 10000 }),
+      totalPresenceTime: faker.number.int({ min: 1000, max: 1000000 }),
+      userActivityTimeline: Array.from({ length: faker.number.int({ min: 10, max: 30 }) }, () => ({
+        date: date.toISOString().split("T")[0],
+        count: faker.number.int({ min: 1, max: 1000 }),
+      })),
+      activeRolesNow: Array.from({ length: 4 }, () => ({
+        role: (faker.helpers.arrayElement(['Online', 'Offline', 'Idle', 'DND']) as string),
+        count: faker.number.int({ min: 1, max: 500 }),
+        percentage: (Math.random() * 100).toFixed(1),
+        color: faker.helpers.arrayElement(['#33FF57', '#FF5733', '#FF33A8', '#3357FF']),
+      })),
+      topActivities: Array.from({ length: faker.number.int({ min: 5, max: 15 }) }, () => ({
+        activity: faker.commerce.productName(),
+        hoursSpent: faker.number.int({ min: 1, max: 500 }),
+      })),
+      hourlyActivity: Array.from({ length: 24 }, (_, i) => ({
+        hour: i,
+        count: Math.max(0, Math.round(100 + (Math.sin((i / 24) * Math.PI) * 100) + faker.number.int({ min: -20, max: 20 }))),
+      })),
+      statusCounts: Array.from({ length: 24 }, (_, i) => ({
+        hour: i,
+        statusCounts: {
+          Online: faker.number.int({ min: 0, max: 500 }),
+          Offline: faker.number.int({ min: 0, max: 500 }),
+          Idle: faker.number.int({ min: 0, max: 500 }),
+          DND: faker.number.int({ min: 0, max: 500 }),
+        },
+      })),
+    };
+  },
+
   otherActivity: () => ({
     id: generateRandomData.bigInt(),
     activityId: generateRandomData.bigInt(),
@@ -196,7 +235,7 @@ export const generateRandomData = {
     return {
       activeUsers: {
         data: generateDataPoints(5, 1000, 2000),
-        color: "#3498db",
+        color: "#3B82F6",
       },
       playingNow: {
         data: generateDataPoints(5, 700, 1200),
@@ -260,5 +299,6 @@ export const useActivities = createDataHook(generateRandomData.activity);
 export const useSpotifyActivities = createDataHook(generateRandomData.spotifyActivity);
 export const useGamingActivities = createDataHook(generateRandomData.gamingActivity);
 export const useGamingAnalyticsResponse = generateRandomData.generateGamingAnalyticsResponse;
+export const usePresenceAnalyticsResponse = generateRandomData.generatePresenceAnalyticsResponse;
 export const useOtherActivities = createDataHook(generateRandomData.otherActivity);
 export const useArtists = createDataHook(generateRandomData.artist);

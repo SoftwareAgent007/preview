@@ -66,7 +66,7 @@ const HorizontalBarChart: React.FC<HorizontalBarChartProps> = ({
         .attr("y", d => y(`${d.hour}`) || 0)
         .attr("width", d => x(+d.count))
         .attr("height", y.bandwidth())
-        .attr("fill", "#3498db")
+        .attr("fill", "#3B82F6")
         .attr("rx", 5)
         .attr("ry", 5)
         .on("mouseover", (_, d) => {

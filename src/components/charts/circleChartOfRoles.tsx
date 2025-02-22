@@ -1,7 +1,7 @@
 import { useEffect, useRef } from "react";
 import * as d3 from "d3";
 
-type RolesData = { role: string; count: number; percentage: number; color: string }[];
+type RolesData = { role: string; count: number; percentage: number | string; color: string }[];
 
 const CircleRoleChart = ({ data }: { data: RolesData }) => {
   const svgRef = useRef<SVGSVGElement>(null);

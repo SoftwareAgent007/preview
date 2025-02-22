@@ -17,7 +17,7 @@ const AreaLineChart: React.FC<AreaLineChartProps> = ({
   data, 
   width, 
   height = 300,
-  graphColor = "#3498db"
+  graphColor = "#3B82F6"
 }) => {
   
   const svgRef = useRef<SVGSVGElement>(null);
