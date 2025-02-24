@@ -116,39 +116,36 @@ export const useDashboardData = (period: 'day' | 'week' | 'month' | 'year' = 'ye
       'year': 365
     }[period];
 
-    if (!presences) {
-      // Generate fake timeline data for the period
-      const timeline = [];
-      for (let i = 0; i < 365; i++) {
-        const date = new Date(today);
-        date.setDate(date.getDate() - i);
-        timeline.push({
-          date: date.toISOString().split('T')[0],
-          count: Math.floor(Math.random() * 500) + 1000 // Random number between 1000-1500
-        });
-      }
-      return timeline.reverse();
-    }
-    
-    const periodPresences = presences.filter(p => new Date(p.timestamp) >= getPeriodStart);
-    const timeline: Record<string, number> = {};
-    
-    // Initialize all dates in the period with base value
+    const stableBaseValue = 1200; // A stable base value for the timeline
+    const stabilityRange = 30; // Reduced range for slight variations
+    const trendStrength = 10; // Strength of the trend to create a hill-like effect
+
+    const timeline = [];
     for (let i = 0; i < periodDays; i++) {
       const date = new Date(today);
       date.setDate(date.getDate() - i);
-      timeline[date.toISOString().split('T')[0]] = 1000; // Base value
+      const count = stableBaseValue + Math.floor(Math.random() * stabilityRange) - (stabilityRange / 2); // Stable values with slight variations
+
+      // Introduce a hill-like trend
+      if (i < periodDays / 3) {
+        timeline.push({
+          date: date.toISOString().split('T')[0],
+          count: Math.max(count + trendStrength * (i / (periodDays / 3)), 0) // Ascending trend
+        });
+      } else if (i < (2 * periodDays) / 3) {
+        timeline.push({
+          date: date.toISOString().split('T')[0],
+          count: Math.max(count + trendStrength * (1 - (i - (periodDays / 3)) / (periodDays / 3)), 0) // Descending trend
+        });
+      } else {
+        timeline.push({
+          date: date.toISOString().split('T')[0],
+          count: Math.max(count, 0) // Stable towards the end
+        });
+      }
     }
 
-    // Add actual presence data
-    periodPresences.forEach(presence => {
-      const date = presence.timestamp.toISOString().split('T')[0];
-      timeline[date] = (timeline[date] || 1000) + Math.floor(Math.random() * 100);
-    });
-
-    return Object.entries(timeline)
-      .map(([date, count]) => ({ date, count }))
-      .sort((a, b) => a.date.localeCompare(b.date));
+    return timeline.reverse();
   }, [presences, getPeriodStart, period]);
 
   const messageFrequency = useMemo(() => {
