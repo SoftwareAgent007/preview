@@ -1,8 +1,8 @@
 import { useDashboardData } from "@/hooks/analytics/useDashboardData";
-import AreaLineChart from "../areaLineChart";
 import React, { useState } from "react";
 import ReactDOM from "react-dom";
 import { Expand, Minimize } from "lucide-react";
+import AreaLineChart from "@/components/charts/areaLineChart";
 
 interface UserActivityTimelineProps {
     width?: number;
