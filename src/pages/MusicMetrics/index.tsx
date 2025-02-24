@@ -13,7 +13,6 @@ const generateFakeStats = () => [
   { label: "Total Plays", value: faker.number.int({ min: 10000, max: 50000 }), change: faker.number.int({ min: -20, max: 20 }), isPositive: faker.datatype.boolean() },
   { label: "Unique Artists", value: faker.number.int({ min: 500, max: 1500 }), change: faker.number.int({ min: -20, max: 20 }), isPositive: faker.datatype.boolean() },
   { label: "Active Listeners", value: faker.number.int({ min: 1000, max: 5000 }), change: faker.number.int({ min: -20, max: 20 }), isPositive: faker.datatype.boolean() },
-  { label: "Listenings while playing", value: faker.number.int({ min: 2000, max: 10000 }), change: faker.number.int({ min: -20, max: 20 }), isPositive: faker.datatype.boolean() },
 ];
 
 const generateFakeArtists = () => 

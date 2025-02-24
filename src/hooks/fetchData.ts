@@ -149,8 +149,8 @@ export const generateRandomData = {
         date: date.toISOString().split("T")[0],
         count: faker.number.int({ min: 1, max: 1000 }),
       })),
-      activeRolesNow: Array.from({ length: 4 }, () => ({
-        role: (faker.helpers.arrayElement(['Online', 'Offline', 'Idle', 'DND']) as string),
+      activeRolesNow: ['Online', 'Offline', 'Idle', 'DND'].map(role => ({
+        role,
         count: faker.number.int({ min: 1, max: 500 }),
         percentage: (Math.random() * 100).toFixed(1),
         color: faker.helpers.arrayElement(['#33FF57', '#FF5733', '#FF33A8', '#3357FF']),

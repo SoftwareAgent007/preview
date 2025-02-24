@@ -11,6 +11,7 @@ import ListElement from "@/components/ui/list-element";
 import UserActivityTimeline from "@/components/charts/userActivityTimeline/userActivityTimelineChart";
 import MessageFrequencyChart from "@/components/charts/userActivityTimeline/messageFrequencyChart";
 import { useRef, useEffect, useState } from "react";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"; // Ensure this path is correct
 
 const Dashboard = () => {
   const {
@@ -72,32 +73,72 @@ const Dashboard = () => {
         </div>
 
         <div className="flex gap-6 mb-6">
-          <Card className="flex-1 p-6 h-30">
+          <Card className="relative flex-1 p-6 h-30">
             <div className="h-full flex flex-col items-left justify-center">
               <span className="text-gray-500 text-sm font-medium">Total Users</span>
               <span className="text-2xl font-bold">{totalUsers.toLocaleString()}</span>
               <span className="text-sm text-gray-500">New users this period</span>
+              <div className="absolute top-2 right-2">
+                <TooltipProvider>
+                  <Tooltip>
+                    <TooltipTrigger><span className="bg-gray-300 bg-opacity-25 text-gray-600 px-[7px] rounded-full cursor-help">?</span></TooltipTrigger>
+                    <TooltipContent>
+                      <p>Total number of users registered during this period</p>
+                    </TooltipContent>
+                  </Tooltip>
+                </TooltipProvider>
+              </div>
             </div>
           </Card>
-          <Card className="flex-1 p-6 h-30">
+          <Card className="relative flex-1 p-6 h-30">
             <div className="h-full flex flex-col items-left justify-center">
               <span className="text-gray-500 text-sm font-medium">Active Users</span>
               <span className="text-2xl font-bold">{activeUsers.toLocaleString()}</span>
               <span className="text-sm text-gray-500">Currently active users</span>
+              <div className="absolute top-2 right-2">
+                <TooltipProvider>
+                  <Tooltip>
+                    <TooltipTrigger><span className="bg-gray-300 bg-opacity-25 text-gray-600 px-[7px] rounded-full cursor-help">?</span></TooltipTrigger>
+                    <TooltipContent>
+                      <p>Users who are currently active in the platform</p>
+                    </TooltipContent>
+                  </Tooltip>
+                </TooltipProvider>
+              </div>
             </div>
           </Card>
-          <Card className="flex-1 p-6 h-30">
+          <Card className="relative flex-1 p-6 h-30">
             <div className="h-full flex flex-col items-left justify-center">
               <span className="text-gray-500 text-sm font-medium">Total Messages</span>
               <span className="text-2xl font-bold">{totalMessages.toLocaleString()}</span>
               <span className="text-sm text-gray-500">Messages this period</span>
+              <div className="absolute top-2 right-2">
+                <TooltipProvider>
+                  <Tooltip>
+                    <TooltipTrigger><span className="bg-gray-300 bg-opacity-25 text-gray-600 px-[7px] rounded-full cursor-help">?</span></TooltipTrigger>
+                    <TooltipContent>
+                      <p>Total number of messages sent during this period</p>
+                    </TooltipContent>
+                  </Tooltip>
+                </TooltipProvider>
+              </div>
             </div>
           </Card>
-          <Card className="flex-1 p-6 h-30">
+          <Card className="relative flex-1 p-6 h-30">
             <div className="h-full flex flex-col items-left justify-center">
               <span className="text-gray-500 text-sm font-medium">Total Reactions</span>
               <span className="text-2xl font-bold">{totalReactions.toLocaleString()}</span>
               <span className="text-sm text-gray-500">Reactions this period</span>
+              <div className="absolute top-2 right-2">
+                <TooltipProvider>
+                  <Tooltip>
+                    <TooltipTrigger><span className="bg-gray-300 bg-opacity-25 text-gray-600 px-[7px] rounded-full cursor-help">?</span></TooltipTrigger>
+                    <TooltipContent>
+                      <p>Total number of reactions made during this period</p>
+                    </TooltipContent>
+                  </Tooltip>
+                </TooltipProvider>
+              </div>
             </div>
           </Card>
         </div>
@@ -112,7 +153,7 @@ const Dashboard = () => {
         </div>
 
         <div className="flex justify-between gap-6 mb-6">
-          <Card className="w-[35%] p-6 h-70">
+          <Card className="relative w-[35%] p-6 h-70">
             <div className="h-full flex flex-col">
               <span className="text-gray-500 text-lg font-bold mb-4">Current Activities</span>
               <ListElement logo={<Users className="w-8 h-8 text-gray-600" />} title="Active Gamers" description={`${currentActivities.gamers} users`} />
@@ -121,9 +162,19 @@ const Dashboard = () => {
                 title="Spotify Listeners" 
                 description={`${currentActivities.spotifyListeners} users`} 
               />
+              <div className="absolute top-2 right-2">
+                <TooltipProvider>
+                  <Tooltip>
+                    <TooltipTrigger><span className="bg-gray-300 bg-opacity-25 text-gray-600 px-[7px] rounded-full cursor-help">?</span></TooltipTrigger>
+                    <TooltipContent>
+                      <p>Current activities of users on the platform</p>
+                    </TooltipContent>
+                  </Tooltip>
+                </TooltipProvider>
+              </div>
             </div>
           </Card>
-          <Card className="w-[35%] p-4 h-70">
+          <Card className="relative w-[35%] p-4 h-70">
             <div className="h-full flex flex-col">
               <span className="text-gray-500 text-sm font-bold mb-2">Top Keywords</span>
               {topKeywords.map((keyword, index) => (
@@ -134,9 +185,19 @@ const Dashboard = () => {
                   description={`${keyword.count} matches`} 
                 />
               ))}
+              <div className="absolute top-2 right-2">
+                <TooltipProvider>
+                  <Tooltip>
+                    <TooltipTrigger><span className="bg-gray-300 bg-opacity-25 text-gray-600 px-[7px] rounded-full cursor-help">?</span></TooltipTrigger>
+                    <TooltipContent>
+                      <p>Keywords that are frequently mentioned</p>
+                    </TooltipContent>
+                  </Tooltip>
+                </TooltipProvider>
+              </div>
             </div>
           </Card>
-          <Card className="w-[35%] p-6 h-70">
+          <Card className="relative w-[35%] p-6 h-70">
             <div className="h-full flex flex-col">
               <span className="text-gray-500 text-lg font-bold mb-4">Top Users</span>
               {topUsers.map((user, index) => (
@@ -148,31 +209,61 @@ const Dashboard = () => {
                   backgroundColor="" // Turn off background
                 />
               ))}
+              <div className="absolute top-2 right-2">
+                <TooltipProvider>
+                  <Tooltip>
+                    <TooltipTrigger><span className="bg-gray-300 bg-opacity-25 text-gray-600 px-[7px] rounded-full cursor-help">?</span></TooltipTrigger>
+                    <TooltipContent>
+                      <p>Users with the highest message counts</p>
+                    </TooltipContent>
+                  </Tooltip>
+                </TooltipProvider>
+              </div>
             </div>
           </Card>
         </div>
 
         <div className="flex justify-between gap-6">
-          <Card className="flex-1 p-6 h-150">
+          <Card className="relative flex-1 p-6 h-150">
             <div className="h-full flex flex-col">
               <span className="text-gray-500 text-lg font-bold mb-4">Hourly Activity</span>
               <HorizontalBarChart data={hourlyActivity} height={500} width={600} />
+              <div className="absolute top-2 right-2">
+                <TooltipProvider>
+                  <Tooltip>
+                    <TooltipTrigger><span className="bg-gray-300 bg-opacity-25 text-gray-600 px-[7px] rounded-full cursor-help">?</span></TooltipTrigger>
+                    <TooltipContent>
+                      <p>Activity levels over the course of the hour</p>
+                    </TooltipContent>
+                  </Tooltip>
+                </TooltipProvider>
+              </div>
             </div>
           </Card>
           <div className="flex-1 grid grid-cols-2 h-60 gap-6">
-            <Card className="p-6 р-50">
+            <Card className="relative p-6 р-50">
               <div className="h-full flex flex-col justify-between">
                 <span className="text-gray-500 text-sm font-medium">Peak Activity Time</span>
                 <div className="flex-1 flex items-center">
                   <span className="text-2xl font-bold">{peakActivityTime?.hour}:00</span>
                 </div>
                 <div className="text-sm text-gray-500 flex-row justify-between">
-                  <span>{peakActivityTime?.count} users active</span>
+                  <span>{peakActivityTime?.count} active users</span>
                   <TrendIndicator unit={'%'} value={15} isPositive={true} />
+                </div>
+                <div className="absolute top-2 right-2">
+                  <TooltipProvider>
+                    <Tooltip>
+                      <TooltipTrigger><span className="bg-gray-300 bg-opacity-25 text-gray-600 px-[7px] rounded-full cursor-help">?</span></TooltipTrigger>
+                      <TooltipContent>
+                        <p>Time with the highest user activity</p>
+                      </TooltipContent>
+                    </Tooltip>
+                  </TooltipProvider>
                 </div>
               </div>
             </Card>
-            <Card className="p-6 р-50">
+            <Card className="relative p-6 р-50">
               <div className="h-full flex flex-col justify-between">
                 <span className="text-gray-500 text-sm font-medium">Total Game Time</span>
                 <div className="flex-1 flex items-center">
@@ -181,9 +272,19 @@ const Dashboard = () => {
                 <div className="text-sm text-gray-500 flex-row justify-between">
                   <TrendIndicator value={8} unit="h" isPositive={true} />
                 </div>
+                <div className="absolute top-2 right-2">
+                  <TooltipProvider>
+                    <Tooltip>
+                      <TooltipTrigger><span className="bg-gray-300 bg-opacity-25 text-gray-600 px-[7px] rounded-full cursor-help">?</span></TooltipTrigger>
+                      <TooltipContent>
+                        <p>Total time spent playing games</p>
+                      </TooltipContent>
+                    </Tooltip>
+                  </TooltipProvider>
+                </div>
               </div>
             </Card>
-            <Card className="p-6 р-50">
+            <Card className="relative p-6 р-50">
               <div className="h-full flex flex-col justify-between">
                 <span className="text-gray-500 text-sm font-medium">Active Listeners</span>
                 <div className="flex-1 flex items-center">
@@ -192,13 +293,33 @@ const Dashboard = () => {
                 <div className="text-sm text-gray-500 flex-row justify-between">
                   <TrendIndicator unit={'%'} value={12} isPositive={false} />
                 </div>
+                <div className="absolute top-2 right-2">
+                  <TooltipProvider>
+                    <Tooltip>
+                      <TooltipTrigger><span className="bg-gray-300 bg-opacity-25 text-gray-600 px-[7px] rounded-full cursor-help">?</span></TooltipTrigger>
+                      <TooltipContent>
+                        <p>Listeners currently active on the platform</p>
+                      </TooltipContent>
+                    </Tooltip>
+                  </TooltipProvider>
+                </div>
               </div>
             </Card>
-            <Card className="p-6 р-50">
+            <Card className="relative p-6 р-50">
               <div className="h-full flex flex-col justify-between">
                 <span className="text-gray-500 text-sm font-medium">Keywords</span>
                 <div className="flex-1 flex items-center">
                   <span className="text-2xl font-bold">{keywordStats.total}</span>
+                  <div className="absolute top-2 right-2">
+                    <TooltipProvider>
+                      <Tooltip>
+                        <TooltipTrigger><span className="bg-gray-300 bg-opacity-25 text-gray-600 px-[7px] rounded-full cursor-help">?</span></TooltipTrigger>
+                        <TooltipContent>
+                          <p>Active keywords are keywords that have been mentioned in the discord guild within the timerange selected</p>
+                        </TooltipContent>
+                      </Tooltip>
+                    </TooltipProvider>
+                  </div>
                 </div>
                 <div className="text-sm text-gray-500 flex-row justify-between">
                   <span>{keywordStats.active} active</span>
