@@ -3,14 +3,12 @@ import * as d3 from "d3";
 
 type RolesData = { role: string; count: number; percentage: number | string; color: string }[];
 
-const CircleRoleChart = ({ data }: { data: RolesData }) => {
+const CircleRoleChart = ({ data, width = 500, height = 500 }: { data: RolesData; width?: number; height?: number; }) => {
   const svgRef = useRef<SVGSVGElement>(null);
 
   useEffect(() => {
     if (!svgRef.current) return;
     
-    const width = 500;
-    const height = 500;
     const margin = 50;
     const radius = Math.min(width, height) / 2 - margin;
 
@@ -97,7 +95,7 @@ const CircleRoleChart = ({ data }: { data: RolesData }) => {
           .style("opacity", 0.8)
           .style("filter", "none");
       });
-  }, [data]);
+  }, [data, width, height]);
 
   return <svg className="m-auto" ref={svgRef}></svg>;
 };

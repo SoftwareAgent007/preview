@@ -12,7 +12,7 @@ import Header from "./components/common/Header.tsx"
 
 function App() {
   return (
-    // <ThemeProvider defaultTheme="light" storageKey="vite-ui-theme">
+    <ThemeProvider defaultTheme="light" storageKey="vite-ui-theme">
       <BrowserRouter>
         <Header />
         <Routes>
@@ -27,7 +27,7 @@ function App() {
           <Route path="music-metrics" element={<MusicMetrics />} />
         </Routes>
       </BrowserRouter>
-    // </ThemeProvider>
+    </ThemeProvider>
   )
 }
 
