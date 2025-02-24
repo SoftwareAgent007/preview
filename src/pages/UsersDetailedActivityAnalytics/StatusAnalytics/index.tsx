@@ -1,7 +1,6 @@
-import { Card } from "@/components/ui/card";
-import TrendIndicator from '@/components/common/TrendIndicator';
 import PresenceWeekActivityChart from "@/components/charts/userActivityTimeline/presenceActivityChart/userPresenceWeekActivityChart";
-import StatusDataTableComponent from '@/components/common/StatusDataTable';
+import TrendIndicator from '@/components/common/TrendIndicator';
+import { Card } from "@/components/ui/card";
 import { useStatusPageAnalyticsResponse } from '@/hooks/fetchData';
 
 const StatusPageComponent = ({ }) => {

@@ -1,12 +1,10 @@
-import { useEffect, useRef, useState } from "react";
-import { Card } from "@/components/ui/card";
 import CircleRoleChart from "@/components/charts/circleChartOfRoles";
-import { usePresenceAnalyticsResponse } from "@/hooks/fetchData";
-import UserActivityTimeline from "@/components/charts/userActivityTimeline/userActivityTimelineChart";
-import TopGamesList from "../GamingAnalytics/components/TopGamesList";
-import HorizontalBarChart from "@/components/charts/hourActivity/horizontalBarChart";
 import HorizontalTopHoursChart from "@/components/charts/hourActivity/horisontalTopHoursChart";
+import HorizontalBarChart from "@/components/charts/hourActivity/horizontalBarChart";
 import PresenceWeekActivityChart from "@/components/charts/userActivityTimeline/presenceActivityChart/userPresenceWeekActivityChart";
+import { Card } from "@/components/ui/card";
+import { usePresenceAnalyticsResponse } from "@/hooks/fetchData";
+import { useRef } from "react";
 
 const PresenceAnalytics = () => {
   const presenceAnalyticsResponse = usePresenceAnalyticsResponse();
@@ -16,30 +14,28 @@ const PresenceAnalytics = () => {
     totalPresenceTime = 0,
     peakUsers = 0,
     activeRolesNow = [],
-    topActivities = [],
     hourlyActivity = [],
-    statusCounts = []
   } = presenceAnalyticsResponse || {};
 
   const wrapperRef = useRef<HTMLDivElement | null>(null);
-  const [graphWidth, setGraphWidth] = useState(0);
+  // const [graphWidth, setGraphWidth] = useState(0);
 
-  const updateGraphWidth = () => {
-    if (wrapperRef.current) {
-      setGraphWidth(wrapperRef.current.offsetWidth / 2.3);
-    }
-  };
+  // const updateGraphWidth = () => {
+  //   if (wrapperRef.current) {
+  //     setGraphWidth(wrapperRef.current.offsetWidth / 2.3);
+  //   }
+  // };
 
-  useEffect(() => {
-    window.addEventListener("resize", updateGraphWidth);
-    return () => window.removeEventListener("resize", updateGraphWidth);
-  }, []);
+  // useEffect(() => {
+  //   window.addEventListener("resize", updateGraphWidth);
+  //   return () => window.removeEventListener("resize", updateGraphWidth);
+  // }, []);
 
-  useEffect(() => {
-    if (wrapperRef.current) {
-      updateGraphWidth();
-    }
-  }, [wrapperRef.current]);
+  // useEffect(() => {
+  //   if (wrapperRef.current) {
+  //     updateGraphWidth();
+  //   }
+  // }, [wrapperRef.current]);
 
   return (
     <div ref={wrapperRef} className="w-full bg-gray-50">
