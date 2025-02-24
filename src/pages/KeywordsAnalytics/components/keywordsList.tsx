@@ -22,11 +22,11 @@ const ActiveKeywordsList: React.FC<KeywordsListProps> = ({ activeKeywords }) => 
   };
 
   return (
-    <Card className="p-6">
+    <Card className="p-8"> {/* Increased padding */}
       <div className="flex flex-col">
       <div className="flex justify-left items-center mb-4">
-        <h2 className="text-lg font-bold mr-4">Active Keywords</h2>
-        <Button className="p-2 bg-blue-500 text-white text-sm font-light" onClick={openModal}>
+        <h2 className="text-md font-bold mr-4 text-[#222]">Active Keywords</h2> {/* Darker text and smaller font size */}
+        <Button className="p-2 bg-blue-500 text-white text-sm font-normal" onClick={openModal}>
           Add Keyword
         </Button>
       </div>
@@ -34,8 +34,8 @@ const ActiveKeywordsList: React.FC<KeywordsListProps> = ({ activeKeywords }) => 
       <div className="keywords-container overflow-y-hidden">
         <div className="overflow-y-scroll max-h-80 flex flex-wrap gap-2 pr-2 pb-5">
           {activeKeywords.map((keyword) => (
-            <Badge key={keyword.id.toString()} className="text-md font-light text-blue-500 bg-blue-100 border p-1 m-1 rounded shadow">
-              <span className="font-bold text-blue-500">{keyword.keyword}</span>
+            <Badge key={keyword.id.toString()} className="text-sm font-light text-blue-500 bg-blue-100 border p-[5px] px-[7px] m-1 rounded shadow">
+              <span className="font-bold text-blue-600">{keyword.keyword}</span>
             </Badge>
           ))}
         </div>
