@@ -32,4 +32,4 @@ const TopGamesList = ({ topGames }: { topGames: { game: string; hoursPlayed: num
   );
 };
 
-export default TopGamesList;
+export { TopGamesList };

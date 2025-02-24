@@ -3,7 +3,7 @@ import { Card } from "@/components/ui/card";
 import CircleRoleChart from "@/components/charts/circleChartOfRoles";
 import { useGamingAnalyticsResponse } from "@/hooks/fetchData";
 import UserActivityTimeline from "@/components/charts/userActivityTimeline/userActivityTimelineChart";
-import TopGamesList from "./components/TopGamesList";
+import { TopGamesList } from "./components/topGamesList";
 
 const GamingAnalytics = () => {
   const gamingAnalyticsResponse = useGamingAnalyticsResponse();
