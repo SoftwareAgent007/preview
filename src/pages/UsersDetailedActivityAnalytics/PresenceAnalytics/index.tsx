@@ -6,7 +6,7 @@ import UserActivityTimeline from "@/components/charts/userActivityTimeline/userA
 import TopGamesList from "../GamingAnalytics/components/TopGamesList";
 import HorizontalBarChart from "@/components/charts/hourActivity/horizontalBarChart";
 import HorizontalTopHoursChart from "@/components/charts/hourActivity/horisontalTopHoursChart";
-import InteractiveChart from "@/components/charts/userActivityTimeline/userPresenceActivityChart";
+import PresenceWeekActivityChart from "@/components/charts/userActivityTimeline/presenceActivityChart/userPresenceWeekActivityChart";
 
 const PresenceAnalytics = () => {
   const presenceAnalyticsResponse = usePresenceAnalyticsResponse();
@@ -76,9 +76,7 @@ const PresenceAnalytics = () => {
           </Card>
         </div>
         <div className="grid grid-cols-2 gap-6 mb-6">
-          <Card className="flex-1 p-6">
-            <InteractiveChart data={statusCounts} />
-          </Card>
+          <PresenceWeekActivityChart  />
           <Card className="flex-1 p-6">
             <div className="flex flex-col">
               <span className="text-gray-500 text-lg font-bold mb-4">Active Status (per last 7 days)</span>
@@ -103,11 +101,11 @@ const PresenceAnalytics = () => {
               </div>
             </div>
           </Card>
-          <Card className="flex-1 p-6">
-            <div className="flex flex-col">
+          <Card className="flex-1 h-min p-6">
+            <div className="flex h-min flex-col">
               <span className="text-gray-500 text-lg font-bold mb-4">Peak Activity Hours</span>
               <span className="text-gray-500 text-sm mb-2">User activity distribution throughout the day</span>
-              <HorizontalTopHoursChart data={hourlyActivity} height={500} width={500} />
+              <HorizontalTopHoursChart data={hourlyActivity} height={400} width={500} />
             </div>
           </Card>
           <Card className="flex-1 p-6">

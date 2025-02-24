@@ -6,7 +6,7 @@ import { useKeywordsAnalytics } from "@/hooks/analytics/useKeywordsAnalytics";
 import { BREADCRUMB_PATHS, ROUTES } from "@/routes/routes.constant";
 import { useState } from "react";
 import KeywordsList from "./components/keywordsList";
-import DataTableComponent from "@/components/common/DataTable";
+import DataTableComponent from "@/components/common/KeywordsDataTable";
 import ActiveKeywordsList from "./components/keywordsList";
 
 const KeywordsAnalytics = () => {

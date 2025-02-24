@@ -7,6 +7,8 @@ const CircleRoleChart = ({ data }: { data: RolesData }) => {
   const svgRef = useRef<SVGSVGElement>(null);
 
   useEffect(() => {
+    if (!svgRef.current) return;
+    
     const width = 500;
     const height = 500;
     const margin = 50;
@@ -16,8 +18,12 @@ const CircleRoleChart = ({ data }: { data: RolesData }) => {
     const arcGenerator = d3.arc().innerRadius(0).outerRadius(radius);
     const outerArc = d3.arc().innerRadius(radius).outerRadius(radius + 30);
 
-    const svg = d3
-      .select(svgRef.current)
+    const svg = d3.select(svgRef.current);
+
+    // Clear previous content
+    svg.selectAll("*").remove();
+    
+    const chartGroup = svg
       .attr("width", width)
       .attr("height", height)
       .append("g")
@@ -26,51 +32,56 @@ const CircleRoleChart = ({ data }: { data: RolesData }) => {
     const dataReady = pie(data);
 
     // Draw pie slices
-    svg
-      .selectAll(".slice")
-      .data(dataReady)
+    const slices = chartGroup.selectAll(".slice").data(dataReady);
+
+    slices
       .enter()
       .append("path")
-      .attr("d", arcGenerator)
+      .attr("class", "slice")
+      .merge(slices)
+      .attr("d", arcGenerator as any)
       .attr("fill", (d) => d.data.color)
       .attr("stroke", "white")
       .style("stroke-width", "2px")
       .style("opacity", 0.8);
 
+    slices.exit().remove();
+
     // Append text labels
-    const textLabels = svg
-      .selectAll(".role-text")
-      .data(dataReady)
+    const textLabels = chartGroup.selectAll(".role-text").data(dataReady);
+
+    const labelsEnter = textLabels
       .enter()
       .append("text")
       .attr("class", "role-text")
-      .attr("transform", (d) => {
-        const pos = outerArc.centroid(d);
-        return `translate(${pos})`;
-      })
       .attr("text-anchor", "middle")
       .attr("font-size", "14px")
       .attr("fill", "black");
 
-    textLabels
-      .append("tspan")
+    labelsEnter
+      .merge(textLabels)
+      .attr("transform", (d) => {
+        const pos = outerArc.centroid(d);
+        return `translate(${pos})`;
+      });
+
+    labelsEnter.append("tspan")
       .attr("x", 0)
       .attr("dy", "-5")
       .attr("font-weight", "bold")
       .attr("font-size", "20")
-      .attr("fill", "black") // Set text color to white for contrast
-      .attr("padding", "10px")
-      .attr("background", "white") // Add black background for labels
+      .attr("fill", "black")
       .text((d) => d.data.role);
 
-    textLabels
-      .append("tspan")
+    labelsEnter.append("tspan")
       .attr("x", 0)
       .attr("dy", "15")
       .text((d) => `${d.data.count} (${d.data.percentage}%)`);
 
+    textLabels.exit().remove();
+
     // Hover effect
-    svg
+    chartGroup
       .selectAll("path")
       .on("mouseover", function (event, d) {
         d3.select(this)

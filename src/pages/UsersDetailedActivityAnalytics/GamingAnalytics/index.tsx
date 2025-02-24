@@ -65,7 +65,7 @@ const GamingAnalytics = () => {
           <Card className="flex-1 p-6 h-30">
             <div className="h-full flex flex-col items-left justify-center">
               <span className="text-gray-500 text-sm font-medium">Total Game Time</span>
-              <span className="text-2xl font-bold">{totalGameTime.toLocaleString()}h</span>
+              <span className="text-2xl font-bold">{totalGameTime.toLocaleString()}</span>
               <span className="text-sm text-gray-500">Total hours played</span>
             </div>
           </Card>

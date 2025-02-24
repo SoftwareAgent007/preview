@@ -22,7 +22,7 @@ const UsersDetailedNavigation = () => {
       {navigationItems.map((item) => (
         <Button
           key={item.label}
-          variant={isActive(item.label) ? "outline" : "default"}
+          className={`transition-colors ${isActive(item.label) ? "bg-blue-500 text-white" : "bg-white text-black"} hover:bg-sky-300 hover:text-white`}
           onClick={() => navigate(item.path)}
         >
           {item.label}

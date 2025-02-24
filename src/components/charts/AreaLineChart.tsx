@@ -66,12 +66,14 @@ const AreaLineChart: React.FC<AreaLineChartProps> = ({
     const area = d3.area<DataPoint>()
       .x(d => x(new Date(d.date)))
       .y0(chartHeight)
-      .y1(d => y(d.count));
+      .y1(d => y(d.count))
+      .curve(d3.curveMonotoneX)
 
     // Line generator
     const line = d3.line<DataPoint>()
       .x(d => x(new Date(d.date)))
-      .y(d => y(d.count));
+      .y(d => y(d.count))
+      .curve(d3.curveMonotoneX)
 
     // Add area
     svg.append("path")

@@ -47,32 +47,33 @@ const HorizontalTopHoursChart: React.FC<HorizontalTopHoursChartProps> = ({
       .domain(top5Data.map(d => `${d.hour}:00`))
       .padding(0.5);
 
-      svg.selectAll("backgroundRect")
+    svg.selectAll("backgroundRect")
       .data(top5Data)
       .join("rect")
-        .attr("x", 5)
-        .attr("y", d => y(`${d.hour}:00`) || 0)
-        .attr("width", chartWidth)
-        .attr("height", y.bandwidth())
+        .attr("x", 25)
+        .attr("y", d => (y(`${d.hour}:00`) || 0) + 5) // Adjusted for better spacing
+        .attr("width", chartWidth - 20)
+        .attr("height", y.bandwidth()) // Reduce spacing between bars
         .attr("fill", "#e0e0e0")
-        .attr("rx", 20)
-        .attr("ry", 20);
+        .attr("rx", 10) // Reduce corner rounding
+        .attr("ry", 10);
 
     svg.selectAll("dataRect")
       .data(top5Data)
       .join("rect")
-        .attr("x", 5)
-        .attr("y", d => y(`${d.hour}:00`) || 0)
-        .attr("width", d => x(+d.count))
-        .attr("height", y.bandwidth())
+        .attr("x", 25)
+        .attr("y", d => (y(`${d.hour}:00`) || 0) + 5) // Adjusted for better spacing
+        .attr("width", d => x(+d.count) - 20)
+        .attr("height", y.bandwidth()) // Reduce spacing between bars
         .attr("fill", "#3B82F6")
-        .attr("rx", 20)
-        .attr("ry", 20);
+        .attr("rx", 10) // Reduce corner rounding
+        .attr("ry", 10);
+
     svg.selectAll("hourLabels")
       .data(top5Data)
       .join("text")
         .attr("x", -4)
-        .attr("y", d => (y(`${d.hour}:00`) || 0) + y.bandwidth() / 2)
+        .attr("y", d => (y(`${d.hour}:00`) || 0) + y.bandwidth() / 1.5)
         .attr("dy", ".35em")
         .attr("text-anchor", "end")
         .text(d => `${d.hour}:00`)
@@ -84,7 +85,7 @@ const HorizontalTopHoursChart: React.FC<HorizontalTopHoursChartProps> = ({
       .data(top5Data)
       .join("text")
         .attr("x", chartWidth + 100)
-        .attr("y", d => (y(`${d.hour}:00`) || 0) + y.bandwidth() / 2)
+        .attr("y", d => (y(`${d.hour}:00`) || 0) + y.bandwidth() / 1.5)
         .attr("dy", ".35em")
         .attr("text-anchor", "end")
         .text(d => `${d.count} users`)

@@ -169,9 +169,47 @@ export const generateRandomData = {
           Online: faker.number.int({ min: 0, max: 500 }),
           Offline: faker.number.int({ min: 0, max: 500 }),
           Idle: faker.number.int({ min: 0, max: 500 }),
-          DND: faker.number.int({ min: 0, max: 500 }),
+          DND: faker.number.int({ min: 0, max: 500 }),  
         },
       })),
+    };
+  },
+
+  generateStatusPageAnalyticsResponse(): {
+    totalUniqueStatuses: number;
+    avgStatusDuration: string;
+    peakActivityTime: string;
+    updateFrequency: string;
+    statusDurationTimeline: Array<{
+      date: string;
+      count: number;
+    }>;
+    topStatusMessages: Array<{
+      status: string;
+      usedBy: number;
+      trend: 'increasing' | 'decreasing' | 'stable';
+    }>;
+  } {
+    return {
+      totalUniqueStatuses: faker.number.int({ min: 10, max: 500 }),
+      avgStatusDuration: `${faker.number.int({ min: 1, max: 48 })}h`,
+      peakActivityTime: `${faker.number.int({ min: 0, max: 23 })}:00`,
+      updateFrequency: `${faker.number.int({ min: 1, max: 60 })}m`,
+      statusDurationTimeline: generateRandomData.array(
+        () => ({
+          date: faker.date.past().toISOString().split('T')[0],
+          count: faker.number.int({ min: 1, max: 100 }),
+        }),
+        faker.number.int({ min: 5, max: 20 })
+      ),
+      topStatusMessages: generateRandomData.array(
+        () => ({
+          status: faker.lorem.words(3),
+          usedBy: faker.number.int({ min: 1, max: 1000 }),
+          trend: faker.helpers.arrayElement(['increasing', 'decreasing', 'stable']),
+        }),
+        faker.number.int({ min: 3, max: 10 })
+      ),
     };
   },
 
@@ -221,6 +259,36 @@ export const generateRandomData = {
       admin: faker.number.int({ min: 5, max: 50 }),
       user: faker.number.int({ min: 100, max: 1000 }),
       moderator: faker.number.int({ min: 5, max: 50 }),
+    };
+  },
+
+  generateStatusActivityHeatmapResponse() {
+    return {
+      heatmap: generateRandomData.array(
+        () => ({
+          weekDay: faker.date.weekday(),
+          weekIndex: faker.number.int({ min: 0, max: 6 }),
+          activity: faker.number.int({ min: 0, max: 100 }),
+        }),
+        7
+      ),
+    };
+  },
+
+  generatePaginatedStatusListResponse(page = 1, pageSize = 10) {
+    const total = faker.number.int({ min: 50, max: 500 });
+    return {
+      statuses: generateRandomData.array(
+        () => ({
+          status: faker.lorem.words(2),
+          usageCount: faker.number.int({ min: 1, max: 1000 }),
+          trend: faker.helpers.arrayElement(['increasing', 'decreasing', 'stable']),
+        }),
+        pageSize
+      ),
+      total,
+      page,
+      pageSize,
     };
   },
 
@@ -300,5 +368,6 @@ export const useSpotifyActivities = createDataHook(generateRandomData.spotifyAct
 export const useGamingActivities = createDataHook(generateRandomData.gamingActivity);
 export const useGamingAnalyticsResponse = generateRandomData.generateGamingAnalyticsResponse;
 export const usePresenceAnalyticsResponse = generateRandomData.generatePresenceAnalyticsResponse;
+export const useStatusPageAnalyticsResponse = generateRandomData.generateStatusPageAnalyticsResponse;
 export const useOtherActivities = createDataHook(generateRandomData.otherActivity);
 export const useArtists = createDataHook(generateRandomData.artist);

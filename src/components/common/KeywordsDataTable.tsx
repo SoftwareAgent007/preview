@@ -80,7 +80,7 @@ const columns: ColumnDef<Keyword>[] = [
   },
 ];
 
-const DataTableComponent = ({
+const KeywordsDataTableComponent = ({
   displayedKeywords = [],
   searchTerm,
   setSearchTerm,
@@ -257,4 +257,4 @@ const DataTableComponent = ({
   );
 };
 
-export default DataTableComponent;
+export default KeywordsDataTableComponent;
