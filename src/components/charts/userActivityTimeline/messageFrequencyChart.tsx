@@ -1,5 +1,5 @@
 import { useDashboardData } from "@/hooks/analytics/useDashboardData";
-import AreaLineChart from "@/components/charts/areaLineChart";
+import AreaLineChart from "@/components/charts/AreaLineChart";
 import React, { useState } from "react";
 import ReactDOM from "react-dom";
 import { Expand, Minimize } from "lucide-react";
@@ -17,7 +17,8 @@ const MessageFrequencyChart: React.FC<MessageFrequencyChartProps> = ({ width = 5
 
     return (
         <div className="h-full flex flex-col">
-            <div className="text-black-500 text-lg font-bold mb-4 cursor-pointer flex justify-between">
+            
+            <div className="text-gray-500 text-lg font-bold mb-4 cursor-pointer flex justify-between">
                 <span>Keywords Activity</span>
                 <button onClick={openModal} style={{ padding: "4px" }}>
                     <Expand />

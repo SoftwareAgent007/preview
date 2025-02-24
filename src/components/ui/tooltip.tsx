@@ -2,8 +2,10 @@
 
 import * as React from "react"
 import * as TooltipPrimitive from "@radix-ui/react-tooltip"
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
 
 import { cn } from "@/lib/utils"
+import { Button } from "./button"
 
 const TooltipProvider = TooltipPrimitive.Provider
 
@@ -27,4 +29,18 @@ const TooltipContent = React.forwardRef<
 ))
 TooltipContent.displayName = TooltipPrimitive.Content.displayName
 
-export { Tooltip, TooltipTrigger, TooltipContent, TooltipProvider }
+
+const ClickableTooltip = ({ children, content }: { children: React.ReactNode; content: React.ReactNode; }) => {
+  return (
+    <Popover>
+      <PopoverTrigger asChild>
+        <button>{children}</button>
+      </PopoverTrigger>
+      <PopoverContent>
+        {content}
+      </PopoverContent>
+    </Popover>
+  );
+};
+
+export { Tooltip, TooltipTrigger, TooltipContent, TooltipProvider, ClickableTooltip }

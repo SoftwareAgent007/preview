@@ -1,5 +1,5 @@
 import { useDashboardData } from "@/hooks/analytics/useDashboardData";
-import AreaLineChart from "@/components/charts/areaLineChart";
+import AreaLineChart from "@/components/charts/AreaLineChart";
 import React, { useState } from "react";
 import ReactDOM from "react-dom";
 import { Expand, Minimize } from "lucide-react";

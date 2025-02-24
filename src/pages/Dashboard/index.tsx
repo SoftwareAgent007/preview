@@ -1,17 +1,16 @@
+import HorizontalBarChart from "@/components/charts/hourActivity/horizontalBarChart";
+import MessageFrequencyChart from "@/components/charts/userActivityTimeline/messageFrequencyChart";
+import UserActivityTimeline from "@/components/charts/userActivityTimeline/userActivityTimelineChart";
 import BreadcrumbsNavigation from "@/components/common/BreadcrumbsNavigation";
-import { Card } from "@/components/ui/card";
+import TrendIndicator from "@/components/common/TrendIndicator";
 import { Button } from "@/components/ui/button";
+import { Card } from "@/components/ui/card";
+import ListElement from "@/components/ui/list-element";
+import { ClickableTooltip } from "@/components/ui/tooltip"; // Ensure this path is correct
+import { useDashboardData } from "@/hooks/analytics/useDashboardData";
 import { BREADCRUMB_PATHS, ROUTES } from "@/routes/routes.constant";
 import { Download, Users } from "lucide-react";
-import { useDashboardData } from "@/hooks/analytics/useDashboardData";
-import TrendIndicator from "@/components/common/TrendIndicator";
-import AreaLineChart from "@/components/charts/areaLineChart";
-import HorizontalBarChart from "@/components/charts/hourActivity/horizontalBarChart";
-import ListElement from "@/components/ui/list-element";
-import UserActivityTimeline from "@/components/charts/userActivityTimeline/userActivityTimelineChart";
-import MessageFrequencyChart from "@/components/charts/userActivityTimeline/messageFrequencyChart";
-import { useRef, useEffect, useState } from "react";
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"; // Ensure this path is correct
+import { useEffect, useRef, useState } from "react";
 
 const Dashboard = () => {
   const {
@@ -79,14 +78,9 @@ const Dashboard = () => {
               <span className="text-2xl font-bold">{totalUsers.toLocaleString()}</span>
               <span className="text-sm text-gray-500">New users this period</span>
               <div className="absolute top-2 right-2">
-                <TooltipProvider>
-                  <Tooltip>
-                    <TooltipTrigger><span className="bg-gray-300 bg-opacity-25 text-gray-600 px-[7px] rounded-full cursor-help">?</span></TooltipTrigger>
-                    <TooltipContent>
-                      <p>Total number of users registered during this period</p>
-                    </TooltipContent>
-                  </Tooltip>
-                </TooltipProvider>
+                <ClickableTooltip content={<p>Total number of users registered during this period</p>}>
+                  <span className="bg-gray-300 bg-opacity-25 text-gray-600 px-[7px] rounded-full cursor-help">?</span>
+                </ClickableTooltip>
               </div>
             </div>
           </Card>
@@ -96,14 +90,9 @@ const Dashboard = () => {
               <span className="text-2xl font-bold">{activeUsers.toLocaleString()}</span>
               <span className="text-sm text-gray-500">Currently active users</span>
               <div className="absolute top-2 right-2">
-                <TooltipProvider>
-                  <Tooltip>
-                    <TooltipTrigger><span className="bg-gray-300 bg-opacity-25 text-gray-600 px-[7px] rounded-full cursor-help">?</span></TooltipTrigger>
-                    <TooltipContent>
-                      <p>Users who are currently active in the platform</p>
-                    </TooltipContent>
-                  </Tooltip>
-                </TooltipProvider>
+                 <ClickableTooltip content={<p>Users who are currently active in the platform</p>}>
+                  <span className="bg-gray-300 bg-opacity-25 text-gray-600 px-[7px] rounded-full cursor-help">?</span>
+                </ClickableTooltip>
               </div>
             </div>
           </Card>
@@ -113,14 +102,9 @@ const Dashboard = () => {
               <span className="text-2xl font-bold">{totalMessages.toLocaleString()}</span>
               <span className="text-sm text-gray-500">Messages this period</span>
               <div className="absolute top-2 right-2">
-                <TooltipProvider>
-                  <Tooltip>
-                    <TooltipTrigger><span className="bg-gray-300 bg-opacity-25 text-gray-600 px-[7px] rounded-full cursor-help">?</span></TooltipTrigger>
-                    <TooltipContent>
-                      <p>Total number of messages sent during this period</p>
-                    </TooltipContent>
-                  </Tooltip>
-                </TooltipProvider>
+                 <ClickableTooltip content={<p>Total number of messages sent during this period</p>}>
+                  <span className="bg-gray-300 bg-opacity-25 text-gray-600 px-[7px] rounded-full cursor-help">?</span>
+                </ClickableTooltip>
               </div>
             </div>
           </Card>
@@ -130,14 +114,9 @@ const Dashboard = () => {
               <span className="text-2xl font-bold">{totalReactions.toLocaleString()}</span>
               <span className="text-sm text-gray-500">Reactions this period</span>
               <div className="absolute top-2 right-2">
-                <TooltipProvider>
-                  <Tooltip>
-                    <TooltipTrigger><span className="bg-gray-300 bg-opacity-25 text-gray-600 px-[7px] rounded-full cursor-help">?</span></TooltipTrigger>
-                    <TooltipContent>
-                      <p>Total number of reactions made during this period</p>
-                    </TooltipContent>
-                  </Tooltip>
-                </TooltipProvider>
+                 <ClickableTooltip content={<p>Total number of reactions made during this period</p>}>
+                  <span className="bg-gray-300 bg-opacity-25 text-gray-600 px-[7px] rounded-full cursor-help">?</span>
+                </ClickableTooltip>
               </div>
             </div>
           </Card>
@@ -163,14 +142,9 @@ const Dashboard = () => {
                 description={`${currentActivities.spotifyListeners} users`} 
               />
               <div className="absolute top-2 right-2">
-                <TooltipProvider>
-                  <Tooltip>
-                    <TooltipTrigger><span className="bg-gray-300 bg-opacity-25 text-gray-600 px-[7px] rounded-full cursor-help">?</span></TooltipTrigger>
-                    <TooltipContent>
-                      <p>Current activities of users on the platform</p>
-                    </TooltipContent>
-                  </Tooltip>
-                </TooltipProvider>
+                 <ClickableTooltip content={<p>Current activities of users on the platform</p>}>
+                  <span className="bg-gray-300 bg-opacity-25 text-gray-600 px-[7px] rounded-full cursor-help">?</span>
+                </ClickableTooltip>
               </div>
             </div>
           </Card>
@@ -186,14 +160,9 @@ const Dashboard = () => {
                 />
               ))}
               <div className="absolute top-2 right-2">
-                <TooltipProvider>
-                  <Tooltip>
-                    <TooltipTrigger><span className="bg-gray-300 bg-opacity-25 text-gray-600 px-[7px] rounded-full cursor-help">?</span></TooltipTrigger>
-                    <TooltipContent>
-                      <p>Keywords that are frequently mentioned</p>
-                    </TooltipContent>
-                  </Tooltip>
-                </TooltipProvider>
+                 <ClickableTooltip content={<p>Keywords that are frequently mentioned</p>}>
+                  <span className="bg-gray-300 bg-opacity-25 text-gray-600 px-[7px] rounded-full cursor-help">?</span>
+                </ClickableTooltip>
               </div>
             </div>
           </Card>
@@ -210,14 +179,9 @@ const Dashboard = () => {
                 />
               ))}
               <div className="absolute top-2 right-2">
-                <TooltipProvider>
-                  <Tooltip>
-                    <TooltipTrigger><span className="bg-gray-300 bg-opacity-25 text-gray-600 px-[7px] rounded-full cursor-help">?</span></TooltipTrigger>
-                    <TooltipContent>
-                      <p>Users with the highest message counts</p>
-                    </TooltipContent>
-                  </Tooltip>
-                </TooltipProvider>
+                 <ClickableTooltip content={<p>Users with the highest message counts</p>}>
+                  <span className="bg-gray-300 bg-opacity-25 text-gray-600 px-[7px] rounded-full cursor-help">?</span>
+                </ClickableTooltip>
               </div>
             </div>
           </Card>
@@ -229,14 +193,9 @@ const Dashboard = () => {
               <span className="text-gray-500 text-lg font-bold mb-4">Hourly Activity</span>
               <HorizontalBarChart data={hourlyActivity} height={500} width={600} />
               <div className="absolute top-2 right-2">
-                <TooltipProvider>
-                  <Tooltip>
-                    <TooltipTrigger><span className="bg-gray-300 bg-opacity-25 text-gray-600 px-[7px] rounded-full cursor-help">?</span></TooltipTrigger>
-                    <TooltipContent>
-                      <p>Activity levels over the course of the hour</p>
-                    </TooltipContent>
-                  </Tooltip>
-                </TooltipProvider>
+                 <ClickableTooltip content={<p>Activity levels over the course of the hour</p>}>
+                  <span className="bg-gray-300 bg-opacity-25 text-gray-600 px-[7px] rounded-full cursor-help">?</span>
+                </ClickableTooltip>
               </div>
             </div>
           </Card>
@@ -252,14 +211,9 @@ const Dashboard = () => {
                   <TrendIndicator unit={'%'} value={15} isPositive={true} />
                 </div>
                 <div className="absolute top-2 right-2">
-                  <TooltipProvider>
-                    <Tooltip>
-                      <TooltipTrigger><span className="bg-gray-300 bg-opacity-25 text-gray-600 px-[7px] rounded-full cursor-help">?</span></TooltipTrigger>
-                      <TooltipContent>
-                        <p>Time with the highest user activity</p>
-                      </TooltipContent>
-                    </Tooltip>
-                  </TooltipProvider>
+                   <ClickableTooltip content={<p>Time with the highest user activity</p>}>
+                  <span className="bg-gray-300 bg-opacity-25 text-gray-600 px-[7px] rounded-full cursor-help">?</span>
+                </ClickableTooltip>
                 </div>
               </div>
             </Card>
@@ -273,14 +227,9 @@ const Dashboard = () => {
                   <TrendIndicator value={8} unit="h" isPositive={true} />
                 </div>
                 <div className="absolute top-2 right-2">
-                  <TooltipProvider>
-                    <Tooltip>
-                      <TooltipTrigger><span className="bg-gray-300 bg-opacity-25 text-gray-600 px-[7px] rounded-full cursor-help">?</span></TooltipTrigger>
-                      <TooltipContent>
-                        <p>Total time spent playing games</p>
-                      </TooltipContent>
-                    </Tooltip>
-                  </TooltipProvider>
+                   <ClickableTooltip content={<p>Total time spent playing games</p>}>
+                  <span className="bg-gray-300 bg-opacity-25 text-gray-600 px-[7px] rounded-full cursor-help">?</span>
+                </ClickableTooltip>
                 </div>
               </div>
             </Card>
@@ -294,14 +243,9 @@ const Dashboard = () => {
                   <TrendIndicator unit={'%'} value={12} isPositive={false} />
                 </div>
                 <div className="absolute top-2 right-2">
-                  <TooltipProvider>
-                    <Tooltip>
-                      <TooltipTrigger><span className="bg-gray-300 bg-opacity-25 text-gray-600 px-[7px] rounded-full cursor-help">?</span></TooltipTrigger>
-                      <TooltipContent>
-                        <p>Listeners currently active on the platform</p>
-                      </TooltipContent>
-                    </Tooltip>
-                  </TooltipProvider>
+                   <ClickableTooltip content={<p>Listeners currently active on the platform</p>}>
+                  <span className="bg-gray-300 bg-opacity-25 text-gray-600 px-[7px] rounded-full cursor-help">?</span>
+                </ClickableTooltip>
                 </div>
               </div>
             </Card>
@@ -311,14 +255,9 @@ const Dashboard = () => {
                 <div className="flex-1 flex items-center">
                   <span className="text-2xl font-bold">{keywordStats.total}</span>
                   <div className="absolute top-2 right-2">
-                    <TooltipProvider>
-                      <Tooltip>
-                        <TooltipTrigger><span className="bg-gray-300 bg-opacity-25 text-gray-600 px-[7px] rounded-full cursor-help">?</span></TooltipTrigger>
-                        <TooltipContent>
-                          <p>Active keywords are keywords that have been mentioned in the discord guild within the timerange selected</p>
-                        </TooltipContent>
-                      </Tooltip>
-                    </TooltipProvider>
+                     <ClickableTooltip content={<p>Active keywords are keywords that have been mentioned in the discord guild within the timerange selected</p>}>
+                  <span className="bg-gray-300 bg-opacity-25 text-gray-600 px-[7px] rounded-full cursor-help">?</span>
+                </ClickableTooltip>
                   </div>
                 </div>
                 <div className="text-sm text-gray-500 flex-row justify-between">

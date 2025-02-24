@@ -1,5 +1,5 @@
 import CircleRoleChart from "@/components/charts/circleChartOfRoles";
-import HorizontalTopHoursChart from "@/components/charts/hourActivity/horisontalTopHoursChart";
+import HorizontalTopHoursChart from "@/components/charts/hourActivity/HorisontalTopHoursChart";
 import HorizontalBarChart from "@/components/charts/hourActivity/horizontalBarChart";
 import PresenceWeekActivityChart from "@/components/charts/userActivityTimeline/presenceActivityChart/userPresenceWeekActivityChart";
 import { Card } from "@/components/ui/card";
