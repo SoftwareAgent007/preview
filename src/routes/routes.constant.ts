@@ -8,7 +8,8 @@ export const ROUTES = {
   USER_ACTIVITY_DETAILED_STATUS: '/user-activity/detailed/status',
   USER_ACTIVITY_DETAILED_GAMING: '/user-activity/detailed/gaming', 
   USER_ACTIVITY_DETAILED_PRESENCE: '/user-activity/detailed/presence',
-  MUSIC_METRICS: '/music-metrics'
+  MUSIC_METRICS: '/music-metrics',
+  MESSAGE_REACTIONS: '/message-reactions',
 } as const;
 
 export const BREADCRUMB_PATHS: Record<string, BreadcrumbItem[]> = {
@@ -49,5 +50,9 @@ export const BREADCRUMB_PATHS: Record<string, BreadcrumbItem[]> = {
   [ROUTES.MUSIC_METRICS]: [
     { label: 'Dashboard', path: ROUTES.DASHBOARD },
     { label: 'Music Metrics' }
+  ],
+  [ROUTES.MESSAGE_REACTIONS]: [
+    { label: 'Dashboard', path: ROUTES.DASHBOARD },
+    { label: 'Message reaction', path: ROUTES.MESSAGE_REACTIONS },
   ]
 } as const;

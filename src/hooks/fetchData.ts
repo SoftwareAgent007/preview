@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { faker } from '@faker-js/faker';
-import { ActiveRolesData, ActivityData, ActivityOverview, DataSet, PeakActivityTime, TrendData } from '@/components/common/types/userAnalytic.types';
+import { ActiveRolesData, ActivityData, ActivityOverview, ActivityStatusData, DataSet, PeakActivityTime, TrendData } from '@/components/common/types/userAnalytic.types';
 
 // TODO: later implement here reusable fetch requests and add usage in hooks
 
@@ -213,6 +213,35 @@ export const generateRandomData = {
     };
   },
 
+  generateStatusData() {
+    return generateRandomData.array(() => ({
+      status: faker.lorem.words(3),
+      usedBy: faker.number.int({ min: 1, max: 1000 }),
+      trend: faker.helpers.arrayElement(['increasing', 'decreasing', 'stable']),
+    }), faker.number.int({ min: 20, max: 40 }));
+  },
+  
+  generateMockActivityData(weeks: number) {
+    const startDate = new Date();
+    const mockData: ActivityStatusData[] = [];
+  
+    for (let i = 0; i < weeks; i++) {
+      const weekData: ActivityStatusData = {};
+      const weekStart = new Date(startDate);
+      weekStart.setDate(startDate.getDate() - (i * 7));
+  
+      for (let j = 0; j < 7; j++) {
+        const day = new Date(weekStart);
+        day.setDate(weekStart.getDate() + j);
+        const dayName = day.toLocaleString('default', { weekday: 'long' });
+        const dateString = day.toISOString().split('T')[0]; // Generate date string in YYYY-MM-DD format
+        weekData[dayName] = { value: Math.floor(Math.random() * 500), date: dateString }; // Store value and date
+      }
+      mockData.push(weekData);
+    }
+    return mockData;
+  },
+  
   otherActivity: () => ({
     id: generateRandomData.bigInt(),
     activityId: generateRandomData.bigInt(),
@@ -370,5 +399,7 @@ export const useGamingActivities = createDataHook(generateRandomData.gamingActiv
 export const useGamingAnalyticsResponse = generateRandomData.generateGamingAnalyticsResponse;
 export const usePresenceAnalyticsResponse = generateRandomData.generatePresenceAnalyticsResponse;
 export const useStatusPageAnalyticsResponse = generateRandomData.generateStatusPageAnalyticsResponse;
+export const useMockActivityData = generateRandomData.generateMockActivityData;
+export const useStatusData = generateRandomData.generateStatusData;
 export const useOtherActivities = createDataHook(generateRandomData.otherActivity);
 export const useArtists = createDataHook(generateRandomData.artist);

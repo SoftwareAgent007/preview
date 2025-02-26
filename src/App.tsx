@@ -7,6 +7,7 @@ import StatusAnalytics from "./pages/UsersDetailedActivityAnalytics/StatusAnalyt
 import GamingAnalytics from "./pages/UsersDetailedActivityAnalytics/GamingAnalytics/index"
 import PresenceAnalytics from "./pages/UsersDetailedActivityAnalytics/PresenceAnalytics/index"
 import UsersDetailedActivityAnalytics from "./pages/UsersDetailedActivityAnalytics/index.tsx"
+import MessageReactionsAnalytics from "./pages/MessageReactionsAnalytics/index.tsx"
 import MusicMetrics from "./pages/MusicMetrics/index"
 import Header from "./components/common/Header.tsx"
 
@@ -25,6 +26,7 @@ function App() {
             <Route path="presence" element={<PresenceAnalytics />} />
           </Route>
           <Route path="music-metrics" element={<MusicMetrics />} />
+          <Route path="message-reactions" element={<MessageReactionsAnalytics />} />
         </Routes>
       </BrowserRouter>
     </ThemeProvider>

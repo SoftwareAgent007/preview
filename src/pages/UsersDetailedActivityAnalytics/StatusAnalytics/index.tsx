@@ -1,13 +1,19 @@
 import PresenceWeekActivityChart from "@/components/charts/userActivityTimeline/presenceActivityChart/userPresenceWeekActivityChart";
 import TrendIndicator from '@/components/common/TrendIndicator';
 import { Card } from "@/components/ui/card";
-import { useStatusPageAnalyticsResponse } from '@/hooks/fetchData';
+import { useStatusData, useMockActivityData, useStatusPageAnalyticsResponse } from '@/hooks/fetchData';
+import StatusHeatmap from "@/components/charts/status/statusHeatmap";
+import TopGamingStatuses from "./topGamingStatuses";
+import StatusDataTableComponent from "@/components/common/StatusDataTable";
 
 const StatusPageComponent = ({ }) => {
   const presenceAnalyticsResponse = useStatusPageAnalyticsResponse();
+  const activityData = useMockActivityData(15);
+  const statusData = useStatusData();
 
   return (
     <div className="w-full bg-gray-50 p-6">
+
       <div className="flex gap-6 mb-6">
         <Card className="flex-1 p-6 h-30">
           <div className="h-full flex flex-col items-left justify-center">
@@ -36,26 +42,27 @@ const StatusPageComponent = ({ }) => {
           </div>
         </Card>
       </div>
+
       <div className="grid grid-cols-2 gap-6">
         <PresenceWeekActivityChart />
-        <div className="w-full gap-6">
-          <Card className="p-6 h-150">
-            {/* <StatusDataTableComponent 
-              displayedKeywords={presenceAnalyticsResponse.topStatusMessages} 
-              searchTerm={""} 
-              setSearchTerm={() => {}} 
-              currentPage={1} 
-              setCurrentPage={() => {}} 
-              totalPages={10}
-              onPageSizeChange={() => {}}
-              pageSize={10}
-            /> */}
-          </Card>
-        </div>
+        <TopGamingStatuses topStatusMessages={presenceAnalyticsResponse.topStatusMessages}/>
+      </div>
+
+      <div className="mt-6">
+        <Card className="p-6 w-full">
+          <h3 className="text-lg font-bold mb-4">Status Activity Heatmap</h3>
+          <StatusHeatmap activityData={activityData} />
+        </Card>
+      </div>
+
+      <div className="mt-6">
+        <Card className="p-6 w-full">
+          <h3 className="text-lg font-bold mb-4">List Of Status Messages</h3>
+          <StatusDataTableComponent data={statusData} />
+        </Card>
       </div>
     </div>
   );
 };
 
-
-export default StatusPageComponent
+export default StatusPageComponent;

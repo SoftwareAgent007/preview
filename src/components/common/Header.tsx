@@ -8,7 +8,7 @@ import { Input } from "@/components/ui/input";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { BREADCRUMB_PATHS, ROUTES } from "@/routes/routes.constant";
-import { Bell, Home, KeyRound, LogOut, Music2, Search, SwitchCamera, Users } from "lucide-react";
+import { HeartHandshake, Home, KeyRound, LogOut, Music2, Search, SwitchCamera, Users } from "lucide-react";
 import { useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { DatePickerWithRange } from "../ui/data-rande-picker";
@@ -90,8 +90,8 @@ const Header = () => {
                 <Music2 className="h-5 w-5" />
               </Button>
 
-              <Button variant="ghost" size="icon">
-                <Bell className="h-5 w-5" />
+              <Button variant="ghost" size="icon" onClick={() => navigate(ROUTES.MESSAGE_REACTIONS)}>
+                <HeartHandshake className="h-5 w-5" />
               </Button>
 
               <Popover open={isUserMenuOpen} onOpenChange={setIsUserMenuOpen}>

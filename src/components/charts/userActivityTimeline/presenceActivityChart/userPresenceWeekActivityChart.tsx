@@ -101,7 +101,7 @@ const PresenceWeekActivityChart = ({ data }) => {
   }, [data, selectedStatus, chartWidth, chartHeight]);
 
   return (
-    <div ref={chartRef} className="w-full h-[600px] flex flex-col items-center">
+    <div ref={chartRef} className="w-full h-[600px] flex flex-col items-left">
       <Select value={selectedStatus} onValueChange={(value) => setSelectedStatus(value)}>
         <SelectTrigger className="w-40">
           <SelectValue placeholder="Select Status" />

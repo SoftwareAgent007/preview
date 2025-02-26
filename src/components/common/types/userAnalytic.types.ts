@@ -21,6 +21,10 @@ export interface ActivityOverview {
   moderator: number;
 }
 
+export interface ActivityStatusData {
+  [key: string]: { value: number; date: string }; // Updated to include date
+}
+
 export interface ActivityData {
   id: bigint;
   presenceId: bigint;
