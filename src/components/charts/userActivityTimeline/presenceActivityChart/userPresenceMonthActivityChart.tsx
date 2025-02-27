@@ -70,7 +70,7 @@ const InteractiveChart = ({
 
     svg.on("pointermove", (event) => {
       const [xPos] = d3.pointer(event, g.node());
-      const day = Math.round(xPos / (width / data.length)); // Adjusted to calculate day based on x position
+      const day = Math.round(xPos / (width / data.length)); 
       const closestData = data.find(d => d.day === day);
       if (!closestData) return;
       const statusKey = selectedStatus || Object.keys(closestData.statusCounts)[0] as keyof typeof closestData.statusCounts;

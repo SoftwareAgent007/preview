@@ -6,15 +6,15 @@ import { Card } from "@/components/ui/card";
 import { usePlayingStatisticData } from "@/hooks/analytics/usePlayingStatisticData";
 import { useUsersActivityData } from "@/hooks/fetchData";
 import { BREADCRUMB_PATHS, ROUTES } from "@/routes/routes.constant";
-import TrendIndicator from "@/components/common/TrendIndicator"; // Assuming this component exists
+import TrendIndicator from "@/components/common/TrendIndicator"; 
 
 const UserActivityAnalytics = () => {
   const data: ActivityData = useUsersActivityData();
   const { playingUserStats } = usePlayingStatisticData();
 
-  // Mocked data for Joins and Leaves
-  const mockedJoins = 120; // Example value
-  const mockedLeaves = 80; // Example value
+  
+  const mockedJoins = 120; 
+  const mockedLeaves = 80; 
 
   return (
     <div className="w-full min-h-screen bg-gray-50 p-6">

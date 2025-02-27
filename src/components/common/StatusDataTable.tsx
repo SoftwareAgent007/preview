@@ -44,7 +44,7 @@ const StatusDataTableComponent = ({ data }: { data: StatusData[] }) => {
     getPaginationRowModel: getPaginationRowModel(),
     initialState: {
       pagination: {
-        pageSize: 10, // Set default page size
+        pageSize: 10, 
       },
     },
   });

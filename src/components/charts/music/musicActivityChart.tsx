@@ -54,7 +54,7 @@ const HorizontalBarChartRelatedGenres: React.FC<HorizontalBarChartRelatedGenresP
       .attr("x", 0)
       .attr("y", (d) => y(d.genre) + 3 || 0)
       .attr("width", chartWidth)
-      .attr("height", y.bandwidth() / 1.5) // Thinner bars
+      .attr("height", y.bandwidth() / 1.5) 
       .attr("fill", "#f0f0f0")
       .attr("rx", 4)
       .attr("ry", 4);
@@ -66,7 +66,7 @@ const HorizontalBarChartRelatedGenres: React.FC<HorizontalBarChartRelatedGenresP
       .attr("x", 0)
       .attr("y", (d) => y(d.genre) + 3 || 0)
       .attr("width", (d) => x(d.count))
-      .attr("height", y.bandwidth() / 1.5) // Thinner bars
+      .attr("height", y.bandwidth() / 1.5) 
       .attr("fill", "#3B82F6")
       .attr("rx", 4)
       .attr("ry", 4);
@@ -92,7 +92,7 @@ const HorizontalBarChartRelatedGenres: React.FC<HorizontalBarChartRelatedGenresP
       .attr("dy", ".35em")
       .attr("text-anchor", "end")
       .text((d) => {
-        const maxLength = 10; // Set the maximum length for the artist name
+        const maxLength = 10; 
         return d.artist.length > maxLength ? `${d.artist.substring(0, maxLength)}...` : d.artist;
       })
       .attr("font-size", "12px")

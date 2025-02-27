@@ -22,13 +22,13 @@ export const usePlayingStatisticData = (period: 'day' | 'week' | 'month' | 'year
     }
   }, [period]);
 
-  // Function to filter and sort ChartData by date
+  
   const processChartData = (chartData: ChartData) => ({
     ...chartData,
     data: [...chartData.data]
       .filter(({ date }) => new Date(date) >= getPeriodStart)
       .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime()),
-    color: `#${Math.floor(Math.random()*16777215).toString(16)}` // Set random color
+    color: `#${Math.floor(Math.random()*16777215).toString(16)}` 
   });
 
   const playingUserStats = useMemo(() => {

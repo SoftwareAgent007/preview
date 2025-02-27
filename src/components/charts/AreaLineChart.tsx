@@ -47,7 +47,7 @@ const AreaLineChart: React.FC<AreaLineChartProps> = ({
       .attr("transform", `translate(0,${chartHeight})`)
       .call(d3.axisBottom(x).ticks(5).tickSizeOuter(0).tickPadding(10));
 
-    // Поворот подписей оси X
+    
     xAxis.selectAll("text")
       .attr("text-anchor", "end")
       .attr("transform", "rotate(-45)");

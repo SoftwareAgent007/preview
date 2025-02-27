@@ -5,7 +5,7 @@ import { ActiveRolesData, ActivityData, ActivityOverview, ActivityStatusData, Da
 // TODO: later implement here reusable fetch requests and add usage in hooks
 
 export const generateRandomData = {
-  bigInt: () => BigInt(faker.string.numeric(15)), // Increased to 15 digits
+  bigInt: () => BigInt(faker.string.numeric(15)), 
   string: (length = 10) => faker.string.alphanumeric(length),
   date: () => faker.date.past(),
   boolean: () => faker.datatype.boolean(),
@@ -63,14 +63,14 @@ export const generateRandomData = {
 
   activity: () => {
     const sessionStart = generateRandomData.date();
-    const sessionEnd = new Date(sessionStart.getTime() + 60 * 60 * 1000); // Add 1 hour in milliseconds
+    const sessionEnd = new Date(sessionStart.getTime() + 60 * 60 * 1000); 
     return {
       id: generateRandomData.bigInt(),
       presenceId: generateRandomData.bigInt(),
       type: faker.helpers.arrayElement(['spotify', 'gaming', 'other']),
       sessionStart,
       sessionEnd,
-      duration: 60 * 60 * 1000, // 1 hour in milliseconds
+      duration: 60 * 60 * 1000, 
       name: faker.commerce.productName(),
       state: faker.lorem.word(),
       details: faker.lorem.sentence(),
@@ -93,8 +93,8 @@ export const generateRandomData = {
     activityId: generateRandomData.bigInt(),
     gameName: faker.commerce.productName(),
     isCompetitive: generateRandomData.boolean(),
-    partySize: faker.number.int({ min: 1, max: 100 }), // Increased max
-    partyMaxSize: faker.number.int({ min: 100, max: 1000 }), // Increased range
+    partySize: faker.number.int({ min: 1, max: 100 }), 
+    partyMaxSize: faker.number.int({ min: 100, max: 1000 }), 
     platformId: faker.string.uuid(),
   }),
 
@@ -234,8 +234,8 @@ export const generateRandomData = {
         const day = new Date(weekStart);
         day.setDate(weekStart.getDate() + j);
         const dayName = day.toLocaleString('default', { weekday: 'long' });
-        const dateString = day.toISOString().split('T')[0]; // Generate date string in YYYY-MM-DD format
-        weekData[dayName] = { value: Math.floor(Math.random() * 500), date: dateString }; // Store value and date
+        const dateString = day.toISOString().split('T')[0]; 
+        weekData[dayName] = { value: Math.floor(Math.random() * 500), date: dateString }; 
       }
       mockData.push(weekData);
     }
@@ -245,7 +245,7 @@ export const generateRandomData = {
   otherActivity: () => ({
     id: generateRandomData.bigInt(),
     activityId: generateRandomData.bigInt(),
-    activityType: faker.number.int({ min: 1, max: 10000 }), // Increased range
+    activityType: faker.number.int({ min: 1, max: 10000 }), 
     url: faker.internet.url(),
     applicationId: faker.string.uuid(),
     emoji: faker.internet.emoji(),
@@ -346,11 +346,11 @@ export const generateRandomData = {
     return {
       id: generateRandomData.bigInt(),
       presenceId: generateRandomData.bigInt(),
-      presence: { id: generateRandomData.bigInt() }, // Assuming presence is an object with an id
+      presence: { id: generateRandomData.bigInt() }, 
       type: faker.helpers.arrayElement(['spotify', 'gaming', 'other']),
       sessionStart: generateRandomData.date(),
       sessionEnd: generateRandomData.date(),
-      duration: 60 * 60 * 1000, // 1 hour in milliseconds
+      duration: 60 * 60 * 1000, 
       name: faker.commerce.productName(),
       state: faker.lorem.word(),
       details: faker.lorem.sentence(),
@@ -365,7 +365,7 @@ export const generateRandomData = {
 
 }
 
-function createDataHook<T>(generateFn: () => T, count = 100) { // Increased default count
+function createDataHook<T>(generateFn: () => T, count = 100) { 
   return () => {
     const [data, setData] = useState<T[]>([]);
     const [loading, setLoading] = useState(true);

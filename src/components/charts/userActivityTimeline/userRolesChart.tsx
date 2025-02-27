@@ -7,8 +7,8 @@ import { ClickableTooltip } from "@/components/ui/tooltip";
 
 const RolesChart = () => {
     const chartRef = useRef<HTMLDivElement | null>(null);
-    const [chartWidth, setChartWidth] = useState(800); // Default width
-    const [chartHeight, setChartHeight] = useState(500); // Default height
+    const [chartWidth, setChartWidth] = useState(800); 
+    const [chartHeight, setChartHeight] = useState(500); 
     const [isModalOpen, setIsModalOpen] = useState(false);
 
     const mockData = [

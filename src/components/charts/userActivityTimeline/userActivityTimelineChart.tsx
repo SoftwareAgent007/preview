@@ -34,7 +34,7 @@ const UserActivityTimeline: React.FC<UserActivityTimelineProps> = ({
             <div className="chart-parent flex justify-between">
                 <AreaLineChart
                     data={userActivityTimeline}
-                    width={width} // Use provided width directly
+                    width={width} 
                     height={300}
                 />
             </div>

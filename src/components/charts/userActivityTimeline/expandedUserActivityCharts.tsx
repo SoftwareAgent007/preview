@@ -8,7 +8,7 @@ import { ClickableTooltip } from "@/components/ui/tooltip";
 
 const ActivityCharts = ({ data, className }: {data: DataSet; className?: string}) => {
     const chartRef = useRef<HTMLDivElement | null>(null);
-    const [chartWidth, setChartWidth] = useState(800); // Default width
+    const [chartWidth, setChartWidth] = useState(800); 
     const [isModalOpen, setIsModalOpen] = useState(false);
 
     const updateChartWidth = () => {

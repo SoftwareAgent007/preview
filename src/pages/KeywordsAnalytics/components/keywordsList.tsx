@@ -16,7 +16,7 @@ const ActiveKeywordsList: React.FC<KeywordsListProps> = ({ activeKeywords }) => 
   const closeModal = () => setIsModalOpen(false);
 
   const handleAddKeyword = () => {
-    // Mock event for adding a keyword
+    
     console.log("Keyword added!");
     closeModal();
   };

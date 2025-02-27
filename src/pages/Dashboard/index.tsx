@@ -191,7 +191,7 @@ const Dashboard = () => {
           <Card className="relative flex-1 p-6 h-150">
             <div className="h-full flex flex-col">
               <div className="title">
-                <span className="text-gray-500 text-lg font-bold mb-4 mr-5">Hourly Activity</span>
+                <span className="text-gray-500 text-lg font-bold mb-4">Hourly Activity</span>
                 <ClickableTooltip content={<p><strong>Hourly Activity:</strong> Displays the number of users at different hours of the day.</p>}>
                   <span className="bg-gray-300 bg-opacity-25 text-gray-600 px-[7px] rounded-full cursor-help">?</span>
                 </ClickableTooltip>

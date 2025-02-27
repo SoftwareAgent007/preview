@@ -11,7 +11,7 @@ interface HeatmapProps {
 const Heatmap: React.FC<HeatmapProps> = ({ activityData, maxActivity = 500 }) => {
   const ref = useRef<SVGSVGElement | null>(null);
   
-  // Handle cases when activityData is not provided
+  
   const weeks = activityData ? activityData.length : 0;
   const days = activityData && activityData.length > 0 ? Object.keys(activityData[0]) : [];
 
@@ -22,8 +22,8 @@ const Heatmap: React.FC<HeatmapProps> = ({ activityData, maxActivity = 500 }) =>
     svg.selectAll("*").remove();
 
     const margin = { top: 20, right: 20, bottom: 20, left: 80 };
-    const width = ref.current.clientWidth - margin.left - margin.right; // Use clientWidth for responsive width
-    const height = width * (days.length / (weeks || 1)); // Maintain aspect ratio based on number of days and weeks
+    const width = ref.current.clientWidth - margin.left - margin.right; 
+    const height = width * (days.length / (weeks || 1)); 
 
     const xScale = d3.scaleBand()
       .domain(d3.range(weeks))
@@ -67,11 +67,11 @@ const Heatmap: React.FC<HeatmapProps> = ({ activityData, maxActivity = 500 }) =>
                     <strong class="text-blue-600">Date:</strong> <span class="text-blue-500">${d.value ? d.value.date : 'N/A'}</span><br>
                     <strong class="text-blue-600">Count:</strong> <span class="text-blue-500">${d.value ? d.value.value + 1 : 0}</span>`)
             .style("background-color", "white")
-            .style("border", "1px solid #3b82f6") // Tailwind blue-500
-            .style("border-radius", "0.375rem") // Tailwind rounded-md
-            .style("padding", "0.625rem") // Tailwind p-2
-            .style("box-shadow", "0 4px 6px rgba(0, 0, 0, 0.1)") // Tailwind shadow
-            .style("color", "#3b82f6"); // Tailwind blue-500
+            .style("border", "1px solid #3b82f6") 
+            .style("border-radius", "0.375rem") 
+            .style("padding", "0.625rem") 
+            .style("box-shadow", "0 4px 6px rgba(0, 0, 0, 0.1)") 
+            .style("color", "#3b82f6"); 
       })
       .on("mousemove", (event: any) => {
         tooltip.style("top", `${event.pageY - 10}px`).style("left", `${event.pageX + 10}px`);
@@ -91,13 +91,13 @@ const Heatmap: React.FC<HeatmapProps> = ({ activityData, maxActivity = 500 }) =>
       .style("font-weight", "bold")
       .text((d: any) => d);
 
-    // Add week numbers below the cells
+    
     g.selectAll(".week-label")
       .data(d3.range(weeks))
       .enter()
       .append("text")
       .attr("x", (d: any) => (xScale(d) + xScale.bandwidth() / 2) + 5)
-      .attr("y", height + 15) // Position below the heatmap
+      .attr("y", height + 15) 
       .attr("dy", "0.35em")
       .style("text-anchor", "middle")
       .text((d: any) => `Week ${d + 1}`);

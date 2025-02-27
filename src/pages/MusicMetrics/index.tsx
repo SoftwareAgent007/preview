@@ -27,7 +27,7 @@ const generateFakeGenreData = () => {
   const counts = Array.from({ length: 5 }, () => Math.floor(Math.random() * (totalCount / 5)));
   const sumCounts = counts.reduce((acc, count) => acc + count, 0);
   
-  // Adjust the last count to ensure the total is exactly 800
+  
   counts[counts.length - 1] += totalCount - sumCounts;
 
   return counts.map((count, i) => ({
@@ -41,13 +41,13 @@ const generateFakeGenreData = () => {
 const generateListeningHoursData = () => {
   return Array.from({ length: 24 }, (_, i) => ({
     hour: i,
-    percentage: faker.number.int({ min: 10, max: 100 }), // Fake data for peak times
+    percentage: faker.number.int({ min: 10, max: 100 }), 
   }));
 };
 
 const generateSessionStats = () => {
-  const currentSession = 135; // 2h 15m in minutes
-  const previousSession = 115; // 1h 55m in minutes
+  const currentSession = 135; 
+  const previousSession = 115; 
   const change = ((currentSession - previousSession) / previousSession) * 100;
   return {
     current: currentSession,
@@ -62,7 +62,7 @@ const MusicMetrics = () => {
   const topArtists = generateFakeArtists();
   const genreData = generateFakeGenreData();
   
-  // Using state to store session stats
+  
   const [sessionStats] = useState(generateSessionStats());
 
   return (

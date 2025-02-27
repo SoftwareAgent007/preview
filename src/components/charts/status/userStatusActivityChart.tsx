@@ -8,18 +8,18 @@ import { ClickableTooltip } from "@/components/ui/tooltip";
 
 const StatusActivityChart = ({ data }) => {
   const svgRef = useRef();
-  const chartRef = useRef(); // Reference to chart container
+  const chartRef = useRef(); 
   const [selectedStatus, setSelectedStatus] = useState("all");
 
-  // Dynamic width and height
+  
   const [chartWidth, setChartWidth] = useState(800);
   const [chartHeight, setChartHeight] = useState(500);
 
-  // Function to update chart dimensions
+  
   const updateChartDimensions = () => {
     if (chartRef.current) {
-      setChartWidth(chartRef.current.offsetWidth * 1.01); // Adjust to fit container
-      setChartHeight(chartRef.current.offsetHeight); // Maintain proportion
+      setChartWidth(chartRef.current.offsetWidth * 1.01); 
+      setChartHeight(chartRef.current.offsetHeight); 
     }
   };
 
@@ -63,7 +63,7 @@ const StatusActivityChart = ({ data }) => {
       .x(d => x(d.day) + x.bandwidth() / 2)
       .y(d => y(d.value));
 
-    // Tooltip
+    
     const tooltip = g.append("g").style("display", "none");
     tooltip.append("rect")
       .attr("fill", "white")
@@ -124,7 +124,7 @@ const ExpandablePresenceChart = () => {
   const openModal = () => setIsModalOpen(true);
   const closeModal = () => setIsModalOpen(false);
 
-  // Sample data
+  
   const data = Array.from({ length: 30 }, (_, i) => ({
     day: i + 1,
     statusCounts: {

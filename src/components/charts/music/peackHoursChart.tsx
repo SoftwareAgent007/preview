@@ -56,9 +56,9 @@ const PeakListeningHoursChart: React.FC<PeakListeningHoursChartProps> = ({ data 
             .attr("x", d => x(d.hour.toString()) || 0)
             .attr("y", d => y(d.percentage))
             .attr("height", d => height - margin.bottom - y(d.percentage))
-            .attr("width", x.bandwidth() * 1.2) // Increase bar thickness
+            .attr("width", x.bandwidth() * 1.2) 
             .attr("fill", d => colorScale(d.percentage))
-            .attr("rx", 8) // Rounded top corners only
+            .attr("rx", 8) 
             .attr("ry", 8)
             .on("mouseover", (event, d) => {
                 tooltip.style("visibility", "visible").text(`${d.hour}:00 - ${d.percentage}%`);

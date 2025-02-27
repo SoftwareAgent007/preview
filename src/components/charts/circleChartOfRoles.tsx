@@ -54,10 +54,10 @@ const CircleRoleChart = ({ data, width = 500, height = 600 }: { data: RolesData;
     const simulation = d3.forceSimulation(labelsData)
       .force("x", d3.forceX((d) => d.x).strength(0.5))
       .force("y", d3.forceY((d) => d.y).strength(0.5))
-      .force("collide", d3.forceCollide(25)) // Раздвигаем метки
+      .force("collide", d3.forceCollide(25)) 
       .stop();
 
-    for (let i = 0; i < 120; i++) simulation.tick(); // Запускаем симуляцию вручную
+    for (let i = 0; i < 120; i++) simulation.tick(); 
 
     const textLabels = chartGroup.selectAll(".role-text").data(labelsData);
 
@@ -88,7 +88,7 @@ const CircleRoleChart = ({ data, width = 500, height = 600 }: { data: RolesData;
 
     textLabels.exit().remove();
 
-    // Hover-эффект для сегментов
+    
     chartGroup
       .selectAll("path")
       .on("mouseover", function (event, d) {

@@ -116,31 +116,31 @@ export const useDashboardData = (period: 'day' | 'week' | 'month' | 'year' = 'ye
       'year': 365
     }[period];
 
-    const stableBaseValue = 1200; // A stable base value for the timeline
-    const stabilityRange = 30; // Reduced range for slight variations
-    const trendStrength = 10; // Strength of the trend to create a hill-like effect
+    const stableBaseValue = 1200; 
+    const stabilityRange = 30; 
+    const trendStrength = 10; 
 
     const timeline = [];
     for (let i = 0; i < periodDays; i++) {
       const date = new Date(today);
       date.setDate(date.getDate() - i);
-      const count = stableBaseValue + Math.floor(Math.random() * stabilityRange) - (stabilityRange / 2); // Stable values with slight variations
+      const count = stableBaseValue + Math.floor(Math.random() * stabilityRange) - (stabilityRange / 2); 
 
-      // Introduce a hill-like trend
+      
       if (i < periodDays / 3) {
         timeline.push({
           date: date.toISOString().split('T')[0],
-          count: Math.max(count + trendStrength * (i / (periodDays / 3)), 0) // Ascending trend
+          count: Math.max(count + trendStrength * (i / (periodDays / 3)), 0) 
         });
       } else if (i < (2 * periodDays) / 3) {
         timeline.push({
           date: date.toISOString().split('T')[0],
-          count: Math.max(count + trendStrength * (1 - (i - (periodDays / 3)) / (periodDays / 3)), 0) // Descending trend
+          count: Math.max(count + trendStrength * (1 - (i - (periodDays / 3)) / (periodDays / 3)), 0) 
         });
       } else {
         timeline.push({
           date: date.toISOString().split('T')[0],
-          count: Math.max(count, 0) // Stable towards the end
+          count: Math.max(count, 0) 
         });
       }
     }
@@ -151,7 +151,7 @@ export const useDashboardData = (period: 'day' | 'week' | 'month' | 'year' = 'ye
   const messageFrequency = useMemo(() => {
     const today = new Date();
     const periodDays = {
-      'day': 24, // Hours for day view
+      'day': 24, 
       'week': 7,
       'month': 30,
       'year': 365
@@ -160,28 +160,28 @@ export const useDashboardData = (period: 'day' | 'week' | 'month' | 'year' = 'ye
     const generateRealisticData = () => {
       const frequency = [];
       
-      // Base parameters
-      const baseValue = 15000; // Base message count
-      const dailyVariation = 3000; // Normal daily variation
-      const trendStrength = 0.3; // How strong the trend patterns are
-      const noiseStrength = 0.2; // How much random noise to add
       
-      // Generate multiple trend components
+      const baseValue = 15000; 
+      const dailyVariation = 3000; 
+      const trendStrength = 0.3; 
+      const noiseStrength = 0.2; 
+      
+      
       const trends = {
-        // Weekly pattern (higher on weekdays, lower on weekends)
+        
         weekly: (date: Date) => {
           const day = date.getDay();
           return day === 0 || day === 6 ? -2000 : 1000;
         },
-        // Monthly pattern (higher in middle of month)
+        
         monthly: (date: Date) => {
           const day = date.getDate();
           return Math.sin((day / 30) * Math.PI) * 1500;
         },
-        // Time of day pattern (for day view)
+        
         hourly: (date: Date) => {
           const hour = date.getHours();
-          // Lower at night (0-6), peak at noon and evening
+          
           if (hour >= 0 && hour < 6) return -5000;
           if (hour >= 6 && hour < 12) return hour * 500;
           if (hour >= 12 && hour < 18) return 4000 - (hour - 12) * 200;
@@ -189,7 +189,7 @@ export const useDashboardData = (period: 'day' | 'week' | 'month' | 'year' = 'ye
         }
       };
 
-      // Generate smooth random walks for longer-term trends
+      
       const generateRandomWalk = (steps: number, volatility: number) => {
         const walk = [0];
         for (let i = 1; i < steps; i++) {
@@ -200,10 +200,10 @@ export const useDashboardData = (period: 'day' | 'week' | 'month' | 'year' = 'ye
         return walk;
       };
 
-      // Generate long-term trend
+      
       const longTermTrend = generateRandomWalk(periodDays, 200);
 
-      // Generate medium-term fluctuations
+      
       const mediumTermTrend = generateRandomWalk(periodDays, 500);
 
       for (let i = 0; i < periodDays; i++) {
@@ -214,10 +214,10 @@ export const useDashboardData = (period: 'day' | 'week' | 'month' | 'year' = 'ye
           date.setDate(date.getDate() - i);
         }
 
-        // Combine all components
+        
         let value = baseValue;
 
-        // Add trend components
+        
         if (period === 'day') {
           value += trends.hourly(date);
         } else {
@@ -225,15 +225,15 @@ export const useDashboardData = (period: 'day' | 'week' | 'month' | 'year' = 'ye
           value += trends.monthly(date);
         }
 
-        // Add long-term and medium-term trends
+        
         value += longTermTrend[i] * trendStrength;
         value += mediumTermTrend[i] * trendStrength;
 
-        // Add random noise
+        
         const noise = (Math.random() - 0.5) * dailyVariation * noiseStrength;
         value += noise;
 
-        // Ensure value stays positive and reasonable
+        
         value = Math.max(Math.round(value), 5000);
 
         frequency.push({
@@ -250,13 +250,13 @@ export const useDashboardData = (period: 'day' | 'week' | 'month' | 'year' = 'ye
     const periodMessages = messages.filter(m => new Date(m.matchedAt) >= getPeriodStart);
     const frequency: Record<string, number> = {};
     
-    // Initialize all dates in the period with realistic base values
+    
     const baseData = generateRealisticData();
     baseData.forEach(({ date, count }) => {
       frequency[date] = count;
     });
   
-    // Add actual message data
+    
     periodMessages.forEach(message => {
       const date = period === 'day'
         ? `${message.matchedAt.toISOString().split(':')[0]}:00`
@@ -311,7 +311,7 @@ export const useDashboardData = (period: 'day' | 'week' | 'month' | 'year' = 'ye
       .filter(a => a.type === 'gaming' && new Date(a.sessionStart) >= getPeriodStart)
       .reduce((total, activity) => {
         const duration = (new Date(activity.sessionEnd).getTime() - 
-          new Date(activity.sessionStart).getTime()) / (1000 * 60 * 60); // Convert to hours
+          new Date(activity.sessionStart).getTime()) / (1000 * 60 * 60); 
           console.log('total', total, 'duration', duration)
         return total + duration;
     }, 0);

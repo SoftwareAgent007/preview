@@ -1,20 +1,20 @@
 import React from 'react';
 interface ListElementProps {
-  logo: React.ReactNode; // JSX element for the logo
+  logo: React.ReactNode; 
   title: string;
   description: string;
-  titleColor?: string; // Optional color for the title
-  descriptionColor?: string; // Optional color for the description
-  backgroundColor?: string; // Optional background color
+  titleColor?: string; 
+  descriptionColor?: string; 
+  backgroundColor?: string; 
 }
 
 const ListElement: React.FC<ListElementProps> = ({
   logo,
   title,
   description,
-  titleColor = 'gray-700', // Default title color
-  descriptionColor = 'gray-400', // Default description color
-  backgroundColor = 'bg-blue-100/40' // Default background color
+  titleColor = 'gray-700', 
+  descriptionColor = 'gray-400', 
+  backgroundColor = 'bg-blue-100/40' 
 }) => {
   return (
     <div className={`flex ${backgroundColor} p-2 rounded-lg mb-3`}>

@@ -71,8 +71,8 @@ const Modal: React.FC<{ closeModal: () => void; messageFrequency: any; width: nu
                 </h2>
                 <AreaLineChart
                     data={messageFrequency}
-                    width={width * 1.2} // Set width to 1.2 times the provided width
-                    height={400} // Set height to 400
+                    width={width * 1.2} 
+                    height={400} 
                 />
             </div>
         </div>,

@@ -22,7 +22,7 @@ export interface ActivityOverview {
 }
 
 export interface ActivityStatusData {
-  [key: string]: { value: number; date: string }; // Updated to include date
+  [key: string]: { value: number; date: string }; 
 }
 
 export interface ActivityData {

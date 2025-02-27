@@ -113,7 +113,7 @@ const KeywordsDataTableComponent = ({
     },
   });
 
-  // Generate page numbers for pagination
+  
   const getPageNumbers = () => {
     const pageNumbers = [];
     if (totalPages <= 5) {
@@ -139,7 +139,7 @@ const KeywordsDataTableComponent = ({
   const handlePageSizeChange = (value: string) => {
     const newSize = parseInt(value, 10);
     onPageSizeChange(newSize);
-    // Reset to first page when changing page size
+    
     setCurrentPage(1);
   };
 

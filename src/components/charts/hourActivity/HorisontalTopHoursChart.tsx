@@ -51,22 +51,22 @@ const HorizontalTopHoursChart: React.FC<HorizontalTopHoursChartProps> = ({
       .data(top5Data)
       .join("rect")
         .attr("x", 25)
-        .attr("y", d => (y(`${d.hour}:00`) || 0) + 5) // Adjusted for better spacing
+        .attr("y", d => (y(`${d.hour}:00`) || 0) + 5) 
         .attr("width", chartWidth - 20)
-        .attr("height", y.bandwidth()) // Reduce spacing between bars
+        .attr("height", y.bandwidth()) 
         .attr("fill", "#e0e0e0")
-        .attr("rx", 10) // Reduce corner rounding
+        .attr("rx", 10) 
         .attr("ry", 10);
 
     svg.selectAll("dataRect")
       .data(top5Data)
       .join("rect")
         .attr("x", 25)
-        .attr("y", d => (y(`${d.hour}:00`) || 0) + 5) // Adjusted for better spacing
+        .attr("y", d => (y(`${d.hour}:00`) || 0) + 5) 
         .attr("width", d => x(+d.count) - 20)
-        .attr("height", y.bandwidth()) // Reduce spacing between bars
+        .attr("height", y.bandwidth()) 
         .attr("fill", "#3B82F6")
-        .attr("rx", 10) // Reduce corner rounding
+        .attr("rx", 10) 
         .attr("ry", 10);
 
     svg.selectAll("hourLabels")
