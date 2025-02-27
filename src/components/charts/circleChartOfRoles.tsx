@@ -3,24 +3,23 @@ import * as d3 from "d3";
 
 type RolesData = { role: string; count: number; percentage: number | string; color: string }[];
 
-const CircleRoleChart = ({ data, width = 500, height = 500 }: { data: RolesData; width?: number; height?: number; }) => {
+const CircleRoleChart = ({ data, width = 500, height = 600 }: { data: RolesData; width?: number; height?: number }) => {
   const svgRef = useRef<SVGSVGElement>(null);
 
   useEffect(() => {
     if (!svgRef.current) return;
-    
+
     const margin = 50;
     const radius = Math.min(width, height) / 2 - margin;
 
     const pie = d3.pie<{ percentage: number }>().value((d) => d.percentage);
     const arcGenerator = d3.arc().innerRadius(0).outerRadius(radius);
-    const outerArc = d3.arc().innerRadius(radius).outerRadius(radius + 30);
+    const outerArc = d3.arc().innerRadius(radius + 20).outerRadius(radius + 50);
 
     const svg = d3.select(svgRef.current);
 
-    // Clear previous content
     svg.selectAll("*").remove();
-    
+
     const chartGroup = svg
       .attr("width", width)
       .attr("height", height)
@@ -29,7 +28,6 @@ const CircleRoleChart = ({ data, width = 500, height = 500 }: { data: RolesData;
 
     const dataReady = pie(data);
 
-    // Draw pie slices
     const slices = chartGroup.selectAll(".slice").data(dataReady);
 
     slices
@@ -45,8 +43,23 @@ const CircleRoleChart = ({ data, width = 500, height = 500 }: { data: RolesData;
 
     slices.exit().remove();
 
-    // Append text labels
-    const textLabels = chartGroup.selectAll(".role-text").data(dataReady);
+    const labelsData = dataReady.map((d) => ({
+      role: d.data.role,
+      count: d.data.count,
+      percentage: d.data.percentage,
+      x: outerArc.centroid(d)[0],
+      y: outerArc.centroid(d)[1]
+    }));
+
+    const simulation = d3.forceSimulation(labelsData)
+      .force("x", d3.forceX((d) => d.x).strength(0.5))
+      .force("y", d3.forceY((d) => d.y).strength(0.5))
+      .force("collide", d3.forceCollide(25)) // Раздвигаем метки
+      .stop();
+
+    for (let i = 0; i < 120; i++) simulation.tick(); // Запускаем симуляцию вручную
+
+    const textLabels = chartGroup.selectAll(".role-text").data(labelsData);
 
     const labelsEnter = textLabels
       .enter()
@@ -58,10 +71,7 @@ const CircleRoleChart = ({ data, width = 500, height = 500 }: { data: RolesData;
 
     labelsEnter
       .merge(textLabels)
-      .attr("transform", (d) => {
-        const pos = outerArc.centroid(d);
-        return `translate(${pos})`;
-      });
+      .attr("transform", (d) => `translate(${d.x}, ${d.y})`);
 
     labelsEnter.append("tspan")
       .attr("x", 0)
@@ -69,16 +79,16 @@ const CircleRoleChart = ({ data, width = 500, height = 500 }: { data: RolesData;
       .attr("font-weight", "bold")
       .attr("font-size", "20")
       .attr("fill", "black")
-      .text((d) => d.data.role);
+      .text((d) => d.role);
 
     labelsEnter.append("tspan")
       .attr("x", 0)
       .attr("dy", "15")
-      .text((d) => `${d.data.count} (${d.data.percentage}%)`);
+      .text((d) => `${d.count} (${d.percentage}%)`);
 
     textLabels.exit().remove();
 
-    // Hover effect
+    // Hover-эффект для сегментов
     chartGroup
       .selectAll("path")
       .on("mouseover", function (event, d) {
@@ -95,6 +105,7 @@ const CircleRoleChart = ({ data, width = 500, height = 500 }: { data: RolesData;
           .style("opacity", 0.8)
           .style("filter", "none");
       });
+
   }, [data, width, height]);
 
   return <svg className="m-auto" ref={svgRef}></svg>;

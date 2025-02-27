@@ -3,6 +3,7 @@ import CircleRoleChart from "../circleChartOfRoles";
 import { useEffect, useRef, useState } from "react";
 import ReactDOM from "react-dom";
 import { Expand, Minimize } from "lucide-react";
+import { ClickableTooltip } from "@/components/ui/tooltip";
 
 const RolesChart = () => {
     const chartRef = useRef<HTMLDivElement | null>(null);
@@ -37,9 +38,14 @@ const RolesChart = () => {
         <>
             <Card className="w-full max-w-4xl" ref={chartRef}>
                 <div className="text-gray-500 text-lg font-bold mb-4 cursor-pointer flex justify-between">
-                    <span>User Activity</span>
+                    <div className="title">
+                        <span className="mr-5">User Roles</span>
+                        <ClickableTooltip content={<p><strong>User Roles diagram: </strong> Roles chart shows the percentage of people with different roles online.</p>}>
+                            <span className="bg-gray-300 bg-opacity-25 text-gray-600 px-[7px] rounded-full cursor-help">?</span>
+                        </ClickableTooltip>
+                    </div>
                     <button onClick={openModal} style={{ padding: "4px" }}>
-                        <Expand />
+                        <Expand className="text-gray-500" />
                     </button>
                 </div>
                 <CardContent>
@@ -62,13 +68,20 @@ const RolesChart = () => {
 };
 
 const Modal: React.FC<{ closeModal: () => void; chartWidth: number; chartHeight: number; data: typeof mockData }> = ({ closeModal, chartWidth, chartHeight, data }) => {
+    const handleOutsideClick = (event: React.MouseEvent) => {
+        const target = event.target as HTMLElement;
+        if (target.closest(".modal-content") === null) {
+            closeModal();
+        }
+    };
+
     return ReactDOM.createPortal(
-        <div className="fixed inset-0 bg-black/50 flex justify-center items-center z-50">
-            <div className="bg-white p-4 rounded relative">
+        <div className="fixed inset-0 bg-black/50 flex justify-center items-center z-50" onClick={handleOutsideClick}>
+            <div className="bg-white p-4 rounded relative modal-content">
                 <button className="absolute top-2 right-2" style={{ padding: "4px" }} onClick={closeModal}>
-                    <Minimize />
+                    <Minimize className="text-gray-500" />
                 </button>
-                <h2 className="text-lg font-bold mb-4">Active Roles Diagram</h2>
+                <h2 className="text-gray-500 text-lg font-bold mb-4">User Roles</h2>
                 <CircleRoleChart width={chartWidth} height={chartHeight} data={data} />
             </div>
         </div>,

@@ -1,4 +1,4 @@
-import MessageFrequencyChart from "@/components/charts/userActivityTimeline/messageFrequencyChart";
+import MessageFrequencyChart from "@/components/charts/keywordsMatches/keywordsMatchesTimeline";
 import BreadcrumbsNavigation from "@/components/common/BreadcrumbsNavigation";
 import TrendIndicator from "@/components/common/TrendIndicator";
 import { Card } from "@/components/ui/card";

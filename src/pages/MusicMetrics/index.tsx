@@ -8,6 +8,7 @@ import ListElement from "@/components/ui/list-element";
 import HorizontalBarChartRelatedGenres from "@/components/charts/music/musicActivityChart";
 import PeakListeningHoursChart from "@/components/charts/music/peackHoursChart";
 import { useState } from "react";
+import { ClickableTooltip } from "@/components/ui/tooltip";
 
 const generateFakeStats = () => [
   { label: "Total Plays", value: faker.number.int({ min: 10000, max: 50000 }), change: faker.number.int({ min: -20, max: 20 }), isPositive: faker.datatype.boolean() },
@@ -112,7 +113,12 @@ const MusicMetrics = () => {
 
         <div className="flex gap-6 mb-6">
           <Card className="flex-1 p-6 h-100">
-            <span className="text-gray-500 text-lg font-bold mb-4">Peak Listening Hours</span>
+            <div className="title">
+              <span className="text-gray-500 text-lg font-bold mr-5">Peak Listening Hours</span>
+              <ClickableTooltip content={<p><strong>Peak Listening Hours:</strong> Shows statistics for the most active hours of the day.</p>}>
+                <span className="bg-gray-300 bg-opacity-25 text-gray-600 px-[7px] rounded-full cursor-help">?</span>
+              </ClickableTooltip>
+            </div>
             <PeakListeningHoursChart data={generateListeningHoursData()}/>
           </Card>
 

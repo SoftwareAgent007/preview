@@ -190,13 +190,13 @@ const Dashboard = () => {
         <div className="flex justify-between gap-6">
           <Card className="relative flex-1 p-6 h-150">
             <div className="h-full flex flex-col">
-              <span className="text-gray-500 text-lg font-bold mb-4">Hourly Activity</span>
-              <HorizontalBarChart data={hourlyActivity} height={500} width={600} />
-              <div className="absolute top-2 right-2">
-                 <ClickableTooltip content={<p>Activity levels over the course of the hour</p>}>
+              <div className="title">
+                <span className="text-gray-500 text-lg font-bold mb-4 mr-5">Hourly Activity</span>
+                <ClickableTooltip content={<p><strong>Hourly Activity:</strong> Displays the number of users at different hours of the day.</p>}>
                   <span className="bg-gray-300 bg-opacity-25 text-gray-600 px-[7px] rounded-full cursor-help">?</span>
                 </ClickableTooltip>
               </div>
+              <HorizontalBarChart data={hourlyActivity} height={500} width={600} />
             </div>
           </Card>
           <div className="flex-1 grid grid-cols-2 h-60 gap-6">

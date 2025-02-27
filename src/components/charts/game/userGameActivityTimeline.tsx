@@ -22,7 +22,7 @@ const UserActivityTimeline: React.FC<UserActivityTimelineProps> = ({
             <div className="text-gray-500 text-lg font-bold mb-4 cursor-pointer flex justify-between">
                 <span>User Activity</span>
                 <button onClick={openModal} style={{ padding: "4px" }}>
-                    <Expand />
+                    <Expand className="text-gray-500" />
                 </button>
             </div>
             <div className="chart-parent flex justify-between">
@@ -39,22 +39,22 @@ const UserActivityTimeline: React.FC<UserActivityTimelineProps> = ({
 
 const Modal: React.FC<{ closeModal: () => void; userActivityTimeline: any; width: number }> = ({ closeModal, userActivityTimeline, width }) => {
     return ReactDOM.createPortal(
-        <div className="fixed inset-0 bg-black/50 bg-opacity-50 flex justify-center items-center z-50 scale-175">
+        <div className="fixed inset-0 bg-black/50 flex justify-center items-center z-50">
             <div className="bg-white p-4 rounded relative">
                 <button
-                    className="absolute top-2 right-2 scale-75"
+                    className="absolute top-2 right-2"
                     style={{ padding: "4px" }}
                     onClick={closeModal}
                 >
-                    <Minimize />
+                    <Minimize className="text-gray-500" />
                 </button>
                 <h2 className="text-lg font-bold mb-4">
-                    User Activity Details
+                    User Activity
                 </h2>
                 <AreaLineChart
                     data={userActivityTimeline}
-                    width={width}
-                    height={300}
+                    width={width * 1.2} // Set width to 1.2 times the provided width
+                    height={400} // Set height to 400
                 />
             </div>
         </div>,

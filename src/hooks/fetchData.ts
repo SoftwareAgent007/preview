@@ -204,7 +204,7 @@ export const generateRandomData = {
       ),
       topStatusMessages: generateRandomData.array(
         () => ({
-          status: faker.lorem.words(3),
+          status: faker.helpers.arrayElement(['Gaming Time', 'AFK', 'Voice', 'Studying', 'Chatting']),
           usedBy: faker.number.int({ min: 1, max: 1000 }),
           trend: faker.helpers.arrayElement(['increasing', 'decreasing', 'stable']),
         }),

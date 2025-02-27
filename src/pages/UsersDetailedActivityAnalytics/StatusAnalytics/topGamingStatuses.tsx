@@ -17,7 +17,7 @@ const TopGamingStatuses: React.FC<{
         <div className="text-gray-500 text-lg font-bold mb-4 cursor-pointer flex justify-between items-center">
           <h3 className="text-lg font-bold">Top Status Messages</h3>
           <button onClick={openModal} className="p-2">
-            <Expand />
+            <Expand className="text-gray-500" />
           </button>
         </div>
         <ul className="space-y-4">
@@ -39,15 +39,21 @@ const TopGamingStatuses: React.FC<{
     </div>
   );
 };
-
 const Modal: React.FC<{ closeModal: () => void; topStatusMessages: { status: string; usedBy: number; trend: "increasing" | "decreasing" | "stable"; }[] }> = ({ closeModal, topStatusMessages }) => {
+  const handleOutsideClick = (event: React.MouseEvent) => {
+    const target = event.target as HTMLElement;
+    if (target.closest('.modal-content') === null) {
+      closeModal();
+    }
+  };
+
   return ReactDOM.createPortal(
-    <div className="fixed inset-0 bg-black/50 flex justify-center items-center z-50">
-      <Card className="bg-white p-6 w-1/2 h-[70vh] relative">
+    <div className="fixed inset-0 bg-black/50 flex justify-center items-center z-50" onClick={handleOutsideClick}>
+      <Card className="bg-white p-6 w-1/2 h-[70vh] relative modal-content">
         <div className="flex justify-between items-center mb-4">
-          <h2 className="text-lg font-bold">Top Status Messages</h2>
-          <button className="absolute top-2 right-2" onClick={closeModal}>
-            <Minimize />
+          <h2 className="text-gray-500 text-lg font-bold mb-4">Top Status Messages</h2>
+          <button className="absolute top-6 right-6" onClick={closeModal}>
+            <Minimize className="text-gray-500" />
           </button>
         </div>
         <ul className="space-y-4 h-[90%] overflow-y-auto flex flex-col">

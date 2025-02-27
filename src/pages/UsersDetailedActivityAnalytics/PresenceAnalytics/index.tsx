@@ -3,6 +3,7 @@ import HorizontalTopHoursChart from "@/components/charts/hourActivity/Horisontal
 import HorizontalBarChart from "@/components/charts/hourActivity/horizontalBarChart";
 import PresenceWeekActivityChart from "@/components/charts/userActivityTimeline/presenceActivityChart/userPresenceWeekActivityChart";
 import { Card } from "@/components/ui/card";
+import { ClickableTooltip } from "@/components/ui/tooltip";
 import { usePresenceAnalyticsResponse } from "@/hooks/fetchData";
 import { useRef } from "react";
 
@@ -75,7 +76,12 @@ const PresenceAnalytics = () => {
           <PresenceWeekActivityChart  />
           <Card className="flex-1 p-6">
             <div className="flex flex-col">
-              <span className="text-gray-500 text-lg font-bold mb-4">Active Status (per last 7 days)</span>
+              <div className="title">
+                <span className="text-gray-500 text-lg font-bold mb-4 mr-5">Active Status</span>
+                <ClickableTooltip content={<p><strong>Active States: </strong> A chart showing the ratio of users who are online, AFK (away from keyboard), in "Do Not Disturb" mode, and offline leaders over the last seven days.</p>}>
+                  <span className="bg-gray-300 bg-opacity-25 text-gray-600 px-[7px] rounded-full cursor-help">?</span>
+                </ClickableTooltip>
+              </div>
               <CircleRoleChart data={activeRolesNow} />
               <div className="legend flex justify-center gap-8 mt-6 text-lg">
                 <div className="flex items-center gap-3">
@@ -106,7 +112,12 @@ const PresenceAnalytics = () => {
           </Card>
           <Card className="flex-1 p-6">
             <div className="h-full flex flex-col">
-              <span className="text-gray-500 text-lg font-bold mb-4">Hourly Activity</span>
+              <div className="title">
+                <span className="text-gray-500 text-lg font-bold mb-4 mr-5">Hourly Activity</span>
+                <ClickableTooltip content={<p><strong>Hourly Activity:</strong> Displays the number of users at different hours of the day.</p>}>
+                  <span className="bg-gray-300 bg-opacity-25 text-gray-600 px-[7px] rounded-full cursor-help">?</span>
+                </ClickableTooltip>
+              </div>
               <HorizontalBarChart data={hourlyActivity} height={500} width={500} />
             </div>
           </Card>

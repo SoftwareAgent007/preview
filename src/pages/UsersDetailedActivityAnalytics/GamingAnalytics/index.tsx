@@ -4,6 +4,7 @@ import CircleRoleChart from "@/components/charts/circleChartOfRoles";
 import { useGamingAnalyticsResponse } from "@/hooks/fetchData";
 import UserActivityTimeline from "@/components/charts/userActivityTimeline/userActivityTimelineChart";
 import { TopGamesList } from "./components/topGamesList";
+import { ClickableTooltip } from "@/components/ui/tooltip";
 
 const GamingAnalytics = () => {
   const gamingAnalyticsResponse = useGamingAnalyticsResponse();
@@ -74,13 +75,19 @@ const GamingAnalytics = () => {
         <div className="grid grid-cols-2 gap-6 mb-6">
           <div className="grid gap-6">
             <TopGamesList topGames={topGames} />
-            <Card className="p-6 h-[500px]">
+            <Card className="p-6 h-[400px]">
               <UserActivityTimeline width={graphWidth} />
             </Card>
           </div>
           
           <div className="grid grid-rows-8 gap-6 h-[1000px]">
             <Card className="p-6 row-span-5">
+              <div className="title text-gray-500 text-lg font-bold mb-4 ">
+                <span className="mr-5">Active Roles Playing Now</span>
+                <ClickableTooltip content={<p><strong>Active Roles Playing Now: </strong> Active roles chart shows the percentage of people with different roles playing at the same time.</p>}>
+                  <span className="bg-gray-300 bg-opacity-25 text-gray-600 px-[7px] rounded-full cursor-help">?</span>
+                </ClickableTooltip>
+              </div>
               <CircleRoleChart data={activeRolesPlayingNow} />
             </Card>
           </div>

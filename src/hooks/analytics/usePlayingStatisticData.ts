@@ -36,8 +36,6 @@ export const usePlayingStatisticData = (period: 'day' | 'week' | 'month' | 'year
 
     const filteredData: DataSet = {};
 
-    console.log('chartData',data)
-
     Object.keys(data).forEach((key: string) => {
       const chartData: ChartData = data[key];
       if (chartData && chartData.data) {

@@ -6,7 +6,7 @@ import ReactDOM from "react-dom";
 import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from "@/components/ui/select";
 import { ClickableTooltip } from "@/components/ui/tooltip";
 
-const PresenceWeekActivityChart = ({ data }) => {
+const StatusActivityChart = ({ data }) => {
   const svgRef = useRef();
   const chartRef = useRef(); // Reference to chart container
   const [selectedStatus, setSelectedStatus] = useState("all");
@@ -128,10 +128,11 @@ const ExpandablePresenceChart = () => {
   const data = Array.from({ length: 30 }, (_, i) => ({
     day: i + 1,
     statusCounts: {
-      Online: Math.floor(Math.random() * 150),
-      Offline: Math.floor(Math.random() * 50),
-      Idle: Math.floor(Math.random() * 30),
-      DND: Math.floor(Math.random() * 20)
+      "Gaming Time": Math.floor(Math.random() * 150),
+      AFK: Math.floor(Math.random() * 50),
+      Voice: Math.floor(Math.random() * 30),
+      Studying: Math.floor(Math.random() * 20),
+      Chatting: Math.floor(Math.random() * 100)
     }
   }));
 
@@ -139,8 +140,8 @@ const ExpandablePresenceChart = () => {
     <Card className="flex-1 p-6">
       <div className="text-gray-500 text-lg font-bold mb-4 cursor-pointer flex justify-between">
         <div className="title">
-          <span className="text-gray-500 text-lg font-bold mb-4 mr-5">Presence Activity</span>
-          <ClickableTooltip content={<p><strong>User Presence Activity Timeline:</strong> Displays a chart showing varying levels of user activity over a selected timeframe (week, month, or year).</p>}>
+          <span className="text-gray-500 text-lg font-bold mb-4 mr-5">Status Duration Timeline</span>
+          <ClickableTooltip content={<p><strong>User Status Duration Timeline Timeline:</strong> Shows the popularity levels of different user statuses over time (week, month, or year).</p>}>
             <span className="bg-gray-300 bg-opacity-25 text-gray-600 px-[7px] rounded-full cursor-help">?</span>
           </ClickableTooltip>
         </div>
@@ -148,7 +149,7 @@ const ExpandablePresenceChart = () => {
           <Expand className="text-gray-500" />
         </button>
       </div>
-      <PresenceWeekActivityChart data={data} />
+      <StatusActivityChart data={data} />
       {isModalOpen && <Modal closeModal={closeModal} data={data} />}
     </Card>
   );
@@ -166,13 +167,13 @@ const Modal = ({ closeModal, data }) => {
     <div className="fixed inset-0 bg-black/50 bg-opacity-50 flex justify-center items-center z-50 scale-175" onClick={handleOutsideClick}>
       <Card className="w-[75vw] bg-white p-4 rounded relative modal-content">
         <div className="flex items-center justify-between border-b pb-4">
-          <h2 className="text-gray-500 text-lg font-bold mb-4">Presence Activity</h2>
+          <h2 className="text-gray-500 text-lg font-bold mb-4">Status Duration Timeline</h2>
           <button className="text-gray-500 hover:text-gray-700" onClick={closeModal}>
             <Minimize className="text-gray-500" />
           </button>
         </div>
         <CardContent className="pb-0 pt-2">
-          <PresenceWeekActivityChart data={data} />
+          <StatusActivityChart data={data} />
         </CardContent>
       </Card>
     </div>,
