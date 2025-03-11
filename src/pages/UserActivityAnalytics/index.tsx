@@ -1,87 +1,134 @@
-import ActivityCharts from "@/components/charts/userActivityTimeline/expandedUserActivityCharts";
-import RolesChart from "@/components/charts/userActivityTimeline/userRolesChart";
-import BreadcrumbsNavigation from "@/components/common/BreadcrumbsNavigation";
+import { motion } from "framer-motion";
 import { ActivityData } from "@/components/common/types/userAnalytic.types";
-import { Card } from "@/components/ui/card";
 import { usePlayingStatisticData } from "@/hooks/analytics/usePlayingStatisticData";
 import { useUsersActivityData } from "@/hooks/fetchData";
 import { BREADCRUMB_PATHS, ROUTES } from "@/routes/routes.constant";
-import TrendIndicator from "@/components/common/TrendIndicator"; 
+import BreadcrumbsNavigation from "@/components/common/BreadcrumbsNavigation";
+import ActivityStatCard from "./components/ActivityStatCard";
+import ActivityChartsSection from "./components/ActivityChartsSection";
+import RolesSection from "./components/RolesSection";
 
 const UserActivityAnalytics = () => {
+  // #region Data Fetching
   const data: ActivityData = useUsersActivityData();
   const { playingUserStats } = usePlayingStatisticData();
+  // #endregion
 
-  
-  const mockedJoins = 120; 
-  const mockedLeaves = 80; 
+  // #region Constants
+  const mockedJoins = 120;
+  const mockedLeaves = 80;
+  // #endregion
+
+  // #region Animation Variants
+  const container = {
+    hidden: { opacity: 0 },
+    show: {
+      opacity: 1,
+      transition: {
+        staggerChildren: 0.1,
+      },
+    },
+  };
+  // #endregion
+
+  // #region Stats Data
+  const statsData = [
+    {
+      title: "Peak Activity Time",
+      value: data.peakActivityTime
+        ? new Date(data.peakActivityTime.peakTime).toLocaleTimeString([], {
+            hour: "2-digit",
+            minute: "2-digit",
+          })
+        : "No data",
+      trend: data.peakActivityTime.trend,
+      isPositive: data.peakActivityTime.trend >= 0,
+    },
+    {
+      title: "Online users",
+      value: data.onlineUsers.count,
+      trend: data.onlineUsers.trend,
+      isPositive: data.onlineUsers.trend >= 0,
+    },
+    {
+      title: "Avg Session Time",
+      value: data.avgSessionTime.count.toFixed(2),
+      trend: data.avgSessionTime.trend,
+      isPositive: data.avgSessionTime.trend >= 0,
+      unit: "minutes",
+    },
+    {
+      title: "Playing Now",
+      value: data.playingNow.count,
+      trend: data.playingNow.trend,
+      isPositive: data.playingNow.trend >= 0,
+    },
+    {
+      title: "Joins",
+      value: mockedJoins,
+      trend: 1.3,
+      isPositive: true,
+    },
+    {
+      title: "Leaves",
+      value: mockedLeaves,
+      trend: 12.1,
+      isPositive: false,
+    },
+  ];
+  // #endregion
 
   return (
-    <div className="w-full min-h-screen bg-gray-50 p-6">
-      <div className="mx-auto" style={{ maxWidth: `${import.meta.env.VITE_MAX_WIDTH || 1200}px` }}>
-        <div className="flex justify-between items-center mb-6">
-          <BreadcrumbsNavigation items={BREADCRUMB_PATHS[ROUTES.USER_ACTIVITY]} />
-        </div>
+    <motion.div
+      className="w-full min-h-screen bg-gray-50 p-6"
+      variants={container}
+      initial="hidden"
+      animate="show"
+    >
+      <div
+        className="mx-auto"
+        style={{ maxWidth: `${import.meta.env.VITE_MAX_WIDTH || 1200}px` }}
+      >
+        {/* #region Header */}
+        <motion.div
+          className="flex justify-between items-center mb-6"
+          initial={{ opacity: 0, y: -20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.3 }}
+        >
+          <BreadcrumbsNavigation
+            items={BREADCRUMB_PATHS[ROUTES.USER_ACTIVITY]}
+          />
+        </motion.div>
+        {/* #endregion */}
 
-        <div className="flex flex-col items-center gap-6">
-          <ActivityCharts data={playingUserStats} className="mb-6"/>
-        </div>
+        {/* #region Activity Charts */}
+        <ActivityChartsSection data={playingUserStats} className="mb-6" />
+        {/* #endregion */}
 
-        <div className="flex gap-6 mb-6">
-          <div className="grid grid-cols-2 gap-6 flex-1">
-            <Card className="flex-1 p-6">
-              <div className="h-full flex flex-col items-left justify-center">
-                <span className="text-gray-500 text-xs font-medium text-[1rem] font-bold mb-2">Peak Activity Time</span>
-                <span className="text-2xl font-bold">
-                  {data.peakActivityTime 
-                    ? `${new Date(data.peakActivityTime.peakTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}`
-                    : 'No data'}
-                </span>
-                <TrendIndicator unit={'%'} value={data.peakActivityTime.trend.toFixed(2)} isPositive={data.peakActivityTime.trend >= 0} />
-              </div>
-            </Card>
-            <Card className="flex-1 p-6">
-              <div className="h-full flex flex-col items-left justify-center">
-                <span className="text-gray-500 text-xs font-medium text-[1rem] font-bold mb-2">Online users</span>
-                <span className="text-2xl font-bold">{data.onlineUsers.count}</span>
-                <TrendIndicator unit={'%'} value={data.onlineUsers.trend.toFixed(2)} isPositive={data.onlineUsers.trend >= 0} />
-              </div>
-            </Card>
-            <Card className="flex-1 p-6">
-              <div className="h-full flex flex-col items-left justify-center">
-                <span className="text-gray-500 text-xs font-medium text-[1rem] font-bold mb-2">Avg Session Time</span>
-                <span className="text-2xl font-bold">{data.avgSessionTime.count.toFixed(2)} minutes</span>
-                <TrendIndicator unit={'%'} value={data.avgSessionTime.trend.toFixed(2)} isPositive={data.avgSessionTime.trend >= 0} />
-              </div>
-            </Card>
-            <Card className="flex-1 p-6">
-              <div className="h-full flex flex-col items-left justify-center">
-                <span className="text-gray-500 text-xs font-medium text-[1rem] font-bold mb-2">Playing Now</span>
-                <span className="text-2xl font-bold">{data.playingNow.count}</span>
-                <TrendIndicator unit={'%'} value={data.playingNow.trend.toFixed(2)} isPositive={data.playingNow.trend >= 0} />
-              </div>
-            </Card>
-            <Card className="flex-1 p-6">
-              <div className="h-full flex flex-col items-left justify-center">
-                <span className="text-gray-500 text-xs font-medium text-[1rem] font-bold mb-2">Joins</span>
-                <span className="text-2xl font-bold">{mockedJoins}</span>
-                <TrendIndicator unit={'%'} value={1.3} isPositive={true} />
-              </div>
-            </Card>
-            <Card className="flex-1 p-6">
-              <div className="h-full flex flex-col items-left justify-center">
-                <span className="text-gray-500 text-xs font-medium text-[1rem] font-bold mb-2">Leaves</span>
-                <span className="text-2xl font-bold">{mockedLeaves}</span>
-                <TrendIndicator unit={'%'} value={12.1} isPositive={false} />
-              </div>
-            </Card>
+        <div className="flex flex-col lg:flex-row gap-6">
+          {/* #region Stats Grid */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 md:gap-6">
+            {statsData.map((stat, index) => (
+              <ActivityStatCard
+                key={index}
+                index={index}
+                title={stat.title}
+                value={stat.value}
+                trend={stat.trend}
+                isPositive={stat.isPositive}
+                unit={stat.unit}
+              />
+            ))}
           </div>
-          <div className="flex-1">
-            <RolesChart />
-          </div>
+          {/* #endregion */}
+
+          {/* #region Roles Chart */}
+          <RolesSection />
+          {/* #endregion */}
         </div>
       </div>
-    </div>
+    </motion.div>
   );
 };
 

@@ -10,6 +10,7 @@ import {
   Music2,
   GamepadIcon,
   ShoppingCart,
+  Activity,
 } from "lucide-react";
 
 interface MenuItem {
@@ -31,10 +32,11 @@ export const menuCategories: MenuCategories = {
   Analytics: [
     { icon: <Home />, label: "Homepage", path: ROUTES.DASHBOARD },
     { icon: <BarChart2 />, label: "Keyword", path: ROUTES.KEYWORD_ANALYTICS },
+    { icon: <Users />, label: "User Activity", path: ROUTES.USER_ACTIVITY },
     { 
-      icon: <Users />, 
-      label: "User Activity", 
-      path: ROUTES.USER_ACTIVITY,
+      icon: <Activity />, 
+      label: "User Activity Detailed", 
+      path: ROUTES.USER_ACTIVITY_DETAILED,
       nested: [
         { label: "Gaming", path: "/user-activity/detailed/gaming" },
         { label: "Presence", path: "/user-activity/detailed/presence" },
