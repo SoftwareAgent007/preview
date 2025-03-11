@@ -1,16 +1,17 @@
-import HorizontalBarChart from "@/components/charts/hourActivity/horizontalBarChart";
-import MessageFrequencyChart from "@/components/charts/userActivityTimeline/messageFrequencyChart";
-import UserActivityTimeline from "@/components/charts/userActivityTimeline/userActivityTimelineChart";
-import BreadcrumbsNavigation from "@/components/common/BreadcrumbsNavigation";
-import TrendIndicator from "@/components/common/TrendIndicator";
-import { Button } from "@/components/ui/button";
-import { Card } from "@/components/ui/card";
-import ListElement from "@/components/ui/list-element";
-import { ClickableTooltip } from "@/components/ui/tooltip"; // Ensure this path is correct
-import { useDashboardData } from "@/hooks/analytics/useDashboardData";
-import { BREADCRUMB_PATHS, ROUTES } from "@/routes/routes.constant";
+import { motion, LayoutGroup } from "framer-motion";
 import { Download, Users } from "lucide-react";
-import { useEffect, useRef, useState } from "react";
+import { Button } from "@/components/ui/button";
+import BreadcrumbsNavigation from "@/components/common/BreadcrumbsNavigation";
+import { BREADCRUMB_PATHS, ROUTES } from "@/routes/routes.constant";
+import { useDashboardData } from "@/hooks/analytics/useDashboardData";
+import StatCard from "./components/StatCard";
+import ChartCard from "./components/ChartCard";
+import UserActivityTimeline from "@/components/charts/userActivityTimeline/userActivityTimelineChart";
+import MessageFrequencyChart from "@/components/charts/userActivityTimeline/messageFrequencyChart";
+import HorizontalBarChart from "@/components/charts/hourActivity/horizontalBarChart";
+import ListElement from "@/components/ui/list-element";
+import { useRef, useEffect, useState } from "react";
+import LoadingState from "@/components/states/LoadingState";
 
 const Dashboard = () => {
   const {
@@ -26,15 +27,10 @@ const Dashboard = () => {
     hourlyActivity,
     activeListeners,
     keywordStats,
-    isLoading
-  } = useDashboardData('month'); // Using month period for better data view
+    isLoading,
+  } = useDashboardData("month");
 
-  const fontSize = {
-    amountTitle: 'text-2xl font-bold',
-    cardTitle: 'text-sm font-medium',
-    defaultInfo: 'text-sm text-gray-500',
-  };
-
+  // #region Graph Width Calculation
   const wrapperRef = useRef<HTMLDivElement | null>(null);
   const [graphWidth, setGraphWidth] = useState(0);
 
@@ -45,231 +41,216 @@ const Dashboard = () => {
   };
 
   useEffect(() => {
-    window.addEventListener('resize', updateGraphWidth);
-    return () => window.removeEventListener('resize', updateGraphWidth);
+    window.addEventListener("resize", updateGraphWidth);
+    return () => window.removeEventListener("resize", updateGraphWidth);
   }, []);
 
   useEffect(() => {
     if (!isLoading && wrapperRef.current) {
-      console.log("wrapperRef.current?.offsetHeight", wrapperRef.current.offsetHeight);
       updateGraphWidth();
-    }  
+    }
   }, [isLoading, wrapperRef.current]);
+  // #endregion
+
+  // #region Stats Cards Data
+  const statsCards = [
+    {
+      title: "Total Users",
+      value: totalUsers,
+      description: "New users this period",
+      tooltipContent: "Total number of users registered during this period",
+    },
+    {
+      title: "Active Users",
+      value: activeUsers,
+      description: "Currently active users",
+      tooltipContent: "Users who are currently active in the platform",
+    },
+    {
+      title: "Total Messages",
+      value: totalMessages,
+      description: "Messages this period",
+      tooltipContent: "Total number of messages sent during this period",
+    },
+    {
+      title: "Total Reactions",
+      value: totalReactions,
+      description: "Reactions this period",
+      tooltipContent: "Total number of reactions made during this period",
+    },
+  ];
+  // #endregion
+
+  // #region Bottom Stats Cards Data
+  const bottomStatsCards = [
+    {
+      title: "Peak Activity Time",
+      value: peakActivityTime?.hour || 0,
+      description: `${peakActivityTime?.count} active users`,
+      tooltipContent: "Time with the highest user activity",
+      index: 1,
+    },
+    {
+      title: "Total Game Time",
+      value: totalGameTime,
+      description: "hours played",
+      tooltipContent: "Total time spent playing games",
+      index: 2,
+    },
+    {
+      title: "Active Listeners",
+      value: activeListeners,
+      description: "currently listening",
+      tooltipContent: "Listeners currently active on the platform",
+      index: 3,
+    },
+    {
+      title: "Keywords",
+      value: keywordStats.total,
+      description: `${keywordStats.active} active`,
+      tooltipContent: "Active keywords are keywords that have been mentioned in the discord guild within the timerange selected",
+      index: 4,
+    },
+  ];
+  // #endregion
 
   if (isLoading) {
-    return <div>Loading...</div>;
+    return <LoadingState text="Loading dashboard data..." />;
   }
 
   return (
-    <div className="w-full min-h-screen bg-gray-50 p-6">
-      <div id="dashboard-wrapper" ref={wrapperRef} className="block mx-auto" style={{ maxWidth: `${import.meta.env.VITE_MAX_WIDTH || 1200}px` }}>
-        <div className="flex justify-between items-center mb-6">
+    <LayoutGroup> 
+      <motion.div
+        layout
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        exit={{ opacity: 0 }}
+        className="w-full min-h-screen bg-gray-50 p-6"
+      >
+        <motion.div 
+          layout 
+          id="dashboard-wrapper" 
+          ref={wrapperRef} 
+          className="block mx-auto"
+          style={{ maxWidth: `${import.meta.env.VITE_MAX_WIDTH || 1200}px` }}
+        >
+        {/* #region Header */}
+        <div className="flex flex-col md:flex-row justify-between items-center mb-6">
           <BreadcrumbsNavigation items={BREADCRUMB_PATHS[ROUTES.DASHBOARD]} />
           <Button variant="outline" className="flex items-center gap-2">
             <Download className="h-4 w-4" />
             Export Full Report
           </Button>
         </div>
+        {/* #endregion */}
 
-        <div className="flex gap-6 mb-6">
-          <Card className="relative flex-1 p-6 h-30">
-            <div className="h-full flex flex-col items-left justify-center">
-              <span className="text-gray-500 text-sm font-medium">Total Users</span>
-              <span className="text-2xl font-bold">{totalUsers.toLocaleString()}</span>
-              <span className="text-sm text-gray-500">New users this period</span>
-              <div className="absolute top-2 right-2">
-                <ClickableTooltip content={<p>Total number of users registered during this period</p>}>
-                  <span className="bg-gray-300 bg-opacity-25 text-gray-600 px-[7px] rounded-full cursor-help">?</span>
-                </ClickableTooltip>
-              </div>
-            </div>
-          </Card>
-          <Card className="relative flex-1 p-6 h-30">
-            <div className="h-full flex flex-col items-left justify-center">
-              <span className="text-gray-500 text-sm font-medium">Active Users</span>
-              <span className="text-2xl font-bold">{activeUsers.toLocaleString()}</span>
-              <span className="text-sm text-gray-500">Currently active users</span>
-              <div className="absolute top-2 right-2">
-                 <ClickableTooltip content={<p>Users who are currently active in the platform</p>}>
-                  <span className="bg-gray-300 bg-opacity-25 text-gray-600 px-[7px] rounded-full cursor-help">?</span>
-                </ClickableTooltip>
-              </div>
-            </div>
-          </Card>
-          <Card className="relative flex-1 p-6 h-30">
-            <div className="h-full flex flex-col items-left justify-center">
-              <span className="text-gray-500 text-sm font-medium">Total Messages</span>
-              <span className="text-2xl font-bold">{totalMessages.toLocaleString()}</span>
-              <span className="text-sm text-gray-500">Messages this period</span>
-              <div className="absolute top-2 right-2">
-                 <ClickableTooltip content={<p>Total number of messages sent during this period</p>}>
-                  <span className="bg-gray-300 bg-opacity-25 text-gray-600 px-[7px] rounded-full cursor-help">?</span>
-                </ClickableTooltip>
-              </div>
-            </div>
-          </Card>
-          <Card className="relative flex-1 p-6 h-30">
-            <div className="h-full flex flex-col items-left justify-center">
-              <span className="text-gray-500 text-sm font-medium">Total Reactions</span>
-              <span className="text-2xl font-bold">{totalReactions.toLocaleString()}</span>
-              <span className="text-sm text-gray-500">Reactions this period</span>
-              <div className="absolute top-2 right-2">
-                 <ClickableTooltip content={<p>Total number of reactions made during this period</p>}>
-                  <span className="bg-gray-300 bg-opacity-25 text-gray-600 px-[7px] rounded-full cursor-help">?</span>
-                </ClickableTooltip>
-              </div>
-            </div>
-          </Card>
+        {/* #region Stats Cards */}
+        <div className="flex flex-col md:flex-row justify-between w-full gap-6 mb-6 h-fit">
+          {statsCards.map((card, index) => (
+            <StatCard key={card.title} {...card} index={index} />
+          ))}
         </div>
+        {/* #endregion */}
 
-        <div className="flex gap-6 mb-6">
-          <Card className="flex-1 p-6 h-100">
+         {/* //TODO: fix chart responsiveness on mobile  */}
+        {/* #region Charts */}
+        <div className="flex flex-col md:flex-row gap-6 mb-6">
+          <ChartCard index={0} className="flex-1">
             <UserActivityTimeline width={graphWidth} />
-          </Card>
-          <Card className="flex-1 p-6 h-100">
+          </ChartCard>
+          <ChartCard index={1} className="flex-1">
             <MessageFrequencyChart width={graphWidth} />
-          </Card>
+          </ChartCard>
         </div>
+        {/* #endregion */}
 
-        <div className="flex justify-between gap-6 mb-6">
-          <Card className="relative w-[35%] p-6 h-70">
-            <div className="h-full flex flex-col">
-              <span className="text-gray-500 text-lg font-bold mb-4">Current Activities</span>
-              <ListElement logo={<Users className="w-8 h-8 text-gray-600" />} title="Active Gamers" description={`${currentActivities.gamers} users`} />
-              <ListElement 
-                logo={<img src="https://storage.googleapis.com/pr-newsroom-wp/1/2023/05/Spotify_Primary_Logo_RGB_Green.png" alt="Spotify Logo" className="w-8 h-8" />} 
-                title="Spotify Listeners" 
-                description={`${currentActivities.spotifyListeners} users`} 
+        {/* #region Activity Cards */}
+        <div className="flex flex-col  md:flex-row justify-between gap-6 mb-6  md:h-[300px]">
+          <ChartCard
+            title="Current Activities"
+            tooltipContent="Current activities of users on the platform"
+            index={0}
+            className="w-full md:w-[35%]"
+          >
+              <ListElement
+                logo={<Users className="w-8 h-8 text-gray-600" />}
+                title="Active Gamers"
+                description={`${currentActivities.gamers} users`}
               />
-              <div className="absolute top-2 right-2">
-                 <ClickableTooltip content={<p>Current activities of users on the platform</p>}>
-                  <span className="bg-gray-300 bg-opacity-25 text-gray-600 px-[7px] rounded-full cursor-help">?</span>
-                </ClickableTooltip>
-              </div>
-            </div>
-          </Card>
-          <Card className="relative w-[35%] p-4 h-70">
-            <div className="h-full flex flex-col">
-              <span className="text-gray-500 text-sm font-bold mb-2">Top Keywords</span>
-              {topKeywords.map((keyword, index) => (
-                <ListElement 
-                  key={index} 
-                  logo={<span className="text-gray-600 text-3xl">#</span>} 
-                  title={keyword.keyword} 
-                  description={`${keyword.count} matches`} 
-                />
-              ))}
-              <div className="absolute top-2 right-2">
-                 <ClickableTooltip content={<p>Keywords that are frequently mentioned</p>}>
-                  <span className="bg-gray-300 bg-opacity-25 text-gray-600 px-[7px] rounded-full cursor-help">?</span>
-                </ClickableTooltip>
-              </div>
-            </div>
-          </Card>
-          <Card className="relative w-[35%] p-6 h-70">
-            <div className="h-full flex flex-col">
-              <span className="text-gray-500 text-lg font-bold mb-4">Top Users</span>
-              {topUsers.map((user, index) => (
-                <ListElement 
-                  key={index} 
-                  logo={<Users className="w-8 h-8 text-gray-600" />} 
-                  title={user.user} 
-                  description={`${user.messageCount} messages`} 
-                  backgroundColor="" // Turn off background
-                />
-              ))}
-              <div className="absolute top-2 right-2">
-                 <ClickableTooltip content={<p>Users with the highest message counts</p>}>
-                  <span className="bg-gray-300 bg-opacity-25 text-gray-600 px-[7px] rounded-full cursor-help">?</span>
-                </ClickableTooltip>
-              </div>
-            </div>
-          </Card>
-        </div>
+              <ListElement
+                logo={
+                  <img
+                    src="https://storage.googleapis.com/pr-newsroom-wp/1/2023/05/Spotify_Primary_Logo_RGB_Green.png"
+                    alt="Spotify Logo"
+                    className="w-8 h-8"
+                  />
+                }
+                title="Spotify Listeners"
+                description={`${currentActivities.spotifyListeners} users`}
+              />
+          </ChartCard>
 
-        <div className="flex justify-between gap-6">
-          <Card className="relative flex-1 p-6 h-150">
-            <div className="h-full flex flex-col">
-              <div className="title">
-                <span className="text-gray-500 text-lg font-bold mb-4">Hourly Activity</span>
-                <ClickableTooltip content={<p><strong>Hourly Activity:</strong> Displays the number of users at different hours of the day.</p>}>
-                  <span className="bg-gray-300 bg-opacity-25 text-gray-600 px-[7px] rounded-full cursor-help">?</span>
-                </ClickableTooltip>
-              </div>
-              <HorizontalBarChart data={hourlyActivity} height={500} width={600} />
-            </div>
-          </Card>
-          <div className="flex-1 grid grid-cols-2 h-60 gap-6">
-            <Card className="relative p-6 р-50">
-              <div className="h-full flex flex-col justify-between">
-                <span className="text-gray-500 text-sm font-medium">Peak Activity Time</span>
-                <div className="flex-1 flex items-center">
-                  <span className="text-2xl font-bold">{peakActivityTime?.hour}:00</span>
-                </div>
-                <div className="text-sm text-gray-500 flex-row justify-between">
-                  <span>{peakActivityTime?.count} active users</span>
-                  <TrendIndicator unit={'%'} value={15} isPositive={true} />
-                </div>
-                <div className="absolute top-2 right-2">
-                   <ClickableTooltip content={<p>Time with the highest user activity</p>}>
-                  <span className="bg-gray-300 bg-opacity-25 text-gray-600 px-[7px] rounded-full cursor-help">?</span>
-                </ClickableTooltip>
-                </div>
-              </div>
-            </Card>
-            <Card className="relative p-6 р-50">
-              <div className="h-full flex flex-col justify-between">
-                <span className="text-gray-500 text-sm font-medium">Total Game Time</span>
-                <div className="flex-1 flex items-center">
-                  <span className="text-2xl font-bold">{totalGameTime}h</span>
-                </div>
-                <div className="text-sm text-gray-500 flex-row justify-between">
-                  <TrendIndicator value={8} unit="h" isPositive={true} />
-                </div>
-                <div className="absolute top-2 right-2">
-                   <ClickableTooltip content={<p>Total time spent playing games</p>}>
-                  <span className="bg-gray-300 bg-opacity-25 text-gray-600 px-[7px] rounded-full cursor-help">?</span>
-                </ClickableTooltip>
-                </div>
-              </div>
-            </Card>
-            <Card className="relative p-6 р-50">
-              <div className="h-full flex flex-col justify-between">
-                <span className="text-gray-500 text-sm font-medium">Active Listeners</span>
-                <div className="flex-1 flex items-center">
-                  <span className="text-2xl font-bold">{activeListeners}</span>
-                </div>
-                <div className="text-sm text-gray-500 flex-row justify-between">
-                  <TrendIndicator unit={'%'} value={12} isPositive={false} />
-                </div>
-                <div className="absolute top-2 right-2">
-                   <ClickableTooltip content={<p>Listeners currently active on the platform</p>}>
-                  <span className="bg-gray-300 bg-opacity-25 text-gray-600 px-[7px] rounded-full cursor-help">?</span>
-                </ClickableTooltip>
-                </div>
-              </div>
-            </Card>
-            <Card className="relative p-6 р-50">
-              <div className="h-full flex flex-col justify-between">
-                <span className="text-gray-500 text-sm font-medium">Keywords</span>
-                <div className="flex-1 flex items-center">
-                  <span className="text-2xl font-bold">{keywordStats.total}</span>
-                  <div className="absolute top-2 right-2">
-                     <ClickableTooltip content={<p>Active keywords are keywords that have been mentioned in the discord guild within the timerange selected</p>}>
-                  <span className="bg-gray-300 bg-opacity-25 text-gray-600 px-[7px] rounded-full cursor-help">?</span>
-                </ClickableTooltip>
-                  </div>
-                </div>
-                <div className="text-sm text-gray-500 flex-row justify-between">
-                  <span>{keywordStats.active} active</span>
-                  <TrendIndicator unit={'%'} value={5} isPositive={true} />
-                </div>
-              </div>
-            </Card>
+          <ChartCard
+            title="Top Keywords"
+            tooltipContent="Keywords that are frequently mentioned"
+            index={1}
+           className="w-full md:w-[35%]"
+          >
+            {topKeywords.map((keyword, index) => (
+              <ListElement
+                key={index}
+                logo={<span className="text-gray-600 text-3xl">#</span>}
+                title={keyword.keyword}
+                description={`${keyword.count} matches`}
+              />
+            ))}
+          </ChartCard>
+
+          <ChartCard
+            title="Top Users"
+            tooltipContent="Users with the highest message counts"
+            index={2}
+           className="w-full md:w-[35%]"
+          >
+            {topUsers.map((user, index) => (
+              <ListElement
+                key={index}
+                logo={<Users className="w-8 h-8 text-gray-600" />}
+                title={user.user}
+                description={`${user.messageCount} messages`}
+                backgroundColor=""
+              />
+            ))}
+          </ChartCard>
+        </div>
+        {/* #endregion */}
+
+        {/* #region Bottom Section */}
+        <div className="flex flex-col md:flex-row justify-between gap-6">
+          <ChartCard
+            title="Hourly Activity"
+            tooltipContent="Displays the number of users at different hours of the day"
+            index={0}
+            className="flex-1"
+          >
+            {/* //TODO: fix chart responsiveness on mobile  */}
+            <HorizontalBarChart
+              data={hourlyActivity}
+              height={500}
+              width={600}
+            />
+          </ChartCard>
+
+          <div className="flex-1 grid grid-cols-2 gap-6 h-fit">
+            {bottomStatsCards.map((card) => (
+              <StatCard key={card.title} {...card} />
+            ))}
           </div>
         </div>
-      </div>
-    </div>
+        {/* #endregion */}
+        </motion.div>
+      </motion.div>
+    </LayoutGroup>
   );
 };
 

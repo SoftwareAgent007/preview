@@ -1,74 +1,199 @@
 import { useDashboardData } from "@/hooks/analytics/useDashboardData";
-import AreaLineChart from "@/components/charts/AreaLineChart";
 import React, { useState } from "react";
 import ReactDOM from "react-dom";
+import { motion, AnimatePresence } from "framer-motion";
 import { Expand, Minimize } from "lucide-react";
+import AreaLineChart from "@/components/charts/AreaLineChart";
 import { ClickableTooltip } from "@/components/ui/tooltip";
 
 interface MessageFrequencyChartProps {
     width?: number;
 }
 
-const MessageFrequencyChart: React.FC<MessageFrequencyChartProps> = ({ width = 543 }) => {
+const MessageFrequencyChart: React.FC<MessageFrequencyChartProps> = ({
+    width = 543,
+}) => {
     const { messageFrequency } = useDashboardData("month");
     const [isModalOpen, setIsModalOpen] = useState(false);
 
-    const openModal = () => setIsModalOpen(true);
-    const closeModal = () => setIsModalOpen(false);
+    const containerVariants = {
+        hidden: { opacity: 0, y: 20 },
+        visible: { 
+            opacity: 1, 
+            y: 0,
+            transition: {
+                duration: 0.5,
+                when: "beforeChildren",
+                staggerChildren: 0.1
+            }
+        }
+    };
+
+    const itemVariants = {
+        hidden: { opacity: 0, y: 10 },
+        visible: { 
+            opacity: 1, 
+            y: 0,
+            transition: { duration: 0.3 }
+        }
+    };
 
     return (
-        <div className="h-full flex flex-col">
-            <div className="text-gray-500 text-lg font-bold mb-4 cursor-pointer flex justify-between">
-                <div className="title">
-                    <span className="mr-5">Keywords Activity</span>
-                    <ClickableTooltip content={<p><strong>Message Frequency: </strong>Shows the frequency of messages sent over time (week, month, or year). Adjusting the timeframe updates the data and redirects to the "User Activity Analytics" page.</p>}>
-                        <span className="bg-gray-300 bg-opacity-25 text-gray-600 px-[7px] rounded-full cursor-help">?</span>
+        <motion.div 
+            className="flex flex-col"
+            variants={containerVariants}
+            initial="hidden"
+            animate="visible"
+        >
+            <motion.div 
+                className="text-gray-500 text-lg font-bold mb-4 flex justify-between items-center"
+                variants={itemVariants}
+            >
+                <motion.div 
+                    className="title flex items-center gap-3"
+                    variants={itemVariants}
+                >
+                    <motion.span
+                        variants={itemVariants}
+                        whileHover={{ scale: 1.02 }}
+                    >
+                        Keywords Activity
+                    </motion.span>
+                    <ClickableTooltip content={
+                        <motion.p
+                            initial={{ opacity: 0, y: 5 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            transition={{ duration: 0.2 }}
+                        >
+                            <strong>Message Frequency: </strong> 
+                            Shows the frequency of messages sent over time. Adjusting the timeframe updates the data.
+                        </motion.p>
+                    }>
+                        <motion.span 
+                            className="bg-gray-300 bg-opacity-25 text-gray-600 px-[7px] rounded-full cursor-help"
+                            whileHover={{ 
+                                scale: 1.1,
+                                backgroundColor: "rgba(209, 213, 219, 0.4)"
+                            }}
+                            whileTap={{ scale: 0.95 }}
+                        >
+                            ?
+                        </motion.span>
                     </ClickableTooltip>
-                </div>
-                <button onClick={openModal} style={{ padding: "4px" }}>
-                    <Expand className="text-gray-500" />
-                </button>
-            </div>
-            <div className="chart-parent flex justify-between">
+                </motion.div>
+                <motion.button
+                    whileHover={{ 
+                        scale: 1.1,
+                        backgroundColor: "rgba(243, 244, 246, 1)"
+                    }}
+                    whileTap={{ scale: 0.95 }}
+                    onClick={() => setIsModalOpen(true)}
+                    className="p-2 rounded-full transition-colors"
+                    variants={itemVariants}
+                >
+                    <Expand className="w-5 h-5 text-gray-500" />
+                </motion.button>
+            </motion.div>
+            <motion.div 
+                className="chart-parent"
+                variants={itemVariants}
+            >
                 <AreaLineChart
                     data={messageFrequency}
-                    width={width}
+                    width={width} 
                     height={300}
                     graphColor="#b1c4f5"
                 />
-            </div>
-            {isModalOpen && <Modal closeModal={closeModal} messageFrequency={messageFrequency} width={width} />}
-        </div>
+            </motion.div>
+
+            <AnimatePresence>
+                {isModalOpen && (
+                    <Modal 
+                        closeModal={() => setIsModalOpen(false)} 
+                        messageFrequency={messageFrequency} 
+                        width={width} 
+                    />
+                )}
+            </AnimatePresence>
+        </motion.div>
     );
 };
 
-const Modal: React.FC<{ closeModal: () => void; messageFrequency: any; width: number }> = ({ closeModal, messageFrequency, width }) => {
+interface ModalProps {
+    closeModal: () => void;
+    messageFrequency: any;
+    width: number;
+}
+
+const Modal: React.FC<ModalProps> = ({ closeModal, messageFrequency, width }) => {
     const handleOutsideClick = (event: React.MouseEvent) => {
-        const target = event.target as HTMLElement;
-        if (target.closest(".modal-content") === null) {
+        if (event.target === event.currentTarget) {
             closeModal();
         }
     };
 
     return ReactDOM.createPortal(
-        <div className="fixed inset-0 bg-black/50 flex justify-center items-center z-50" onClick={handleOutsideClick}>
-            <div className="bg-white p-4 rounded relative modal-content">
-                <button
-                    className="absolute top-2 right-2"
-                    style={{ padding: "4px" }}
-                    onClick={closeModal}
+        <AnimatePresence mode="wait">
+            <motion.div 
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                transition={{ duration: 0.3 }}
+                className="fixed inset-0 bg-black/50 backdrop-blur-sm flex justify-center items-center z-50" 
+                onClick={handleOutsideClick}
+            >
+                <motion.div 
+                    initial={{ scale: 0.95, opacity: 0, y: 20 }}
+                    animate={{ scale: 1, opacity: 1, y: 0 }}
+                    exit={{ scale: 0.95, opacity: 0, y: 20 }}
+                    transition={{
+                        type: "spring",
+                        stiffness: 300,
+                        damping: 25
+                    }}
+                    className="bg-white p-6 rounded-lg shadow-xl relative modal-content max-w-4xl w-full mx-4"
+                    onClick={e => e.stopPropagation()}
                 >
-                    <Minimize className="text-gray-500" />
-                </button>
-                <h2 className="text-gray-500 text-lg font-bold mb-4">Keywords Activity</h2>
-                <AreaLineChart
-                    data={messageFrequency}
-                    width={width * 1.2}
-                    height={400}
-                    graphColor="#b1c4f5"
-                />
-            </div>
-        </div>,
+                    <motion.div
+                        initial={{ opacity: 0, y: -10 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ delay: 0.2 }}
+                        className="flex justify-between items-center mb-6"
+                    >
+                        <motion.h2 
+                            className="text-gray-500 text-xl font-bold"
+                            whileHover={{ x: 5 }}
+                            transition={{ type: "spring", stiffness: 300 }}
+                        >
+                            Keywords Activity
+                        </motion.h2>
+                        <motion.button
+                            whileHover={{ 
+                                scale: 1.1,
+                                backgroundColor: "rgba(243, 244, 246, 1)"
+                            }}
+                            whileTap={{ scale: 0.95 }}
+                            onClick={closeModal}
+                            className="p-2 rounded-full"
+                        >
+                            <Minimize className="text-gray-500 w-5 h-5" />
+                        </motion.button>
+                    </motion.div>
+                    <motion.div
+                        initial={{ opacity: 0, y: 20 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ delay: 0.3 }}
+                    >
+                        <AreaLineChart
+                            data={messageFrequency}
+                            width={width * 1.5}
+                            height={500}
+                            graphColor="#b1c4f5"
+                        />
+                    </motion.div>
+                </motion.div>
+            </motion.div>
+        </AnimatePresence>,
         document.body
     );
 };

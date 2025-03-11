@@ -1,4 +1,4 @@
-import { ReactNode, useState, useEffect } from "react";
+import { ReactNode, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Menu } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -8,6 +8,8 @@ import Sidebar from "./Sidebar";
 interface DashboardLayoutProps {
   children: ReactNode;
 }
+
+const SIDEBAR_WIDTH = 128;
 
 const DashboardLayout = ({ children }: DashboardLayoutProps) => {
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
@@ -40,11 +42,25 @@ const DashboardLayout = ({ children }: DashboardLayoutProps) => {
             
             {/* Sidebar */}
             <motion.div
-              initial={{ x: -280 }}
-              animate={{ x: 0 }}
-              exit={{ x: -280 }}
-              transition={{ type: "spring", stiffness: 300, damping: 30 }}
-              className="fixed lg:relative z-40"
+              initial={{ 
+                x: -SIDEBAR_WIDTH,
+                width: 0,
+              }}
+              animate={{ 
+                x: 0,
+                width: SIDEBAR_WIDTH,
+              }}
+              exit={{ 
+                x: -SIDEBAR_WIDTH,
+                width: 0,
+              }}
+              transition={{ 
+                type: "spring",
+                stiffness: 300,
+                damping: 30,
+                mass: 0.8
+              }}
+              className="fixed lg:relative z-40 h-full"
             >
               <Sidebar onClose={() => setIsSidebarOpen(false)} />
             </motion.div>
@@ -52,19 +68,31 @@ const DashboardLayout = ({ children }: DashboardLayoutProps) => {
         )}
       </AnimatePresence>
       
-      {/* Main Content */}
-      <div className="flex flex-col flex-1 overflow-hidden">
+      {/* Main Content with Smooth Width Transition */}
+      <motion.div 
+        layout
+        animate={{
+          marginLeft: isSidebarOpen ? SIDEBAR_WIDTH : 0
+        }}
+        transition={{
+          type: "spring",
+          stiffness: 300,
+          damping: 30,
+          mass: 0.8
+        }}
+        className="flex flex-col flex-1 overflow-hidden lg:ml-[var(--sidebar-margin)]"
+        style={{
+          '--sidebar-margin': isSidebarOpen ? `${SIDEBAR_WIDTH}px` : '0px'
+        } as React.CSSProperties}
+      >
         <Header />
         <motion.main 
           className="flex-1 overflow-y-auto bg-gray-50 p-6"
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          exit={{ opacity: 0, y: 20 }}
-          transition={{ duration: 0.3 }}
+          layout
         >
           {children}
         </motion.main>
-      </div>
+      </motion.div>
     </div>
   );
 };
