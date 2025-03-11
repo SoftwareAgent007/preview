@@ -152,6 +152,7 @@ const Dashboard = () => {
         </div>
         {/* #endregion */}
 
+         {/* //TODO: fix chart responsiveness on mobile  */}
         {/* #region Charts */}
         <div className="flex flex-col md:flex-row gap-6 mb-6">
           <ChartCard index={0} className="flex-1">
@@ -232,6 +233,7 @@ const Dashboard = () => {
             index={0}
             className="flex-1"
           >
+            {/* //TODO: fix chart responsiveness on mobile  */}
             <HorizontalBarChart
               data={hourlyActivity}
               height={500}
