@@ -11,6 +11,7 @@ import MessageFrequencyChart from "@/components/charts/userActivityTimeline/mess
 import HorizontalBarChart from "@/components/charts/hourActivity/horizontalBarChart";
 import ListElement from "@/components/ui/list-element";
 import { useRef, useEffect, useState } from "react";
+import LoadingState from "@/components/states/LoadingState";
 
 const Dashboard = () => {
   const {
@@ -114,7 +115,7 @@ const Dashboard = () => {
   // #endregion
 
   if (isLoading) {
-    return <div>Loading...</div>;
+    return <LoadingState text="Loading dashboard data..." />;
   }
 
   return (
