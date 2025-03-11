@@ -1,4 +1,3 @@
-import { faker } from "@faker-js/faker";
 import BreadcrumbsNavigation from "@/components/common/BreadcrumbsNavigation";
 import { Card } from "@/components/ui/card";
 import { Users } from "lucide-react";
@@ -8,136 +7,118 @@ import ListElement from "@/components/ui/list-element";
 import HorizontalBarChartRelatedGenres from "@/components/charts/music/musicActivityChart";
 import PeakListeningHoursChart from "@/components/charts/music/peackHoursChart";
 import { useState } from "react";
-import { ClickableTooltip } from "@/components/ui/tooltip";
-
-const generateFakeStats = () => [
-  { label: "Total Plays", value: faker.number.int({ min: 10000, max: 50000 }), change: faker.number.int({ min: -20, max: 20 }), isPositive: faker.datatype.boolean() },
-  { label: "Unique Artists", value: faker.number.int({ min: 500, max: 1500 }), change: faker.number.int({ min: -20, max: 20 }), isPositive: faker.datatype.boolean() },
-  { label: "Active Listeners", value: faker.number.int({ min: 1000, max: 5000 }), change: faker.number.int({ min: -20, max: 20 }), isPositive: faker.datatype.boolean() },
-];
-
-const generateFakeArtists = () => 
-  Array.from({ length: 5 }, () => ({
-    name: faker.person.fullName(),
-    plays: faker.number.int({ min: 1000, max: 10000 })
-  }));
-
-const generateFakeGenreData = () => {
-  const totalCount = 800;
-  const counts = Array.from({ length: 5 }, () => Math.floor(Math.random() * (totalCount / 5)));
-  const sumCounts = counts.reduce((acc, count) => acc + count, 0);
-  
-  
-  counts[counts.length - 1] += totalCount - sumCounts;
-
-  return counts.map((count, i) => ({
-    genre: faker.music.genre(),
-    artist: faker.person.fullName(),
-    count,
-    total: totalCount
-  }));
-};
-
-const generateListeningHoursData = () => {
-  return Array.from({ length: 24 }, (_, i) => ({
-    hour: i,
-    percentage: faker.number.int({ min: 10, max: 100 }), 
-  }));
-};
-
-const generateSessionStats = () => {
-  const currentSession = 135; 
-  const previousSession = 115; 
-  const change = ((currentSession - previousSession) / previousSession) * 100;
-  return {
-    current: currentSession,
-    previous: previousSession,
-    change,
-    isPositive: change > 0,
-  };
-};
+import MusicStatCard from "./components/MusicStatCard";
+import { motion } from "framer-motion";
+import {
+  generateFakeArtists,
+  generateSessionStats,
+  generateFakeStats,
+  generateFakeGenreData,
+  generateListeningHoursData,
+} from "./utils";
+import GenrePreferencesCard from "./components/GenrePreferencesCard";
+import SessionStatsCard from "./components/SessionStatsCard";
+import TopPlayedArtistsCard from "./components/TopPlayedArtistCard";
+import BaseCard from "./components/BaseCard";
 
 const MusicMetrics = () => {
+  // #region Data Generation
   const stats = generateFakeStats();
   const topArtists = generateFakeArtists();
   const genreData = generateFakeGenreData();
-  
-  
   const [sessionStats] = useState(generateSessionStats());
+  // #endregion
+
+  // #region Animation Variants
+  const container = {
+    hidden: { opacity: 0 },
+    show: {
+      opacity: 1,
+      transition: {
+        staggerChildren: 0.1,
+      },
+    },
+  };
+
+  const item = {
+    hidden: { opacity: 0, y: 10 },
+    show: {
+      opacity: 1,
+      y: 0,
+      transition: {
+        type: "spring",
+        stiffness: 300,
+        damping: 24,
+      },
+    },
+  };
+  // #endregion
 
   return (
-    <div className="w-full min-h-screen bg-gray-50 p-6">
-      <div className="mx-auto" style={{ maxWidth: `${import.meta.env.VITE_MAX_WIDTH || 1200}px` }}>
-        <div className="flex justify-between items-center mb-6">
-          <BreadcrumbsNavigation items={BREADCRUMB_PATHS[ROUTES.MUSIC_METRICS]} />
-        </div>
-        
-        {/* Upper Section */}
-        <div className="upper-section flex gap-6 mb-6">
+    <motion.div
+      className="w-full min-h-screen bg-gray-50 p-6"
+      variants={container}
+      initial="hidden"
+      animate="show"
+    >
+      <div
+        className="mx-auto"
+        style={{ maxWidth: `${import.meta.env.VITE_MAX_WIDTH || 1200}px` }}
+      >
+        {/* #region Header */}
+        <motion.div
+          className="flex justify-between items-center mb-6"
+          initial={{ opacity: 0, y: -20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.3 }}
+        >
+          <BreadcrumbsNavigation
+            items={BREADCRUMB_PATHS[ROUTES.MUSIC_METRICS]}
+          />
+        </motion.div>
+        {/* #endregion */}
+
+        {/* #region Stats Cards */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
           {stats.map((stat, index) => (
-            <Card key={index} className="flex-1 p-6 h-30">
-              <div className="h-full flex flex-col justify-between">
-                <span className="text-gray-500 text-sm font-medium">{stat.label}</span>
-                <div className="flex-1 flex items-center">
-                  <span className="text-2xl font-bold">{stat.value}</span>
-                </div>
-                <div className="text-sm text-gray-500 flex justify-between">
-                  <span>{stat.change}% from last month</span>
-                  <TrendIndicator unit={'%'} value={stat.change} isPositive={stat.isPositive} />
-                </div>
-              </div>
-            </Card>
+            <MusicStatCard
+              key={index}
+              index={index}
+              label={stat.label}
+              value={stat.value}
+              change={stat.change}
+              isPositive={stat.isPositive}
+              tooltipContent={`Statistics for ${stat.label.toLowerCase()}`}
+            />
           ))}
         </div>
+        {/* #endregion */}
 
-        <div first-row-section className="flex gap-6 mb-6">
-          <Card className="flex-1 p-6 h-100">
-            <div className="h-full flex flex-col">
-              <span className="text-gray-500 text-lg font-bold mb-4">Top Played Artists</span>
-              {topArtists.map((artist, index) => (
-                <ListElement 
-                  key={index} 
-                  logo={<Users className="w-8 h-8 text-gray-600" />} 
-                  title={artist.name} 
-                  description={`${artist.plays} plays`} 
-                  backgroundColor=""
-                />
-              ))}
-            </div>
-          </Card>
-          <Card className="flex-1 p-6 h-100">
-            <span className="text-gray-500 text-lg font-bold mb-4">Genre Preferences</span>
-            <HorizontalBarChartRelatedGenres data={genreData.slice(0, 5)} width={500} height={370} />
-          </Card>
-        </div>
+        {/* #region Artists and Genres */}
+        <motion.div
+          className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6"
+          variants={container}
+        >
+          <TopPlayedArtistsCard artists={topArtists} />
+          <GenrePreferencesCard data={genreData} />
+        </motion.div>
+        {/* #endregion */}
 
-        <div className="flex gap-6 mb-6">
-          <Card className="flex-1 p-6 h-100">
-            <div className="title">
-              <span className="text-gray-500 text-lg font-bold mr-5">Peak Listening Hours</span>
-              <ClickableTooltip content={<p><strong>Peak Listening Hours:</strong> Shows statistics for the most active hours of the day.</p>}>
-                <span className="bg-gray-300 bg-opacity-25 text-gray-600 px-[7px] rounded-full cursor-help">?</span>
-              </ClickableTooltip>
-            </div>
-            <PeakListeningHoursChart data={generateListeningHoursData()}/>
-          </Card>
-
-          <Card className="flex-1 p-6 h-100 flex flex-col  items-center">
-            <span className="text-gray-500 text-lg font-bold mb-20">Average Listening Session</span>
-            <div className="flex flex-col justify-center items-center w-[90%]">
-              <div className="text-blue-600 text-5xl font-bold">{Math.floor(sessionStats.current / 60)}h {sessionStats.current % 60}m</div>
-              <span className="text-gray-500 text-sm">Per session</span>
-              <div className="border-t border-gray-300 my-4 w-3/4"></div>
-              <div className="flex justify-between items-center w-3/4">
-                <span className="text-gray-500 text-sm">{`Previous: ${Math.floor(sessionStats.previous / 60)}h ${sessionStats.previous % 60}m`}</span>
-                <TrendIndicator unit="%" value={Number(sessionStats.change.toFixed(1))} isPositive={sessionStats.isPositive} />
-              </div>
-            </div>
-          </Card>
-        </div>
-
+        {/* #region Charts */}
+        <motion.div
+          className="grid grid-cols-1 md:grid-cols-2 gap-6"
+          variants={container}
+        >
+          <BaseCard>
+            <motion.div variants={item}>
+              <PeakListeningHoursChart data={generateListeningHoursData()} />
+            </motion.div>
+          </BaseCard>
+          <SessionStatsCard stats={sessionStats} />
+        </motion.div>
+        {/* #endregion */}
       </div>
-    </div>
+    </motion.div>
   );
 };
 
