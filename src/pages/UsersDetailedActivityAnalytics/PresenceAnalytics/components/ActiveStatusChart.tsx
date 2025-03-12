@@ -26,9 +26,9 @@ const ActiveStatusChart = ({ data }: ActiveStatusChartProps) => {
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ type: "spring", stiffness: 300, damping: 30 }}
-      className="h-full"
+      className=""
     >
-      <Card className="flex-1 p-6 hover:scale-[101%] transition-all duration-150 h-full">
+      <Card className="flex-1 p-6 hover:scale-[101%] transition-all duration-150">
         <motion.div className="flex flex-col">
           <motion.div 
             className="title flex items-center mb-4"
