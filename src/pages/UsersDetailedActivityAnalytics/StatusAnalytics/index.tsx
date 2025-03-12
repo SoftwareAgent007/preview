@@ -1,7 +1,7 @@
 import StatusActivityChart from "@/components/charts/status/userStatusActivityChart";
 import TrendIndicator from '@/components/common/TrendIndicator';
 import { Card } from "@/components/ui/card";
-import { useStatusData, useMockActivityData, useStatusPageAnalyticsResponse } from '@/hooks/fetchData';
+import { useStatusData, useMockActivityData, useStatusPageAnalyticsResponse } from '@/hooks/mockedApiService';
 import StatusHeatmap from "@/components/charts/status/statusHeatmap";
 import TopGamingStatuses from "./topGamingStatuses";
 import StatusDataTableComponent from "@/components/common/StatusDataTable";

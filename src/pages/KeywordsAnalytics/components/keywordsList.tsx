@@ -2,7 +2,6 @@ import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import React, { useState } from "react";
-import ReactDOM from "react-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import KeywordModal from "./addNewKeyword";
 

@@ -5,6 +5,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { Expand, Minimize } from "lucide-react";
 import AreaLineChart from "@/components/charts/AreaLineChart";
 import { ClickableTooltip } from "@/components/ui/tooltip";
+import ErrorComponent from "@/components/common/errorModel";
 
 interface MessageFrequencyChartProps {
     width?: number;
@@ -13,7 +14,7 @@ interface MessageFrequencyChartProps {
 const MessageFrequencyChart: React.FC<MessageFrequencyChartProps> = ({
     width = 543,
 }) => {
-    const { messageFrequency } = useDashboardData("month");
+    // const { messageFrequency } = useDashboardData("month");
     const [isModalOpen, setIsModalOpen] = useState(false);
 
     const containerVariants = {
@@ -95,15 +96,19 @@ const MessageFrequencyChart: React.FC<MessageFrequencyChartProps> = ({
                 </motion.button>
             </motion.div>
             <motion.div 
-                className="chart-parent"
+                className="chart-parent flex justify-between"
                 variants={itemVariants}
             >
-                <AreaLineChart
-                    data={messageFrequency}
-                    width={width} 
-                    height={300}
-                    graphColor="#b1c4f5"
-                />
+                {messageFrequency ? (
+                    <AreaLineChart
+                        data={messageFrequency}
+                        width={width} 
+                        height={300}
+                        graphColor="#b1c4f5"
+                    />
+                ) : (
+                    <ErrorComponent height={300}/>
+                )}
             </motion.div>
 
             <AnimatePresence>
@@ -184,12 +189,16 @@ const Modal: React.FC<ModalProps> = ({ closeModal, messageFrequency, width }) =>
                         animate={{ opacity: 1, y: 0 }}
                         transition={{ delay: 0.3 }}
                     >
-                        <AreaLineChart
-                            data={messageFrequency}
-                            width={width * 1.5}
-                            height={500}
-                            graphColor="#b1c4f5"
-                        />
+                        {messageFrequency ? (
+                            <AreaLineChart
+                                data={messageFrequency}
+                                width={width * 1.5}
+                                height={500}
+                                graphColor="#b1c4f5"
+                            />
+                        ) : (
+                            <ErrorComponent height={500}/>
+                        )}
                     </motion.div>
                 </motion.div>
             </motion.div>

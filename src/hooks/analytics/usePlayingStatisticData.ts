@@ -1,5 +1,5 @@
 import { useMemo } from 'react';
-import { usePlayingStatisticGraphData } from '../fetchData';
+import { usePlayingStatisticGraphData } from '../mockedApiService';
 import { ChartData, DataSet } from '@/components/common/types/userAnalytic.types';
 
 export const usePlayingStatisticData = (period: 'day' | 'week' | 'month' | 'year' = 'year') => {

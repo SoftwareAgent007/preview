@@ -1,20 +1,30 @@
 import ActivityCharts from "@/components/charts/userActivityTimeline/expandedUserActivityCharts";
-import RolesChart from "@/components/charts/userActivityTimeline/userRolesChart";
 import BreadcrumbsNavigation from "@/components/common/BreadcrumbsNavigation";
-import { ActivityData } from "@/components/common/types/userAnalytic.types";
 import { Card } from "@/components/ui/card";
-import { usePlayingStatisticData } from "@/hooks/analytics/usePlayingStatisticData";
-import { useUsersActivityData } from "@/hooks/fetchData";
 import { BREADCRUMB_PATHS, ROUTES } from "@/routes/routes.constant";
 import TrendIndicator from "@/components/common/TrendIndicator"; 
+import { usePeakHours } from "@/hooks/analytics/useGamingPeakHours";
+import { useUserActivityAnalytics } from "@/hooks/analytics/useUserActivityAnalytics";
+import { useDashboardData } from "@/hooks/analytics/useDashboardData";
+import ContentLoader from "react-content-loader";
+import ErrorComponent from "@/components/common/errorModel";
+
+const CardSkeleton = ({ width, height }: { width: string; height: string }) => (
+  <ContentLoader speed={2} width={width} height={height} viewBox={`0 0 ${width} ${height}`}>
+    <rect x="0" y="0" rx="10" ry="10" width="100%" height="100%" />
+  </ContentLoader>
+);
 
 const UserActivityAnalytics = () => {
-  const data: ActivityData = useUsersActivityData();
-  const { playingUserStats } = usePlayingStatisticData();
+  const { activeRoles, avgSessionTime, joins, leaves, isLoading: activityLoading, error: activityError } = useUserActivityAnalytics("");
+  const { peakHours, isLoading: peakLoading, error: peakError } = usePeakHours("");
+  const { totalUsers, activeUsers, isLoading: dashboardLoading, error: dashboardError } = useDashboardData("year");
 
-  
-  const mockedJoins = 120; 
-  const mockedLeaves = 80; 
+  const isLoading = activityLoading || peakLoading || dashboardLoading;
+  const hasError = activityError || peakError || dashboardError;
+
+  // Проверка наличия данных
+  const hasValidData = totalUsers || activeUsers || avgSessionTime || joins || leaves;
 
   return (
     <div className="w-full min-h-screen bg-gray-50 p-6">
@@ -24,60 +34,61 @@ const UserActivityAnalytics = () => {
         </div>
 
         <div className="flex flex-col items-center gap-6">
-          <ActivityCharts data={playingUserStats} className="mb-6"/>
+          {isLoading ? (
+            <Card className="p-6 w-full h-[300px]">
+              <CardSkeleton width="100%" height="100%" />
+            </Card>
+          ) : hasValidData ? (
+            <ActivityCharts data={{}} className="mb-6" />
+          ) : (
+            <ErrorComponent />
+          )}
         </div>
 
+        {/* Статистика активности */}
         <div className="flex gap-6 mb-6">
           <div className="grid grid-cols-2 gap-6 flex-1">
-            <Card className="flex-1 p-6">
-              <div className="h-full flex flex-col items-left justify-center">
-                <span className="text-gray-500 text-xs font-medium text-[1rem] font-bold mb-2">Peak Activity Time</span>
-                <span className="text-2xl font-bold">
-                  {data.peakActivityTime 
-                    ? `${new Date(data.peakActivityTime.peakTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}`
-                    : 'No data'}
-                </span>
-                <TrendIndicator unit={'%'} value={data.peakActivityTime.trend.toFixed(2)} isPositive={data.peakActivityTime.trend >= 0} />
-              </div>
-            </Card>
-            <Card className="flex-1 p-6">
-              <div className="h-full flex flex-col items-left justify-center">
-                <span className="text-gray-500 text-xs font-medium text-[1rem] font-bold mb-2">Online users</span>
-                <span className="text-2xl font-bold">{data.onlineUsers.count}</span>
-                <TrendIndicator unit={'%'} value={data.onlineUsers.trend.toFixed(2)} isPositive={data.onlineUsers.trend >= 0} />
-              </div>
-            </Card>
-            <Card className="flex-1 p-6">
-              <div className="h-full flex flex-col items-left justify-center">
-                <span className="text-gray-500 text-xs font-medium text-[1rem] font-bold mb-2">Avg Session Time</span>
-                <span className="text-2xl font-bold">{data.avgSessionTime.count.toFixed(2)} minutes</span>
-                <TrendIndicator unit={'%'} value={data.avgSessionTime.trend.toFixed(2)} isPositive={data.avgSessionTime.trend >= 0} />
-              </div>
-            </Card>
-            <Card className="flex-1 p-6">
-              <div className="h-full flex flex-col items-left justify-center">
-                <span className="text-gray-500 text-xs font-medium text-[1rem] font-bold mb-2">Playing Now</span>
-                <span className="text-2xl font-bold">{data.playingNow.count}</span>
-                <TrendIndicator unit={'%'} value={data.playingNow.trend.toFixed(2)} isPositive={data.playingNow.trend >= 0} />
-              </div>
-            </Card>
-            <Card className="flex-1 p-6">
-              <div className="h-full flex flex-col items-left justify-center">
-                <span className="text-gray-500 text-xs font-medium text-[1rem] font-bold mb-2">Joins</span>
-                <span className="text-2xl font-bold">{mockedJoins}</span>
-                <TrendIndicator unit={'%'} value={1.3} isPositive={true} />
-              </div>
-            </Card>
-            <Card className="flex-1 p-6">
-              <div className="h-full flex flex-col items-left justify-center">
-                <span className="text-gray-500 text-xs font-medium text-[1rem] font-bold mb-2">Leaves</span>
-                <span className="text-2xl font-bold">{mockedLeaves}</span>
-                <TrendIndicator unit={'%'} value={12.1} isPositive={false} />
-              </div>
-            </Card>
+            {isLoading ? (
+              [...Array(6)].map((_, i) => (
+                <Card key={i} className="flex-1 p-6">
+                  <CardSkeleton width="100%" height="100px" />
+                </Card>
+              ))
+            ) : hasValidData ? (
+              <>
+                {[ 
+                  { label: "Peak Activity Time", value: peakHours?.[0]?.hour || "No data" },
+                  { label: "Online Users", value: totalUsers?.count || "No data" },
+                  { label: "Avg Session Time", value: avgSessionTime?.count?.toFixed(2) + " minutes" || "No data" },
+                  { label: "Playing Now", value: activeUsers?.count || "No data" },
+                  { label: "Joins", value: joins || "No data", trend: 1.3, isPositive: true },
+                  { label: "Leaves", value: leaves || "No data", trend: 12.1, isPositive: false },
+                ].map((stat, index) => (
+                  <Card key={index} className="flex-1 p-6">
+                    <div className="h-full flex flex-col items-left justify-center">
+                      <span className="text-gray-500 text-xs font-medium text-[1rem] font-bold mb-2">{stat.label}</span>
+                      <span className="text-2xl font-bold">{stat.value}</span>
+                      {stat.trend !== undefined && (
+                        <TrendIndicator unit="%" value={stat.trend} isPositive={stat.isPositive} />
+                      )}
+                    </div>
+                  </Card>
+                ))}
+              </>
+            ) : (
+              <ErrorComponent />
+            )}
           </div>
           <div className="flex-1">
-            <RolesChart />
+            {isLoading ? (
+              <Card className="p-6 h-[300px]">
+                <CardSkeleton width="100%" height="100%" />
+              </Card>
+            ) : activeRoles?.length > 0 ? (
+              <p> {/* Здесь можно добавить визуализацию ролей, например, Pie Chart */}</p>
+            ) : (
+              <ErrorComponent />
+            )}
           </div>
         </div>
       </div>

@@ -5,6 +5,7 @@ import { useEffect, useRef, useState } from "react";
 import ReactDOM from "react-dom";
 import { Expand, Minimize } from "lucide-react";
 import { ClickableTooltip } from "@/components/ui/tooltip";
+import ErrorComponent from "@/components/common/errorModel";
 
 const ActivityCharts = ({ data, className }: {data: DataSet; className?: string}) => {
     const chartRef = useRef<HTMLDivElement | null>(null);
@@ -47,7 +48,7 @@ const ActivityCharts = ({ data, className }: {data: DataSet; className?: string}
                 <CardContent ref={chartRef}>
                     <div className="space-y-1">
                         <div className="flex gap-4 mb-2">
-                            {Object.entries(data).map(([key, value]) => (
+                            {Object.keys(data).length ? Object.entries(data).map(([key, value]) => (
                                 <div key={key} className="flex items-center gap-2">
                                     <div className="w-6 h-6 bg-gray-200 rounded-full flex items-center justify-center">
                                         <div className={`w-3 h-3 rounded-full`} style={{ backgroundColor: value.color }} />
@@ -56,9 +57,12 @@ const ActivityCharts = ({ data, className }: {data: DataSet; className?: string}
                                         {key}
                                     </span>
                                 </div>
-                            ))}
+                            )): <></>}
                         </div>
-                        <MultiLayerAreaChart datasets={data} width={chartWidth} height={300} />
+                        {Object.keys(data).length
+                            ? <MultiLayerAreaChart datasets={data} width={chartWidth} height={300} />
+                            : <ErrorComponent/>
+                        }
                     </div>
                 </CardContent>
             </Card>

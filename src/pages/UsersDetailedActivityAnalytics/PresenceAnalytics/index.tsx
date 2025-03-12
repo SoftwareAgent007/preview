@@ -1,10 +1,10 @@
 import CircleRoleChart from "@/components/charts/circleChartOfRoles";
 import HorizontalTopHoursChart from "@/components/charts/hourActivity/HorisontalTopHoursChart";
-import HorizontalBarChart from "@/components/charts/hourActivity/horizontalBarChart";
+import HorizontalBarChart from "@/components/charts/hourActivity/HorizontalBarChart";
 import PresenceWeekActivityChart from "@/components/charts/userActivityTimeline/presenceActivityChart/userPresenceWeekActivityChart";
 import { Card } from "@/components/ui/card";
 import { ClickableTooltip } from "@/components/ui/tooltip";
-import { usePresenceAnalyticsResponse } from "@/hooks/fetchData";
+import { usePresenceAnalyticsResponse } from "@/hooks/mockedApiService";
 import { useRef } from "react";
 
 const PresenceAnalytics = () => {

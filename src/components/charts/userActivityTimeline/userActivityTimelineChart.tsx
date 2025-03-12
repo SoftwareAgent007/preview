@@ -1,19 +1,20 @@
-import { useDashboardData } from "@/hooks/analytics/useDashboardData";
 import React, { useState } from "react";
 import ReactDOM from "react-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import { Expand, Minimize } from "lucide-react";
 import AreaLineChart from "@/components/charts/AreaLineChart";
 import { ClickableTooltip } from "@/components/ui/tooltip";
+import ErrorComponent from "@/components/common/errorModel";
 
-interface UserActivityTimelineProps {
+interface ActivityTimelineProps {
     width?: number;
+    activityTimeline: any[];
 }
 
-const UserActivityTimeline: React.FC<UserActivityTimelineProps> = ({
+const ActivityTimeline: React.FC<ActivityTimelineProps> = ({
     width = 543,
+    activityTimeline = [],
 }) => {
-    const { userActivityTimeline } = useDashboardData("month");
     const [isModalOpen, setIsModalOpen] = useState(false);
 
     const containerVariants = {
@@ -95,21 +96,25 @@ const UserActivityTimeline: React.FC<UserActivityTimelineProps> = ({
                 </motion.button>
             </motion.div>
             <motion.div 
-                className="chart-parent"
+                className="chart-parent flex justify-center items-center h-[300px]"
                 variants={itemVariants}
             >
-                <AreaLineChart
-                    data={userActivityTimeline}
-                    width={width} 
-                    height={300}
-                />
+                {activityTimeline?.length ? (
+                    <AreaLineChart
+                        data={activityTimeline}
+                        width={width} 
+                        height={300}
+                    />
+                ) : (
+                    <ErrorComponent />
+                )}
             </motion.div>
 
             <AnimatePresence>
                 {isModalOpen && (
                     <Modal 
                         closeModal={() => setIsModalOpen(false)} 
-                        userActivityTimeline={userActivityTimeline} 
+                        activityTimeline={activityTimeline} 
                         width={width} 
                     />
                 )}
@@ -120,13 +125,14 @@ const UserActivityTimeline: React.FC<UserActivityTimelineProps> = ({
 
 interface ModalProps {
     closeModal: () => void;
-    userActivityTimeline: any;
+    activityTimeline: any;
     width: number;
 }
 
-const Modal: React.FC<ModalProps> = ({ closeModal, userActivityTimeline, width }) => {
+const Modal: React.FC<ModalProps> = ({ closeModal, activityTimeline, width }) => {
     const handleOutsideClick = (event: React.MouseEvent) => {
-        if (event.target === event.currentTarget) {
+        const target = event.target as HTMLElement;
+        if (target.closest(".modal-content") === null) {
             closeModal();
         }
     };
@@ -183,11 +189,15 @@ const Modal: React.FC<ModalProps> = ({ closeModal, userActivityTimeline, width }
                         animate={{ opacity: 1, y: 0 }}
                         transition={{ delay: 0.3 }}
                     >
-                        <AreaLineChart
-                            data={userActivityTimeline}
-                            width={width * 1.5}
-                            height={500}
-                        />
+                        {activityTimeline?.length ? (
+                            <AreaLineChart
+                                data={activityTimeline}
+                                width={width * 1.5}
+                                height={500}
+                            />
+                        ) : (
+                            <ErrorComponent />
+                        )}
                     </motion.div>
                 </motion.div>
             </motion.div>
@@ -196,4 +206,4 @@ const Modal: React.FC<ModalProps> = ({ closeModal, userActivityTimeline, width }
     );
 };
 
-export default UserActivityTimeline;
+export default ActivityTimeline;

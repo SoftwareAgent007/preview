@@ -1,19 +1,16 @@
-import { useDashboardData } from "@/hooks/analytics/useDashboardData";
-import React, { useState } from "react";
-import ReactDOM from "react-dom";
-import { motion, AnimatePresence } from "framer-motion";
-import { Expand, Minimize } from "lucide-react";
 import AreaLineChart from "@/components/charts/AreaLineChart";
 import { ClickableTooltip } from "@/components/ui/tooltip";
-
-interface KeywordsMatchesTimelineProps {
+import { TimelineDataDto } from "@/types/dataTypes";
+import { AnimatePresence, motion } from "framer-motion";
+import { Expand, Minimize } from "lucide-react";
+import React, { useState } from "react";
+import ReactDOM from "react-dom";
+interface MessageFrequencyChartProps {
+    matchesTimeline: TimelineDataDto[]
     width?: number;
 }
 
-const KeywordsMatchesTimeline: React.FC<KeywordsMatchesTimelineProps> = ({
-    width = 543,
-}) => {
-    const { messageFrequency } = useDashboardData("month");
+const KeywordsMatchesTimeline: React.FC<MessageFrequencyChartProps> = ({ matchesTimeline, width = 543 }) => {
     const [isModalOpen, setIsModalOpen] = useState(false);
 
     const containerVariants = {
@@ -110,8 +107,8 @@ const KeywordsMatchesTimeline: React.FC<KeywordsMatchesTimelineProps> = ({
                 variants={itemVariants}
             >
                 <AreaLineChart
-                    data={messageFrequency}
-                    width={width} 
+                    data={matchesTimeline}
+                    width={width}
                     height={300}
                     graphColor="#b1c4f5"
                 />

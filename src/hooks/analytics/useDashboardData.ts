@@ -1,358 +1,117 @@
 import { useMemo } from 'react';
-import { 
-  useUsers, 
-  useMessageMatches, 
-  useReactions, 
-  usePresences,
-  useKeywords,
-  useActivities
-} from '../fetchData';
+import { useQuery } from 'react-query';
+import { apiService } from '../apiService';
+import { DashboardOverviewResponse, TimeRange } from '@/types/dataTypes';
 
 export const useDashboardData = (period: 'day' | 'week' | 'month' | 'year' = 'year') => {
-  const { data: users, loading: usersLoading } = useUsers();
-  const { data: messages, loading: messagesLoading } = useMessageMatches();
-  const { data: reactions, loading: reactionsLoading } = useReactions();
-  const { data: presences, loading: presencesLoading } = usePresences();
-  const { data: keywords, loading: keywordsLoading } = useKeywords();
-  const { data: activities, loading: activitiesLoading } = useActivities();
+  // const { timeRange } = useContext(DateRangeContext);
+  const timeRange = { startDate: new Date((new Date()).setMonth((new Date()).getMonth() - 1)), endDate: new Date() };
 
-  const getPeriodStart = useMemo(() => {
-    const now = new Date();
-    switch (period) {
-      case 'day':
-        return new Date(now.setHours(0, 0, 0, 0));
-      case 'week':
-        return new Date(now.setDate(now.getDate() - 7));
-      case 'month':
-        return new Date(now.setMonth(now.getMonth() - 1));
-      case 'year':
-        return new Date(now.setFullYear(now.getFullYear() - 1));
+  const { data: activityData, isLoading, error } = useQuery<DashboardOverviewResponse>(
+    ['activity-overview', 323644524268093441],
+    () =>
+      apiService.getData(
+        `/dashboard/overview?guildId=${323644524268093441}&startDate=${timeRange.startDate.toISOString()}&endDate=${timeRange.endDate.toISOString()}`
+      ),
+    {
+      retry: 1,
+      refetchOnWindowFocus: false,
+      staleTime: 1000 * 60 * 30,
+      cacheTime: 1000 * 60 * 30,
+      onError: (err) => console.error('Error fetching activity overview:', err),
     }
-  }, [period]);
+  );
 
-  // TODO: have to be implemented by separated route
-  const totalUsers = useMemo(() => {
-    if (!users) return 0;
-    return users.filter(user => new Date(user.firstSeenAt) >= getPeriodStart).length;
-  }, [users, getPeriodStart]);
-
-  const activeUsers = useMemo(() => {
-    if (!presences) return 0;
-    const activeStatuses = ['online', 'idle'];
-    return new Set(
-      presences
-        .filter(p => activeStatuses.includes(p.status) && new Date(p.timestamp) >= getPeriodStart)
-        .map(p => p.userId)
-    ).size;
-  }, [presences, getPeriodStart]);
-
-  // TODO: have to be implemented by separated route
-  const totalMessages = useMemo(() => {
-    if (!messages) return 0;
-    return messages.filter(m => new Date(m.matchedAt) >= getPeriodStart).length;
-  }, [messages, getPeriodStart]);
-
-  // TODO: have to be implemented by separated route
-  const totalReactions = useMemo(() => {
-    if (!reactions) return 0;
-    return reactions.filter(r => new Date(r.addedAt) >= getPeriodStart).length;
-  }, [reactions, getPeriodStart]);
-
-  const topKeywords = useMemo(() => {
-    if (!keywords || !messages) return [];
-    const periodMessages = messages.filter(m => new Date(m.matchedAt) >= getPeriodStart);
-    return keywords
-      .filter(k => k.active)
-      .sort((a, b) => (b.createdAt as any) - (a.createdAt as any))
-      .slice(0, 3)
-      .map(k => ({
-        keyword: k.keyword,
-        count: periodMessages.filter(m => m.keywordId === k.id).length || 0
-      }));
-  }, [keywords, messages, getPeriodStart]);
-
-  const topUsers = useMemo(() => {
-    if (!messages || !users) return [];
-    const periodMessages = messages.filter(m => new Date(m.matchedAt) >= getPeriodStart);
-    const userMessageCounts = periodMessages.reduce((acc, message) => {
-      const id = message.authorId.toString();
-      acc[id] = (acc[id] || 0) + 1;
-      return acc;
-    }, {} as Record<string, number>);
-
-    return Object.entries(userMessageCounts)
-      .sort(([, a], [, b]) => b - a)
-      .slice(0, 3)
-      .map(([userId, count]) => ({
-        user: users.find(u => u.id === BigInt(userId))?.username || 'Unknown',
-        messageCount: count
-      }));
-  }, [messages, users, getPeriodStart]);
-
-  const currentActivities = useMemo(() => {
-    if (!activities) return { spotifyListeners: 0, gamers: 0 };
-    const periodActivities = activities.filter(a => new Date(a.sessionStart) >= getPeriodStart);
-    
-    return {
-      spotifyListeners: new Set(
-        periodActivities
-          .filter(a => a.type === 'spotify')
-          .map(a => a.presenceId)
-      ).size,
-      gamers: new Set(
-        periodActivities
-          .filter(a => a.type === 'gaming')
-          .map(a => a.presenceId)
-      ).size
-    };
-  }, [activities, getPeriodStart]);
-
-  const userActivityTimeline = useMemo(() => {
-    const today = new Date();
-    const periodDays = {
-      'day': 1,
-      'week': 7,
-      'month': 30,
-      'year': 365
-    }[period];
-
-    const stableBaseValue = 1200; 
-    const stabilityRange = 30; 
-    const trendStrength = 10; 
-
-    const timeline = [];
-    for (let i = 0; i < periodDays; i++) {
-      const date = new Date(today);
-      date.setDate(date.getDate() - i);
-      const count = stableBaseValue + Math.floor(Math.random() * stabilityRange) - (stabilityRange / 2); 
-
-      
-      if (i < periodDays / 3) {
-        timeline.push({
-          date: date.toISOString().split('T')[0],
-          count: Math.max(count + trendStrength * (i / (periodDays / 3)), 0) 
-        });
-      } else if (i < (2 * periodDays) / 3) {
-        timeline.push({
-          date: date.toISOString().split('T')[0],
-          count: Math.max(count + trendStrength * (1 - (i - (periodDays / 3)) / (periodDays / 3)), 0) 
-        });
-      } else {
-        timeline.push({
-          date: date.toISOString().split('T')[0],
-          count: Math.max(count, 0) 
-        });
+  const { data: hourlyActivityData } = useQuery(
+    ['hourly-activity', 618826436299456533],
+    () =>
+      apiService.getData(
+        `/presence-activity/hourly-activity?guildId=618826436299456533&startDate=${timeRange.startDate.toISOString()}&endDate=${timeRange.endDate.toISOString()}`
+      ),
+    {
+      retry: 1,
+      refetchOnWindowFocus: false,
+      staleTime: 1000 * 60 * 30,
+      cacheTime: 1000 * 60 * 30,
+      onError: (err) => console.error('Error fetching hourly activity:', err),
+    }
+  );
+  
+  // Default values for activity statistics
+  const defaultStats = {
+    totalUsers: {
+      count: 0,
+      label: "Total Users"
+    },
+    activeUsers: {
+      count: 0,
+      label: "Active Users"
+    },
+    totalMessages: {
+      count: 0,
+      label: "Total Messages"
+    },
+    totalReactions: {
+      count: 0,
+      label: "Total Reactions"
+    },
+    topKeywords: [],
+    topUsers: [],
+    currentActivities: {
+      activeGamers: {
+        count: 0,
+        label: "Active Gamers"
+      },
+      spotifyListeners: {
+        count: 0,
+        label: "Spotify Listeners"
       }
+    },
+    peakActivityTime: {
+      time: "00:00",
+      users: 0,
+      percentChange: 0
+    },
+    totalGameTime: {
+      hours: 0,
+      hourChange: "+0h"
+    },
+    hourlyActivity: [],
+    activeListeners: {
+      count: 0,
+      percentChange: 0
+    },
+    keywordsCount: {
+      count: 0,
+      percentChange: 0
     }
+  };
 
-    return timeline.reverse();
-  }, [presences, getPeriodStart, period]);
+  // Compute activity statistics with fallbacks
+  const activityStats = useMemo(() => {
+    if (!activityData) return defaultStats;
 
-  const messageFrequency = useMemo(() => {
-    const today = new Date();
-    const periodDays = {
-      'day': 24, 
-      'week': 7,
-      'month': 30,
-      'year': 365
-    }[period];
-  
-    const generateRealisticData = () => {
-      const frequency = [];
-      
-      
-      const baseValue = 15000; 
-      const dailyVariation = 3000; 
-      const trendStrength = 0.3; 
-      const noiseStrength = 0.2; 
-      
-      
-      const trends = {
-        
-        weekly: (date: Date) => {
-          const day = date.getDay();
-          return day === 0 || day === 6 ? -2000 : 1000;
-        },
-        
-        monthly: (date: Date) => {
-          const day = date.getDate();
-          return Math.sin((day / 30) * Math.PI) * 1500;
-        },
-        
-        hourly: (date: Date) => {
-          const hour = date.getHours();
-          
-          if (hour >= 0 && hour < 6) return -5000;
-          if (hour >= 6 && hour < 12) return hour * 500;
-          if (hour >= 12 && hour < 18) return 4000 - (hour - 12) * 200;
-          return 2000 - (hour - 18) * 300;
-        }
-      };
-
-      
-      const generateRandomWalk = (steps: number, volatility: number) => {
-        const walk = [0];
-        for (let i = 1; i < steps; i++) {
-          const previousValue = walk[i - 1];
-          const change = (Math.random() - 0.5) * volatility;
-          walk.push(previousValue + change);
-        }
-        return walk;
-      };
-
-      
-      const longTermTrend = generateRandomWalk(periodDays, 200);
-
-      
-      const mediumTermTrend = generateRandomWalk(periodDays, 500);
-
-      for (let i = 0; i < periodDays; i++) {
-        const date = new Date(today);
-        if (period === 'day') {
-          date.setHours(date.getHours() - i);
-        } else {
-          date.setDate(date.getDate() - i);
-        }
-
-        
-        let value = baseValue;
-
-        
-        if (period === 'day') {
-          value += trends.hourly(date);
-        } else {
-          value += trends.weekly(date);
-          value += trends.monthly(date);
-        }
-
-        
-        value += longTermTrend[i] * trendStrength;
-        value += mediumTermTrend[i] * trendStrength;
-
-        
-        const noise = (Math.random() - 0.5) * dailyVariation * noiseStrength;
-        value += noise;
-
-        
-        value = Math.max(Math.round(value), 5000);
-
-        frequency.push({
-          date: period === 'day' 
-            ? `${date.toISOString().split(':')[0]}:00` 
-            : date.toISOString().split('T')[0],
-          count: value
-        });
-      }
-
-      return frequency;
-    };
-    
-    const periodMessages = messages.filter(m => new Date(m.matchedAt) >= getPeriodStart);
-    const frequency: Record<string, number> = {};
-    
-    
-    const baseData = generateRealisticData();
-    baseData.forEach(({ date, count }) => {
-      frequency[date] = count;
-    });
-  
-    
-    periodMessages.forEach(message => {
-      const date = period === 'day'
-        ? `${message.matchedAt.toISOString().split(':')[0]}:00`
-        : message.matchedAt.toISOString().split('T')[0];
-      frequency[date] = (frequency[date] || 15000) + Math.floor(Math.random() * 1000);
-    });
-  
-    return Object.entries(frequency)
-      .map(([date, count]) => ({ date, count }))
-      .sort((a, b) => a.date.localeCompare(b.date));
-  }, [messages, getPeriodStart, period]);
-
-  const peakActivityTime = useMemo(() => {
-    if (!presences) return { hour: 0, count: 0 };
-    
-    const periodPresences = presences.filter(p => new Date(p.timestamp) >= getPeriodStart);
-    const hourlyActivity = periodPresences.reduce((acc, presence) => {
-      const hour = new Date(presence.timestamp).getHours();
-      acc[hour] = (acc[hour] || 0) + 1;
-      return acc;
-    }, {} as Record<number, number>);
-
-    const sortedHours = Object.entries(hourlyActivity)
-      .sort(([, a], [, b]) => b - a);
-      
-    if (sortedHours.length === 0) {
-      return { hour: 0, count: 0 };
-    }
-
-    const peakHour = sortedHours[0];
     return {
-      hour: Number(peakHour[0]),
-      count: peakHour[1]
+      totalUsers: activityData.totalUsers ?? defaultStats.totalUsers,
+      activeUsers: activityData.activeUsers ?? defaultStats.activeUsers,
+      totalMessages: activityData.totalMessages ?? defaultStats.totalMessages,
+      totalReactions: activityData.totalReactions ?? defaultStats.totalReactions,
+      currentActivities: activityData.currentActivities ?? defaultStats.currentActivities,
+      peakActivityTime: activityData.peakActivityTime ?? defaultStats.peakActivityTime,
+      totalGameTime: activityData.totalGameTime ?? defaultStats.totalGameTime,
+      topKeywords: activityData.topKeywords ?? defaultStats.topKeywords,
+      topUsers: activityData.topUsers ?? defaultStats.topUsers,
+      hourlyActivity: activityData.hourlyActivity ?? defaultStats.hourlyActivity,
+      activeListeners: activityData.activeListeners ?? defaultStats.activeListeners,
+      keywordsCount: activityData.keywordsCount ?? defaultStats.keywordsCount,
     };
-  }, [presences, getPeriodStart]);
-
-  const hourlyActivity = useMemo(() => {
-    if (!presences) return [];
-    
-    const hours = Array.from({ length: 24 }, (_, i) => i);
-    return hours.map(hour => ({
-      hour,
-      count: presences.filter(p => new Date(p.timestamp).getHours() === hour).length
-    }));
-  }, [presences]);
-
-  // TODO: have to be implemented by separated route
-  const totalGameTime = useMemo(() => {
-    if (!activities) return 0;
-    
-    return activities
-      .filter(a => a.type === 'gaming' && new Date(a.sessionStart) >= getPeriodStart)
-      .reduce((total, activity) => {
-        const duration = (new Date(activity.sessionEnd).getTime() - 
-          new Date(activity.sessionStart).getTime()) / (1000 * 60 * 60); 
-          console.log('total', total, 'duration', duration)
-        return total + duration;
-    }, 0);
-  }, [activities, getPeriodStart]);
-
-  const activeListeners = useMemo(() => {
-    if (!activities) return 0;
-    return new Set(
-      activities
-        .filter(a => a.type === 'spotify' && new Date(a.sessionStart) >= getPeriodStart)
-        .map(a => a.presenceId)
-    ).size;
-  }, [activities, getPeriodStart]);
-
-  const keywordStats = useMemo(() => {
-    if (!keywords) return { total: 0, active: 0 };
-    const periodKeywords = keywords.filter(k => new Date(k.createdAt) >= getPeriodStart);
-    return {
-      total: periodKeywords.length,
-      active: periodKeywords.filter(k => k.active).length
-    };
-  }, [keywords, getPeriodStart]);
-
-  const isLoading = usersLoading || messagesLoading || reactionsLoading || 
-    presencesLoading || keywordsLoading || activitiesLoading;
+  }, [activityData]);
 
   return {
-    totalUsers,
-    activeUsers,
-    totalMessages,
-    totalReactions,
-    topKeywords,
-    topUsers,
-    currentActivities,
-    userActivityTimeline,
-    messageFrequency,
-    peakActivityTime,
-    hourlyActivity,
-    totalGameTime,
-    activeListeners,
-    keywordStats,
-    isLoading
+    ...activityStats,
+    hourlyActivityData,
+    isLoading,
+    error,
+    timeRange
   };
 };

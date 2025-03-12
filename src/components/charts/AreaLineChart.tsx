@@ -1,13 +1,10 @@
 import React, { useEffect, useRef } from 'react';
 import * as d3 from 'd3';
+import { TimelineDataDto } from '@/types/dataTypes';
 
-interface DataPoint {
-  date: string;
-  count: number;
-}
 
 interface AreaLineChartProps {
-  data: DataPoint[];
+  data: TimelineDataDto[];
   width: number;
   height?: number;
   graphColor?: string;

@@ -4,6 +4,8 @@ import { ActiveRolesData, ActivityData, ActivityOverview, ActivityStatusData, Da
 
 // TODO: later implement here reusable fetch requests and add usage in hooks
 
+
+
 export const generateRandomData = {
   bigInt: () => BigInt(faker.string.numeric(15)), 
   string: (length = 10) => faker.string.alphanumeric(length),

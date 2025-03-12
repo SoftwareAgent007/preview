@@ -1,48 +1,75 @@
-import { useEffect, useMemo } from "react";
-import { useGamingAnalyticsResponse } from "../fetchData";
+import { useQuery } from 'react-query';
+import { apiService } from '../apiService';
+import { ActiveGame, GameReport, PopularGame, GameStats } from '@/types/dataTypes';
 
-export const useGamingAnalyticsData = (period: 'day' | 'week' | 'month' | 'year' = 'year') => {
+const getTimeRange = (period: 'day' | 'week' | 'month' | 'year') => {
+  const endDate = new Date();
+  const startDate = new Date();
 
-  const { data } = useGamingAnalyticsResponse()
+  switch (period) {
+    case 'day':
+      startDate.setDate(endDate.getDate() - 1);
+      break;
+    case 'week':
+      startDate.setDate(endDate.getDate() - 7);
+      break;
+    case 'month':
+      startDate.setMonth(endDate.getMonth() - 1);
+      break;
+    case 'year':
+      startDate.setFullYear(endDate.getFullYear() - 1);
+      break;
+  }
 
-  useEffect(() => {
-    console.log('data шт гіу уааусе',data)
-  },[data])
+  return { startDate: startDate.toISOString(), endDate: endDate.toISOString() };
+};
 
-  const getPeriodStart = useMemo(() => {
-    const now = new Date();
-    switch (period) {
-      case 'day':
-        return new Date(now.setHours(0, 0, 0, 0));
-      case 'week':
-        return new Date(now.setDate(now.getDate() - 7));
-      case 'month':
-        return new Date(now.setMonth(now.getMonth() - 1));
-      case 'year':
-        return new Date(now.setFullYear(now.getFullYear() - 1));
-      default:
-        return now; // Fallback to now if period is not recognized
-    }
-  }, [period]);
+export const useGameDetails = (guildId: string, gameName: string, period: 'day' | 'week' | 'month' | 'year' = 'year') => {
+  const { startDate, endDate } = getTimeRange(period);
 
-  const filteredData = useMemo(() => {
-    const result = data[0]
-    console.log('data', data)
-    // .find(item => {
-    //   const itemDate = new Date(item.userActivityTimeline[0].date); // Assuming the first date in the timeline represents the activity date
-    //   console.log('itemDate >= getPeriodStart', itemDate, getPeriodStart)
-    //   return itemDate >= getPeriodStart;
-    // });
-    return result ? {
-      activeUsers: result.activeUsers,
-      avgSessionTime: result.avgSessionTime,
-      peakPlayers: result.peakPlayers,
-      totalGameTime: result.totalGameTime,
-      userActivityTimeline: result.userActivityTimeline,
-      activeRolesPlayingNow: result.activeRolesPlayingNow,
-      topGames: result.topGames,
-    } : null; // Return null if no matching data found
-  }, [data, getPeriodStart]);
+  const queryParams = new URLSearchParams({ guildId, startDate, endDate }).toString();
 
-  return filteredData;
-}
+  const { data: gameStats, isLoading: statsLoading, error: statsError } = useQuery<GameStats>(
+    ['gameStats', guildId, gameName, period],
+    () => apiService.getData(`/games/${gameName}/stats?${queryParams}`),
+    { staleTime: 1000 * 60 * 30, cacheTime: 1000 * 60 * 30, retry: 1 }
+  );
+
+  const { data: gameReport, isLoading: reportLoading, error: reportError } = useQuery<GameReport>(
+    ['gameReport', guildId, gameName, period],
+    () => apiService.getData(`/games/${gameName}/report?${queryParams}`),
+    { staleTime: 1000 * 60 * 30, cacheTime: 1000 * 60 * 30, retry: 1 }
+  );
+
+  return {
+    gameStats,
+    gameReport,
+    isLoading: statsLoading || reportLoading,
+    error: statsError || reportError,
+  };
+};
+
+export const useGamingStats = (guildId: string, period: 'day' | 'week' | 'month' | 'year' = 'year') => {
+  const { startDate, endDate } = getTimeRange(period);
+  
+  const queryParams = new URLSearchParams({ guildId, startDate, endDate }).toString();
+
+  const { data: activeGames, isLoading: activeGamesLoading, error: activeGamesError } = useQuery<ActiveGame[]>(
+    ['activeGames', guildId, period],
+    () => apiService.getData(`/games?${queryParams}`),
+    { staleTime: 1000 * 60 * 30, cacheTime: 1000 * 60 * 30, retry: 1 }
+  );
+
+  const { data: popularGames, isLoading: popularGamesLoading, error: popularGamesError } = useQuery<PopularGame[]>(
+    ['popularGames', guildId, period],
+    () => apiService.getData(`/games/popular?${queryParams}`),
+    { staleTime: 1000 * 60 * 30, cacheTime: 1000 * 60 * 30, retry: 1 }
+  );
+
+  return {
+    activeGames,
+    popularGames,
+    isLoading: activeGamesLoading || popularGamesLoading,
+    error: activeGamesError || popularGamesError,
+  };
+};

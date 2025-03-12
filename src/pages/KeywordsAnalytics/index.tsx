@@ -1,42 +1,42 @@
+import { useState, useMemo } from "react";
+import { motion } from "framer-motion";
 import MessageFrequencyChart from "@/components/charts/keywordsMatches/keywordsMatchesTimeline";
 import BreadcrumbsNavigation from "@/components/common/BreadcrumbsNavigation";
-import TrendIndicator from "@/components/common/TrendIndicator";
 import { Card } from "@/components/ui/card";
 import { useKeywordsAnalytics } from "@/hooks/analytics/useKeywordsAnalytics";
 import { BREADCRUMB_PATHS, ROUTES } from "@/routes/routes.constant";
-import { useState } from "react";
-import KeywordsList from "./components/keywordsList";
 import DataTableComponent from "@/components/common/KeywordsDataTable";
 import ActiveKeywordsList from "./components/keywordsList";
-import { motion } from "framer-motion";
 import KeywordStatCard from "./components/KeywordStatCard";
+import ContentLoader from "react-content-loader";
+import ErrorComponent from "@/components/common/errorModel";
+
+const CardSkeleton = ({ width, height }: { width: string; height: string }) => (
+  <ContentLoader speed={2} width={width} height={height} viewBox={`0 0 ${width} ${height}`}>
+    <rect x="0" y="0" rx="10" ry="10" width="100%" height="100%" />
+  </ContentLoader>
+);
 
 const KeywordsAnalytics = () => {
   // #region Hooks & State
-  const {
-    activeKeywords,
-    keywordStats,
-    totalActiveKeywords,
-    totalMatches,
-    matchesTimeline,
-  } = useKeywordsAnalytics();
-  
   const [searchTerm, setSearchTerm] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
   const [pageSize, setPageSize] = useState(10);
-  const itemsPerPage = 5;
-  // #endregion
+  const guildId = "YOUR_GUILD_ID"; // Replace with actual guildId or fetch dynamically
 
-  // #region Data Processing
-  const filteredKeywords = activeKeywords.filter(keyword =>
-    keyword.keyword.toLowerCase().includes(searchTerm.toLowerCase())
-  );
-
-  const totalPages = Math.ceil(filteredKeywords.length / itemsPerPage);
-  const displayedKeywords = filteredKeywords.slice(
-    (currentPage - 1) * itemsPerPage,
-    currentPage * itemsPerPage
-  );
+  const {
+    totalKeywords,
+    activeKeywords,
+    totalMatches,
+    keywordsList,
+    matchesTimeline,
+    activeKeywordTags,
+    pagination,
+    isLoading,
+    error
+  } = useKeywordsAnalytics(guildId, "year", currentPage, pageSize);
+  
+  const hasErrors = useMemo(() => Boolean(error), [error]);
   // #endregion
 
   // #region Animation Variants
@@ -56,15 +56,15 @@ const KeywordsAnalytics = () => {
     {
       index: 0,
       title: "Keywords",
-      value: keywordStats.total,
-      subValue: { label: "active", value: keywordStats.active },
+      value: totalKeywords,
+      subValue: { label: "active", value: activeKeywords },
       trend: { value: 5, isPositive: true },
       tooltipContent: "Total number of keywords in the system"
     },
     {
       index: 1,
       title: "Active Keywords",
-      value: keywordStats.active,
+      value: activeKeywords,
       trend: { value: 5, isPositive: true },
       tooltipContent: "Currently active keywords"
     },
@@ -77,6 +77,10 @@ const KeywordsAnalytics = () => {
     }
   ];
   // #endregion
+
+  if (hasErrors) {
+    return <ErrorComponent />;
+  }
 
   return (
     <motion.div 
@@ -99,9 +103,17 @@ const KeywordsAnalytics = () => {
 
         {/* #region Stats Cards */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
-          {statsCardsData.map(card => (
-            <KeywordStatCard key={card.index} {...card} />
-          ))}
+          {isLoading ? (
+            <>
+              <Card className="p-6"><CardSkeleton width="100%" height="100px" /></Card>
+              <Card className="p-6"><CardSkeleton width="100%" height="100px" /></Card>
+              <Card className="p-6"><CardSkeleton width="100%" height="100px" /></Card>
+            </>
+          ) : (
+            statsCardsData.map(card => (
+              <KeywordStatCard key={card.index} {...card} />
+            ))
+          )}
         </div>
         {/* #endregion */}
 
@@ -111,10 +123,24 @@ const KeywordsAnalytics = () => {
           variants={container}
         >
           <Card className="flex-1 p-6">
-            <MessageFrequencyChart />
+            {isLoading ? (
+              <CardSkeleton width="100%" height="200px" />
+            ) : matchesTimeline?.length > 0 ? (
+              <MessageFrequencyChart matchesTimeline={matchesTimeline} />
+            ) : (
+              <ErrorComponent />
+            )}
           </Card>
-          
-          <ActiveKeywordsList activeKeywords={activeKeywords} />
+
+          <Card className="flex-1 p-6">
+            {isLoading ? (
+              <CardSkeleton width="100%" height="200px" />
+            ) : activeKeywordTags?.length > 0 ? (
+              <ActiveKeywordsList activeKeywords={[]} />
+            ) : (
+              <ErrorComponent />
+            )}
+          </Card>
         </motion.div>
         {/* #endregion */}
 
@@ -124,17 +150,23 @@ const KeywordsAnalytics = () => {
           variants={container}
         >
           <Card className="p-6 h-150">
-            <DataTableComponent 
-              displayedKeywords={displayedKeywords} 
-              totalKeywords={activeKeywords.length}
-              searchTerm={searchTerm} 
-              setSearchTerm={setSearchTerm} 
-              currentPage={currentPage} 
-              setCurrentPage={setCurrentPage} 
-              totalPages={totalPages}
-              onPageSizeChange={setPageSize}
-              pageSize={pageSize}
-            />
+            {isLoading ? (
+              <CardSkeleton width="100%" height="200px" />
+            ) : keywordsList?.length > 0 ? (
+              <DataTableComponent 
+                displayedKeywords={[]} 
+                totalKeywords={keywordsList.length}
+                searchTerm={searchTerm} 
+                setSearchTerm={setSearchTerm} 
+                currentPage={pagination?.currentPage || currentPage} 
+                setCurrentPage={setCurrentPage} 
+                totalPages={pagination?.totalPages || Math.ceil(keywordsList.length / pageSize)}
+                onPageSizeChange={setPageSize}
+                pageSize={pagination?.itemsPerPage || pageSize}
+              />
+            ) : (
+              <ErrorComponent />
+            )}
           </Card>
         </motion.div>
         {/* #endregion */}

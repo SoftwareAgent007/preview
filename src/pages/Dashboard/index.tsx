@@ -1,34 +1,57 @@
 import { motion, LayoutGroup } from "framer-motion";
 import { Download, Users } from "lucide-react";
+import { useRef, useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
+import { Card } from "@/components/ui/card";
 import BreadcrumbsNavigation from "@/components/common/BreadcrumbsNavigation";
+import ErrorComponent from "@/components/common/errorModel";
+import TrendIndicator from "@/components/common/TrendIndicator";
+import { ClickableTooltip } from "@/components/ui/tooltip";
+import HorizontalBarChart from "@/components/charts/hourActivity/HorizontalBarChart";
+import MessageFrequencyChart from "@/components/charts/userActivityTimeline/messageFrequencyChart";
+import UserActivityTimeline from "@/components/charts/userActivityTimeline/userActivityTimelineChart";
+import ListElement from "@/components/ui/list-element";
 import { BREADCRUMB_PATHS, ROUTES } from "@/routes/routes.constant";
 import { useDashboardData } from "@/hooks/analytics/useDashboardData";
 import StatCard from "./components/StatCard";
 import ChartCard from "./components/ChartCard";
-import UserActivityTimeline from "@/components/charts/userActivityTimeline/userActivityTimelineChart";
-import MessageFrequencyChart from "@/components/charts/userActivityTimeline/messageFrequencyChart";
-import HorizontalBarChart from "@/components/charts/hourActivity/horizontalBarChart";
-import ListElement from "@/components/ui/list-element";
-import { useRef, useEffect, useState } from "react";
 import LoadingState from "@/components/states/LoadingState";
 
 const Dashboard = () => {
+  console.log('INITED')
   const {
     totalUsers,
-    activeUsers,
+    activeUsers, 
     totalMessages,
     totalReactions,
-    topKeywords,
-    topUsers,
     currentActivities,
     peakActivityTime,
+    topKeywords,
+    topUsers,
     totalGameTime,
     hourlyActivity,
     activeListeners,
-    keywordStats,
-    isLoading,
-  } = useDashboardData("month");
+    keywordsCount,
+    keywordsList,
+    isLoading
+  } = useDashboardData('month');
+
+  // TODO: These features are currently being refactored:
+  // - User Activity Timeline
+  // - Message Frequency Chart  
+  // - Keywords Analytics
+  // - Users Statistics
+
+  const keywordStats = {
+    total: keywordsCount?.count || 0,
+    active: keywordsList?.length || 0
+  };
+
+  const fontSize = {
+    amountTitle: 'text-2xl font-bold',
+    cardTitle: 'text-sm font-medium',
+    defaultInfo: 'text-sm text-gray-500',
+  };
 
   // #region Graph Width Calculation
   const wrapperRef = useRef<HTMLDivElement | null>(null);
@@ -56,26 +79,26 @@ const Dashboard = () => {
   const statsCards = [
     {
       title: "Total Users",
-      value: totalUsers,
-      description: "New users this period",
+      value: totalUsers.count,
+      description: totalUsers.label,
       tooltipContent: "Total number of users registered during this period",
     },
     {
       title: "Active Users",
-      value: activeUsers,
-      description: "Currently active users",
+      value: activeUsers.count,
+      description: activeUsers.label,
       tooltipContent: "Users who are currently active in the platform",
     },
     {
       title: "Total Messages",
-      value: totalMessages,
-      description: "Messages this period",
+      value: totalMessages.count,
+      description: totalMessages.label,
       tooltipContent: "Total number of messages sent during this period",
     },
     {
       title: "Total Reactions",
-      value: totalReactions,
-      description: "Reactions this period",
+      value: totalReactions.count,
+      description: totalReactions.label,
       tooltipContent: "Total number of reactions made during this period",
     },
   ];
@@ -85,22 +108,31 @@ const Dashboard = () => {
   const bottomStatsCards = [
     {
       title: "Peak Activity Time",
-      value: peakActivityTime?.hour || 0,
-      description: `${peakActivityTime?.count} active users`,
+      value: peakActivityTime?.time || 0,
+      description: `${peakActivityTime?.users || 0} active users`,
+      trend: peakActivityTime?.percentChange,
+      isTrendPositive: peakActivityTime?.percentChange > 0,
+      trendUnit: "%",
       tooltipContent: "Time with the highest user activity",
       index: 1,
     },
     {
       title: "Total Game Time",
-      value: totalGameTime,
+      value: `${totalGameTime?.hours || 0}h`,
       description: "hours played",
+      trend: parseInt(totalGameTime?.hourChange || "0"),
+      isTrendPositive: totalGameTime?.hourChange?.startsWith('+'),
+      trendUnit: "h",
       tooltipContent: "Total time spent playing games",
       index: 2,
     },
     {
       title: "Active Listeners",
-      value: activeListeners,
+      value: activeListeners?.count || 0,
       description: "currently listening",
+      trend: activeListeners?.percentChange,
+      isTrendPositive: activeListeners?.percentChange > 0,
+      trendUnit: "%",
       tooltipContent: "Listeners currently active on the platform",
       index: 3,
     },
@@ -108,15 +140,14 @@ const Dashboard = () => {
       title: "Keywords",
       value: keywordStats.total,
       description: `${keywordStats.active} active`,
+      trend: keywordsCount?.percentChange,
+      isTrendPositive: keywordsCount?.percentChange > 0,
+      trendUnit: "%",
       tooltipContent: "Active keywords are keywords that have been mentioned in the discord guild within the timerange selected",
       index: 4,
     },
   ];
   // #endregion
-
-  if (isLoading) {
-    return <LoadingState text="Loading dashboard data..." />;
-  }
 
   return (
     <LayoutGroup> 
@@ -152,11 +183,10 @@ const Dashboard = () => {
         </div>
         {/* #endregion */}
 
-         {/* //TODO: fix chart responsiveness on mobile  */}
         {/* #region Charts */}
         <div className="flex flex-col md:flex-row gap-6 mb-6">
           <ChartCard index={0} className="flex-1">
-            <UserActivityTimeline width={graphWidth} />
+            <UserActivityTimeline activityTimeline={hourlyActivity} width={graphWidth} />
           </ChartCard>
           <ChartCard index={1} className="flex-1">
             <MessageFrequencyChart width={graphWidth} />
@@ -165,7 +195,7 @@ const Dashboard = () => {
         {/* #endregion */}
 
         {/* #region Activity Cards */}
-        <div className="flex flex-col  md:flex-row justify-between gap-6 mb-6  md:h-[300px]">
+        <div className="flex flex-col md:flex-row justify-between gap-6 mb-6 md:h-[300px]">
           <ChartCard
             title="Current Activities"
             tooltipContent="Current activities of users on the platform"
@@ -175,7 +205,7 @@ const Dashboard = () => {
               <ListElement
                 logo={<Users className="w-8 h-8 text-gray-600" />}
                 title="Active Gamers"
-                description={`${currentActivities.gamers} users`}
+                description={`${currentActivities.activeGamers?.count || 0} ${currentActivities.activeGamers?.label || 'users'}`}
               />
               <ListElement
                 logo={
@@ -186,7 +216,7 @@ const Dashboard = () => {
                   />
                 }
                 title="Spotify Listeners"
-                description={`${currentActivities.spotifyListeners} users`}
+                description={`${currentActivities.spotifyListeners?.count || 0} ${currentActivities.spotifyListeners?.label || 'users'}`}
               />
           </ChartCard>
 
@@ -194,33 +224,41 @@ const Dashboard = () => {
             title="Top Keywords"
             tooltipContent="Keywords that are frequently mentioned"
             index={1}
-           className="w-full md:w-[35%]"
+            className="w-full md:w-[35%]"
           >
-            {topKeywords.map((keyword, index) => (
-              <ListElement
-                key={index}
-                logo={<span className="text-gray-600 text-3xl">#</span>}
-                title={keyword.keyword}
-                description={`${keyword.count} matches`}
-              />
-            ))}
+            {topKeywords?.length ? (
+              topKeywords.map((keyword, index) => (
+                <ListElement
+                  key={index}
+                  logo={<span className="text-gray-600 text-3xl">#</span>}
+                  title={keyword.keyword}
+                  description={`${keyword.count} matches`}
+                />
+              ))
+            ) : (
+              <ErrorComponent />
+            )}
           </ChartCard>
 
           <ChartCard
             title="Top Users"
             tooltipContent="Users with the highest message counts"
             index={2}
-           className="w-full md:w-[35%]"
+            className="w-full md:w-[35%]"
           >
-            {topUsers.map((user, index) => (
-              <ListElement
-                key={index}
-                logo={<Users className="w-8 h-8 text-gray-600" />}
-                title={user.user}
-                description={`${user.messageCount} messages`}
-                backgroundColor=""
-              />
-            ))}
+            {topUsers?.length ? (
+              topUsers.map((user, index) => (
+                <ListElement
+                  key={index}
+                  logo={<Users className="w-8 h-8 text-gray-600" />}
+                  title={user.user}
+                  description={`${user.messageCount} messages`}
+                  backgroundColor=""
+                />
+              ))
+            ) : (
+              <ErrorComponent />
+            )}
           </ChartCard>
         </div>
         {/* #endregion */}
@@ -233,12 +271,15 @@ const Dashboard = () => {
             index={0}
             className="flex-1"
           >
-            {/* //TODO: fix chart responsiveness on mobile  */}
-            <HorizontalBarChart
-              data={hourlyActivity}
-              height={500}
-              width={600}
-            />
+            {hourlyActivity?.length ? (
+              <HorizontalBarChart
+                data={hourlyActivity}
+                height={500}
+                width={600}
+              />
+            ) : (
+              <ErrorComponent />
+            )}
           </ChartCard>
 
           <div className="flex-1 grid grid-cols-2 gap-6 h-fit">

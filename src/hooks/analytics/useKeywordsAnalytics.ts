@@ -1,60 +1,91 @@
 import { useMemo } from 'react';
-import { useKeywords, useMessageMatches } from '../fetchData';
+import { useQuery } from 'react-query';
+import { apiService } from '../apiService';
+import {
+  KeywordAnalyticsResponseDto,
+} from '@/types/dataTypes';
 
-export const useKeywordsAnalytics = (period: 'day' | 'week' | 'month' | 'year' = 'year') => {
-  const { data: keywords } = useKeywords();
-  const { data: messages } = useMessageMatches();
-
-  const getPeriodStart = useMemo(() => {
+export const useKeywordsAnalytics = (
+  guildId: string,
+  period: 'day' | 'week' | 'month' | 'year' = 'year',
+  page: number = 1,
+  pageSize: number = 50
+) => {
+  const getPeriodStart = (): string => {
     const now = new Date();
     switch (period) {
       case 'day':
-        return new Date(now.setHours(0, 0, 0, 0));
+        return new Date(now.setHours(0, 0, 0, 0)).toISOString();
       case 'week':
-        return new Date(now.setDate(now.getDate() - 7));
+        return new Date(now.setDate(now.getDate() - 7)).toISOString();
       case 'month':
-        return new Date(now.setMonth(now.getMonth() - 1));
+        return new Date(now.setMonth(now.getMonth() - 1)).toISOString();
       case 'year':
-        return new Date(now.setFullYear(now.getFullYear() - 1));
+      default:
+        return new Date(now.setFullYear(now.getFullYear() - 1)).toISOString();
     }
-  }, [period]);
+  };
 
+  const requestParams = {
+    guildId,
+    startDate: getPeriodStart(),
+    endDate: new Date().toISOString(),
+    page,
+    limit: pageSize,
+  };
 
-  const activeKeywords = useMemo(() => {
-    return keywords?.filter(keyword => keyword.active) || [];
-  }, [keywords]);
+  const {
+    data: keywordsAnalytics,
+    isLoading,
+    error,
+  } = useQuery<KeywordAnalyticsResponseDto, Error>(
+    ['keywordsAnalytics', guildId, period, page, pageSize],
+    () =>
+      apiService.getData(
+        `/keywords/analytics?guildId=${618826436299456533}&page=${requestParams.page}&limit=${requestParams.limit}`
+      ),
+    {
+      retry: 1,
+      refetchOnWindowFocus: false,
+      staleTime: 1000 * 60 * 30,
+      cacheTime: 1000 * 60 * 30,
+      onError: (error) => {
+        console.error('Error fetching keyword analytics:', error);
+      },
+    }
+  );
 
-  const matchesTimeline = useMemo(() => {
-    const timeline: Record<string, number> = {};
-    messages?.forEach(message => {
-      const date = message.matchedAt.toISOString().split('T')[0];
-      timeline[date] = (timeline[date] || 0) + 1;
-    });
-    return Object.entries(timeline).map(([date, count]) => ({ date, count }));
-  }, [messages]);
+  const defaultAnalytics = {
+    totalKeywords: 0,
+    activeKeywords: 0,
+    totalMatches: 0,
+    keywordsList: [],
+    matchesTimeline: [],
+    activeKeywordTags: [],
+    pagination: {
+      totalItems: 0,
+      itemsPerPage: pageSize,
+      currentPage: page,
+      totalPages: 0,
+    },
+  };
 
-  const totalActiveKeywords = useMemo(() => {
-    return keywords?.filter(keyword => keyword.active).length || 0;
-  }, [keywords]);
-
-  const totalMatches = useMemo(() => {
-    return messages?.length || 0;
-  }, [messages]);
-
-  const keywordStats = useMemo(() => {
-    if (!keywords) return { total: 0, active: 0 };
-    const periodKeywords = keywords.filter(k => new Date(k.createdAt) >= getPeriodStart);
-    return {
-      total: periodKeywords.length,
-      active: periodKeywords.filter(k => k.active).length
-    };
-  }, [keywords, getPeriodStart]);
+  const sanitizedAnalytics = keywordsAnalytics
+    ? {
+        totalKeywords: keywordsAnalytics.totalKeywords ?? defaultAnalytics.totalKeywords,
+        activeKeywords: keywordsAnalytics.activeKeywords ?? defaultAnalytics.activeKeywords,
+        totalMatches: keywordsAnalytics.totalMatches ?? defaultAnalytics.totalMatches,
+        keywordsList: keywordsAnalytics.keywordsList ?? defaultAnalytics.keywordsList,
+        matchesTimeline: keywordsAnalytics.matchesTimeline ?? defaultAnalytics.matchesTimeline,
+        activeKeywordTags: keywordsAnalytics.activeKeywordTags ?? defaultAnalytics.activeKeywordTags,
+        pagination: keywordsAnalytics.pagination ?? defaultAnalytics.pagination,
+      }
+    : defaultAnalytics;
 
   return {
-    activeKeywords,
-    matchesTimeline,
-    totalActiveKeywords,
-    totalMatches,
-    keywordStats
+    ...sanitizedAnalytics,
+    isLoading,
+    requestParams,
+    error,
   };
 };
