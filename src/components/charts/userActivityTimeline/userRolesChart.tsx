@@ -1,14 +1,15 @@
-import { Card, CardContent } from "@/components/ui/card";
+import { Card } from "@/components/ui/card";
 import CircleRoleChart from "../circleChartOfRoles";
 import { useEffect, useRef, useState } from "react";
 import ReactDOM from "react-dom";
 import { Expand, Minimize } from "lucide-react";
 import { ClickableTooltip } from "@/components/ui/tooltip";
+import { motion, AnimatePresence } from "framer-motion";
 
 const RolesChart = () => {
     const chartRef = useRef<HTMLDivElement | null>(null);
-    const [chartWidth, setChartWidth] = useState(800); 
-    const [chartHeight, setChartHeight] = useState(500); 
+    const [chartWidth, setChartWidth] = useState(400);
+    const [chartHeight, setChartHeight] = useState(300); 
     const [isModalOpen, setIsModalOpen] = useState(false);
 
     const mockData = [
@@ -20,8 +21,20 @@ const RolesChart = () => {
 
     const updateChartDimensions = () => {
         if (chartRef.current) {
-            setChartWidth(chartRef.current.offsetWidth * 0.5);
-            setChartHeight(chartRef.current.offsetHeight * 0.5);
+            const containerWidth = chartRef.current.offsetWidth;
+            const containerHeight = chartRef.current.offsetHeight;
+            
+            // Responsive sizing based on container and screen size
+            if (window.innerWidth < 640) { // Mobile
+                setChartWidth(Math.min(containerWidth * 0.9, 300));
+                setChartHeight(Math.min(containerWidth * 0.9, 300));
+            } else if (window.innerWidth < 1024) { // Tablet
+                setChartWidth(Math.min(containerWidth * 0.8, 400));
+                setChartHeight(Math.min(containerWidth * 0.8, 400));
+            } else { // Desktop
+                setChartWidth(Math.min(containerWidth * 0.7, 500));
+                setChartHeight(Math.min(containerWidth * 0.7, 500));
+            }
         }
     };
 
@@ -31,60 +44,210 @@ const RolesChart = () => {
         return () => window.removeEventListener("resize", updateChartDimensions);
     }, []);
 
-    const openModal = () => setIsModalOpen(true);
-    const closeModal = () => setIsModalOpen(false);
+    const containerVariants = {
+        hidden: { opacity: 0, y: 20 },
+        visible: { 
+            opacity: 1, 
+            y: 0,
+            transition: {
+                duration: 0.5,
+                when: "beforeChildren",
+                staggerChildren: 0.1
+            }
+        }
+    };
+
+    const itemVariants = {
+        hidden: { opacity: 0, y: 10 },
+        visible: { 
+            opacity: 1, 
+            y: 0,
+            transition: { duration: 0.3 }
+        }
+    };
 
     return (
         <>
-            <Card className="w-full max-w-4xl" ref={chartRef}>
-                <div className="text-gray-500 text-lg font-bold mb-4 cursor-pointer flex justify-between">
-                    <div className="title">
-                        <span className="mr-5">User Roles</span>
-                        <ClickableTooltip content={<p><strong>User Roles diagram: </strong> Roles chart shows the percentage of people with different roles online.</p>}>
-                            <span className="bg-gray-300 bg-opacity-25 text-gray-600 px-[7px] rounded-full cursor-help">?</span>
-                        </ClickableTooltip>
-                    </div>
-                    <button onClick={openModal} style={{ padding: "4px" }}>
-                        <Expand className="text-gray-500" />
-                    </button>
-                </div>
-                <CardContent>
-                    <CircleRoleChart width={chartWidth} height={chartHeight} data={mockData} />
-                    <div className="legend flex justify-center gap-8 mt-6 text-lg">
-                        {mockData.map((item) => (
-                            <div key={item.role} className="flex items-center gap-3">
-                                <div className="w-6 h-6 rounded-md" style={{ backgroundColor: item.color }} />
-                                <span className="text-lg font-medium">{item.role}</span>
-                            </div>
-                        ))}
-                    </div>
-                </CardContent>
+            <Card className="w-full h-full flex flex-col justify-between p-6 hover:scale-[101%] transition-all duration-150" ref={chartRef}>
+                <motion.div
+                    variants={containerVariants}
+                    initial="hidden"
+                    animate="visible"
+                    className="h-full"
+                >
+                    <motion.div 
+                        className="text-gray-500 text-lg font-bold mb-4 flex justify-between items-center"
+                        variants={itemVariants}
+                    >
+                        <motion.div 
+                            className="title flex items-center gap-3"
+                            variants={itemVariants}
+                        >
+                            <motion.span
+                                variants={itemVariants}
+                                whileHover={{ scale: 1.02 }}
+                            >
+                                User Roles
+                            </motion.span>
+                            <ClickableTooltip content={
+                                <motion.p
+                                    initial={{ opacity: 0, y: 5 }}
+                                    animate={{ opacity: 1, y: 0 }}
+                                    transition={{ duration: 0.2 }}
+                                >
+                                    <strong>User Roles diagram: </strong> 
+                                    Roles chart shows the percentage of people with different roles online.
+                                </motion.p>
+                            }>
+                                <motion.span 
+                                    className="bg-gray-300 bg-opacity-25 text-gray-600 px-[7px] rounded-full cursor-help"
+                                    whileHover={{ 
+                                        scale: 1.1,
+                                        backgroundColor: "rgba(209, 213, 219, 0.4)"
+                                    }}
+                                    whileTap={{ scale: 0.95 }}
+                                >
+                                    ?
+                                </motion.span>
+                            </ClickableTooltip>
+                        </motion.div>
+                        <motion.button
+                            whileHover={{ 
+                                scale: 1.1,
+                                backgroundColor: "rgba(243, 244, 246, 1)"
+                            }}
+                            whileTap={{ scale: 0.95 }}
+                            onClick={() => setIsModalOpen(true)}
+                            className="p-2 rounded-full transition-colors"
+                            variants={itemVariants}
+                        >
+                            <Expand className="w-5 h-5 text-gray-500" />
+                        </motion.button>
+                    </motion.div>
+
+                    <motion.div 
+                        className="flex flex-col items-center justify-center h-full relative"
+                        variants={itemVariants}
+                    >
+                        <div className="relative w-full flex items-center justify-center">
+                            <CircleRoleChart 
+                                width={chartWidth} 
+                                height={chartHeight} 
+                                data={mockData} 
+                            />
+                        </div>
+                        <motion.div 
+                            className="absolute bottom-0 lg:bottom-12 legend grid grid-cols-2 sm:grid-cols-4 gap-2 w-full"
+                            variants={itemVariants}
+                        >
+                            {mockData.map((item) => (
+                                <motion.div 
+                                    key={item.role} 
+                                    className="flex items-center gap-2 justify-center text-xs sm:text-sm"
+                                    whileHover={{ scale: 1.05 }}
+                                >
+                                    <div 
+                                        className="w-3 h-3 rounded-md" 
+                                        style={{ backgroundColor: item.color }} 
+                                    />
+                                    <span className="font-medium">{item.role}</span>
+                                </motion.div>
+                            ))}
+                        </motion.div>
+                    </motion.div>
+                </motion.div>
             </Card>
-            {isModalOpen && (
-                <Modal closeModal={closeModal} chartWidth={chartWidth * 2} chartHeight={chartHeight * 2} data={mockData} />
-            )}
+
+            <AnimatePresence>
+                {isModalOpen && (
+                    <Modal 
+                        closeModal={() => setIsModalOpen(false)} 
+                        data={mockData}
+                        width={chartWidth}
+                        height={chartHeight}
+                    />
+                )}
+            </AnimatePresence>
         </>
     );
 };
 
-const Modal: React.FC<{ closeModal: () => void; chartWidth: number; chartHeight: number; data: typeof mockData }> = ({ closeModal, chartWidth, chartHeight, data }) => {
+interface ModalProps {
+    closeModal: () => void;
+    data: any[];
+    width: number;
+    height: number;
+}
+
+const Modal: React.FC<ModalProps> = ({ closeModal, data, width, height }) => {
     const handleOutsideClick = (event: React.MouseEvent) => {
-        const target = event.target as HTMLElement;
-        if (target.closest(".modal-content") === null) {
+        if (event.target === event.currentTarget) {
             closeModal();
         }
     };
 
     return ReactDOM.createPortal(
-        <div className="fixed inset-0 bg-black/50 flex justify-center items-center z-50" onClick={handleOutsideClick}>
-            <div className="bg-white p-4 rounded relative modal-content">
-                <button className="absolute top-2 right-2" style={{ padding: "4px" }} onClick={closeModal}>
-                    <Minimize className="text-gray-500" />
-                </button>
-                <h2 className="text-gray-500 text-lg font-bold mb-4">User Roles</h2>
-                <CircleRoleChart width={chartWidth} height={chartHeight} data={data} />
-            </div>
-        </div>,
+        <AnimatePresence mode="wait">
+            <motion.div 
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                transition={{ duration: 0.3 }}
+                className="fixed inset-0 bg-black/50 backdrop-blur-sm flex justify-center items-center z-50 p-4" 
+                onClick={handleOutsideClick}
+            >
+                <motion.div 
+                    initial={{ scale: 0.95, opacity: 0, y: 20 }}
+                    animate={{ scale: 1, opacity: 1, y: 0 }}
+                    exit={{ scale: 0.95, opacity: 0, y: 20 }}
+                    transition={{
+                        type: "spring",
+                        stiffness: 300,
+                        damping: 25
+                    }}
+                    className="bg-white p-6 rounded-lg shadow-xl relative modal-content max-w-4xl w-full"
+                    onClick={e => e.stopPropagation()}
+                >
+                    <motion.div
+                        initial={{ opacity: 0, y: -10 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ delay: 0.2 }}
+                        className="flex justify-between items-center mb-6"
+                    >
+                        <motion.h2 
+                            className="text-gray-500 text-xl font-bold"
+                            whileHover={{ x: 5 }}
+                            transition={{ type: "spring", stiffness: 300 }}
+                        >
+                            User Roles Distribution
+                        </motion.h2>
+                        <motion.button
+                            whileHover={{ 
+                                scale: 1.1,
+                                backgroundColor: "rgba(243, 244, 246, 1)"
+                            }}
+                            whileTap={{ scale: 0.95 }}
+                            onClick={closeModal}
+                            className="p-2 rounded-full"
+                        >
+                            <Minimize className="text-gray-500 w-5 h-5" />
+                        </motion.button>
+                    </motion.div>
+                    <motion.div
+                        initial={{ opacity: 0, y: 20 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ delay: 0.3 }}
+                        className="flex flex-col items-center"
+                    >
+                        <CircleRoleChart 
+                            data={data} 
+                            width={width} 
+                            height={height}
+                        />
+                    </motion.div>
+                </motion.div>
+            </motion.div>
+        </AnimatePresence>,
         document.body
     );
 };
