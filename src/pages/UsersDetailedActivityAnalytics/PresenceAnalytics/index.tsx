@@ -1,16 +1,16 @@
-import CircleRoleChart from "@/components/charts/circleChartOfRoles";
-import HorizontalTopHoursChart from "@/components/charts/hourActivity/HorisontalTopHoursChart";
-import HorizontalBarChart from "@/components/charts/hourActivity/horizontalBarChart";
-import PresenceWeekActivityChart from "@/components/charts/userActivityTimeline/presenceActivityChart/userPresenceWeekActivityChart";
-import { Card } from "@/components/ui/card";
-import { ClickableTooltip } from "@/components/ui/tooltip";
-import { usePresenceAnalyticsResponse } from "@/hooks/fetchData";
 import { useRef } from "react";
+import { motion } from "framer-motion";
+import { usePresenceAnalyticsResponse } from "@/hooks/fetchData";
+import PresenceWeekActivityChart from "@/components/charts/userActivityTimeline/presenceActivityChart/userPresenceWeekActivityChart";
+import StatCard from "./components/StatCard";
+import ActiveStatusChart from "./components/ActiveStatusChart";
+import ActivityCharts from "./components/ActivityChart";
 
 const PresenceAnalytics = () => {
+  // #region Hooks and State
   const presenceAnalyticsResponse = usePresenceAnalyticsResponse();
   const { 
-    activeUsers,
+    activeUsers = 0,
     avgSessionTime = 0,
     totalPresenceTime = 0,
     peakUsers = 0,
@@ -19,111 +19,74 @@ const PresenceAnalytics = () => {
   } = presenceAnalyticsResponse || {};
 
   const wrapperRef = useRef<HTMLDivElement | null>(null);
-  // const [graphWidth, setGraphWidth] = useState(0);
+  // #endregion
 
-  // const updateGraphWidth = () => {
-  //   if (wrapperRef.current) {
-  //     setGraphWidth(wrapperRef.current.offsetWidth / 2.3);
-  //   }
-  // };
+  // #region Animation Variants
+  const containerVariants = {
+    hidden: { opacity: 0 },
+    visible: {
+      opacity: 1,
+      transition: {
+        when: "beforeChildren",
+        staggerChildren: 0.1
+      }
+    }
+  };
 
-  // useEffect(() => {
-  //   window.addEventListener("resize", updateGraphWidth);
-  //   return () => window.removeEventListener("resize", updateGraphWidth);
-  // }, []);
+  const itemVariants = {
+    hidden: { opacity: 0, y: 20 },
+    visible: {
+      opacity: 1,
+      y: 0,
+      transition: {
+        type: "spring",
+        stiffness: 300,
+        damping: 30
+      }
+    }
+  };
+  // #endregion
 
-  // useEffect(() => {
-  //   if (wrapperRef.current) {
-  //     updateGraphWidth();
-  //   }
-  // }, [wrapperRef.current]);
+  // #region Stats Data
+  const statsData = [
+    { title: "Active Users", value: activeUsers, subtitle: "Currently active users" },
+    { title: "Avg. Session Time", value: avgSessionTime, subtitle: "Average session duration" },
+    { title: "Peak Users", value: peakUsers, subtitle: "Highest concurrent users" },
+    { title: "Total Presence Time", value: totalPresenceTime, subtitle: "Total hours present" }
+  ];
+  // #endregion
 
   return (
-    <div ref={wrapperRef} className="w-full bg-gray-50">
+    <motion.div 
+      ref={wrapperRef} 
+      className="w-full bg-gray-50 p-4 md:p-6"
+      variants={containerVariants}
+      initial="hidden"
+      animate="visible"
+    >
       <div className="mx-auto" style={{ maxWidth: `${import.meta.env.VITE_MAX_WIDTH || 1200}px` }}>
-        
-        <div className="flex gap-6 mb-6">
-          <Card className="flex-1 p-6 h-30">
-            <div className="h-full flex flex-col items-left justify-center">
-              <span className="text-gray-500 text-sm font-medium">Active Users</span>
-              <span className="text-2xl font-bold">{activeUsers.toLocaleString()}</span>
-              <span className="text-sm text-gray-500">Currently active users</span>
-            </div>
-          </Card>
-          <Card className="flex-1 p-6 h-30">
-            <div className="h-full flex flex-col items-left justify-center">
-              <span className="text-gray-500 text-sm font-medium">Avg. Session Time</span>
-              <span className="text-2xl font-bold">{avgSessionTime}</span>
-              <span className="text-sm text-gray-500">Average session duration</span>
-            </div>
-          </Card>
-          <Card className="flex-1 p-6 h-30">
-            <div className="h-full flex flex-col items-left justify-center">
-              <span className="text-gray-500 text-sm font-medium">Peak Users</span>
-              <span className="text-2xl font-bold">{peakUsers.toLocaleString()}</span>
-              <span className="text-sm text-gray-500">Highest concurrent users</span>
-            </div>
-          </Card>
-          <Card className="flex-1 p-6 h-30">
-            <div className="h-full flex flex-col items-left justify-center">
-              <span className="text-gray-500 text-sm font-medium">Total Presence Time</span>
-              <span className="text-2xl font-bold">{totalPresenceTime.toLocaleString()}h</span>
-              <span className="text-sm text-gray-500">Total hours present</span>
-            </div>
-          </Card>
+        {/* #region Stats Cards */}
+        <motion.div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6 mb-6">
+          {statsData.map((stat, index) => (
+            <StatCard key={index} {...stat} index={index} />
+          ))}
+        </motion.div>
+        {/* #endregion */}
+
+        {/* #region Charts Grid */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
+          <motion.div variants={itemVariants}>
+            <PresenceWeekActivityChart />
+          </motion.div>
+          
+          {/* //TODO: Replace any with proper type */}
+          <ActiveStatusChart data={activeRolesNow as any[]} />
+          
+          <ActivityCharts hourlyActivity={hourlyActivity} />
         </div>
-        <div className="grid grid-cols-2 gap-6 mb-6">
-          <PresenceWeekActivityChart  />
-          <Card className="flex-1 p-6">
-            <div className="flex flex-col">
-              <div className="title">
-                <span className="text-gray-500 text-lg font-bold mb-4 mr-5">Active Status</span>
-                <ClickableTooltip content={<p><strong>Active States: </strong> A chart showing the ratio of users who are online, AFK (away from keyboard), in "Do Not Disturb" mode, and offline leaders over the last seven days.</p>}>
-                  <span className="bg-gray-300 bg-opacity-25 text-gray-600 px-[7px] rounded-full cursor-help">?</span>
-                </ClickableTooltip>
-              </div>
-              <CircleRoleChart data={activeRolesNow} />
-              <div className="legend flex justify-center gap-8 mt-6 text-lg">
-                <div className="flex items-center gap-3">
-                  <div className="w-6 h-6 rounded-md" style={{ backgroundColor: "#33FF57" }} />
-                  <span className="text-lg font-medium">Online</span>
-                </div>
-                <div className="flex items-center gap-3">
-                  <div className="w-6 h-6 rounded-md" style={{ backgroundColor: "#FF5733" }} />
-                  <span className="text-lg font-medium">Offline</span>
-                </div>
-                <div className="flex items-center gap-3">
-                  <div className="w-6 h-6 rounded-md" style={{ backgroundColor: "#FF33A8" }} />
-                  <span className="text-lg font-medium">Idle</span>
-                </div>
-                <div className="flex items-center gap-3">
-                  <div className="w-6 h-6 rounded-md" style={{ backgroundColor: "#3357FF" }} />
-                  <span className="text-lg font-medium">DND</span>
-                </div>
-              </div>
-            </div>
-          </Card>
-          <Card className="flex-1 h-min p-6">
-            <div className="flex h-min flex-col">
-              <span className="text-gray-500 text-lg font-bold mb-4">Peak Activity Hours</span>
-              <span className="text-gray-500 text-sm mb-2">User activity distribution throughout the day</span>
-              <HorizontalTopHoursChart data={hourlyActivity} height={400} width={500} />
-            </div>
-          </Card>
-          <Card className="flex-1 p-6">
-            <div className="h-full flex flex-col">
-              <div className="title">
-                <span className="text-gray-500 text-lg font-bold mb-4 mr-5">Hourly Activity</span>
-                <ClickableTooltip content={<p><strong>Hourly Activity:</strong> Displays the number of users at different hours of the day.</p>}>
-                  <span className="bg-gray-300 bg-opacity-25 text-gray-600 px-[7px] rounded-full cursor-help">?</span>
-                </ClickableTooltip>
-              </div>
-              <HorizontalBarChart data={hourlyActivity} height={500} width={500} />
-            </div>
-          </Card>
-        </div>
+        {/* #endregion */}
       </div>
-    </div>
+    </motion.div>
   );
 };
 

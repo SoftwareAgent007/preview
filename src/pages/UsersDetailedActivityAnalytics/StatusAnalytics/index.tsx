@@ -1,15 +1,9 @@
 import { motion } from "framer-motion";
 import StatusActivityChart from "@/components/charts/status/userStatusActivityChart";
 import { useStatusData, useMockActivityData, useStatusPageAnalyticsResponse } from '@/hooks/fetchData';
-import StatusHeatmap from "@/components/charts/status/statusHeatmap";
-
-import StatusDataTableComponent from "@/components/common/StatusDataTable";
-import { ClickableTooltip } from "@/components/ui/tooltip";
-import SearchableSelect from "@/components/ui/searchebleSelect";
 import { useState } from "react";
 import StatusStatCard from "./components/StatusStatCard";
-import { Card } from "@/components/ui/card";
-import TopGamingStatuses from "./components/topGamingStatuses";
+import TopGamingStatuses from "./components/TopGamingStatuses";
 import DataTableSection from "./components/DataTableSection";
 import HeatmapSection from "./components/HeatmapSection";
 
