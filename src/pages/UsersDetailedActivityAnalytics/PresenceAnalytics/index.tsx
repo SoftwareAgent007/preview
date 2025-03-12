@@ -4,7 +4,6 @@ import { usePresenceAnalyticsResponse } from "@/hooks/fetchData";
 import PresenceWeekActivityChart from "@/components/charts/userActivityTimeline/presenceActivityChart/userPresenceWeekActivityChart";
 import StatCard from "./components/StatCard";
 import ActiveStatusChart from "./components/ActiveStatusChart";
-import ActivityCharts from "./components/ActivityChart";
 import PeakActivityHours from "./components/PeakActivityHours";
 import HourlyActivity from "./components/HourlyActivity";
 const PresenceAnalytics = () => {

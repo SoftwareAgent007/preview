@@ -4,6 +4,31 @@ import UsersDetailedNavigation from "./UsersDetailedNavigation";
 import { Outlet, useLocation } from "react-router-dom";
 import { Download } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { motion } from "framer-motion";
+
+const containerVariants = {
+  hidden: { opacity: 0 },
+  visible: {
+    opacity: 1,
+    transition: {
+      when: "beforeChildren",
+      staggerChildren: 0.1
+    }
+  }
+};
+
+const itemVariants = {
+  hidden: { opacity: 0, y: 20 },
+  visible: {
+    opacity: 1,
+    y: 0,
+    transition: {
+      type: "spring",
+      stiffness: 300,
+      damping: 30
+    }
+  }
+};
 
 const UsersDetailedActivityAnalytics = () => {
   const location = useLocation();
@@ -20,22 +45,48 @@ const UsersDetailedActivityAnalytics = () => {
   };
 
   return (
-    <div className="w-full min-h-screen bg-gray-50 p-6">
+    <motion.div 
+      className="w-full min-h-screen bg-gray-50 p-4 md:p-6"
+      variants={containerVariants}
+      initial="hidden"
+      animate="visible"
+    >
       <div className="mx-auto" style={{ maxWidth: `${import.meta.env.VITE_MAX_WIDTH || 1200}px` }}>
-        <div className="flex justify-between items-center mb-6">
+        <motion.div 
+          className="flex flex-col md:flex-row justify-between items-start md:items-center mb-4 md:mb-6 gap-4"
+          variants={itemVariants}
+        >
           <BreadcrumbsNavigation items={BREADCRUMB_PATHS[getBreadcrumbPath()]} />
-          <Button variant="outline" className="flex items-center">
-            <Download className="h-4 w-4" />
-            Export Full Report
-          </Button>
-        </div>
+          <motion.div
+            whileHover={{ scale: 1.02 }}
+            whileTap={{ scale: 0.98 }}
+          >
+            <Button 
+              variant="outline" 
+              className="flex items-center gap-2 shadow-sm hover:shadow-md transition-all"
+            >
+              <Download className="h-4 w-4" />
+              <span className="hidden sm:inline">Export Full Report</span>
+              <span className="sm:hidden">Export</span>
+            </Button>
+          </motion.div>
+        </motion.div>
 
-        <div className="flex items-center justify-between mb-6 px-6">
+        <motion.div 
+          className="flex items-center justify-between mb-4 md:mb-6 px-2 md:px-6"
+          variants={itemVariants}
+        >
           <UsersDetailedNavigation />
-        </div>
-        <Outlet />
+        </motion.div>
+
+        <motion.div
+          variants={itemVariants}
+          className="bg-white rounded-lg shadow-sm"
+        >
+          <Outlet />
+        </motion.div>
       </div>
-    </div>
+    </motion.div>
   );
 };
 
