@@ -5,6 +5,50 @@ import { Expand, Minimize } from "lucide-react";
 import ReactDOM from "react-dom";
 import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from "@/components/ui/select";
 import { ClickableTooltip } from "@/components/ui/tooltip";
+import { motion, AnimatePresence } from "framer-motion";
+
+
+// #region Animation Variants
+const containerVariants = {
+  hidden: { opacity: 0 },
+  visible: {
+    opacity: 1,
+    transition: {
+      duration: 0.5,
+      when: "beforeChildren",
+      staggerChildren: 0.1
+    }
+  }
+};
+
+const itemVariants = {
+  hidden: { opacity: 0, y: 20 },
+  visible: {
+    opacity: 1,
+    y: 0,
+    transition: {
+      type: "spring",
+      stiffness: 300,
+      damping: 30
+    }
+  }
+};
+
+const chartVariants = {
+  hidden: { opacity: 0, scale: 0.95 },
+  visible: {
+    opacity: 1,
+    scale: 1,
+    transition: {
+      type: "spring",
+      stiffness: 200,
+      damping: 20,
+      delay: 0.2
+    }
+  }
+};
+// #endregion
+
 
 const StatusActivityChart = ({ data }) => {
   const svgRef = useRef();
@@ -103,18 +147,44 @@ const StatusActivityChart = ({ data }) => {
 
   return (
     <div ref={chartRef} className="w-full h-[600px] flex flex-col items-left">
-      <Select value={selectedStatus} onValueChange={(value) => setSelectedStatus(value)}>
-        <SelectTrigger className="w-40">
-          <SelectValue placeholder="Select Status" />
-        </SelectTrigger>
-        <SelectContent>
-          <SelectItem value="all">All</SelectItem>
-          {Object.keys(data[0].statusCounts).map((key) => (
-            <SelectItem key={key} value={key}>{key}</SelectItem>
-          ))}
-        </SelectContent>
-      </Select>
-      <svg className="mx-auto" ref={svgRef}></svg>
+      <motion.div
+        variants={containerVariants}
+        initial="hidden"
+        animate="visible"
+        className="flex flex-col gap-4"
+      >
+        <motion.div 
+          variants={itemVariants}
+          className="flex items-center gap-4"
+        >
+          <Select 
+            value={selectedStatus} 
+            onValueChange={(value) => setSelectedStatus(value)}
+          >
+            <motion.div
+              whileHover={{ scale: 1.02 }}
+              whileTap={{ scale: 0.98 }}
+            >
+              <SelectTrigger className="w-40">
+                <SelectValue placeholder="Select Status" />
+              </SelectTrigger>
+            </motion.div>
+            <SelectContent>
+              <SelectItem value="all">All</SelectItem>
+              {Object.keys(data[0].statusCounts).map((key) => (
+                <SelectItem key={key} value={key}>{key}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </motion.div>
+
+        <motion.div
+          variants={chartVariants}
+          className="relative w-full h-full"
+        >
+          <svg className="mx-auto" ref={svgRef}></svg>
+        </motion.div>
+      </motion.div>
     </div>
   );
 };
@@ -137,46 +207,135 @@ const ExpandablePresenceChart = () => {
   }));
 
   return (
-    <Card className="flex-1 p-6">
-      <div className="text-gray-500 text-lg font-bold mb-4 cursor-pointer flex justify-between">
-        <div className="title">
-          <span className="text-gray-500 text-lg font-bold mb-4 mr-5">Status Duration Timeline</span>
-          <ClickableTooltip content={<p><strong>User Status Duration Timeline Timeline:</strong> Shows the popularity levels of different user statuses over time (week, month, or year).</p>}>
-            <span className="bg-gray-300 bg-opacity-25 text-gray-600 px-[7px] rounded-full cursor-help">?</span>
-          </ClickableTooltip>
-        </div>
-        <button onClick={openModal} style={{ padding: "4px" }}>
-          <Expand className="text-gray-500" />
-        </button>
-      </div>
-      <StatusActivityChart data={data} />
-      {isModalOpen && <Modal closeModal={closeModal} data={data} />}
+    <Card className="flex-1 p-6 hover:scale-[101%] transition-all duration-150">
+      <motion.div
+        initial="hidden"
+        animate="visible"
+        variants={containerVariants}
+      >
+        <motion.div 
+          className="flex justify-between items-center mb-4"
+          variants={itemVariants}
+        >
+          <div className="title flex items-center gap-3">
+            <motion.span 
+              className="text-gray-500 text-lg font-bold"
+              whileHover={{ x: 5 }}
+              transition={{ type: "spring", stiffness: 300 }}
+            >
+              Status Duration Timeline
+            </motion.span>
+            <ClickableTooltip content={
+              <motion.p
+                initial={{ opacity: 0, y: 5 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.2 }}
+              >
+                <strong>User Status Duration Timeline:</strong> Shows the popularity levels of different user statuses over time.
+              </motion.p>
+            }>
+              <motion.span 
+                className="bg-gray-300 bg-opacity-25 text-gray-600 px-[7px] rounded-full cursor-help"
+                whileHover={{ 
+                  scale: 1.1,
+                  backgroundColor: "rgba(209, 213, 219, 0.4)"
+                }}
+                whileTap={{ scale: 0.95 }}
+              >
+                ?
+              </motion.span>
+            </ClickableTooltip>
+          </div>
+          <motion.button
+            onClick={() => setIsModalOpen(true)}
+            className="p-2 rounded-full"
+            whileHover={{ 
+              scale: 1.1,
+              backgroundColor: "rgba(243, 244, 246, 1)"
+            }}
+            whileTap={{ scale: 0.95 }}
+          >
+            <Expand className="text-gray-500" />
+          </motion.button>
+        </motion.div>
+        <StatusActivityChart data={data} />
+      </motion.div>
+
+      <AnimatePresence>
+        {isModalOpen && (
+          <Modal 
+            closeModal={() => setIsModalOpen(false)} 
+            data={data}
+          />
+        )}
+      </AnimatePresence>
     </Card>
   );
 };
 
 const Modal = ({ closeModal, data }) => {
   const handleOutsideClick = (event) => {
-    const target = event.target;
-    if (target.closest('.modal-content') === null) {
+    if (event.target === event.currentTarget) {
       closeModal();
     }
   };
 
   return ReactDOM.createPortal(
-    <div className="fixed inset-0 bg-black/50 bg-opacity-50 flex justify-center items-center z-50 scale-175" onClick={handleOutsideClick}>
-      <Card className="w-[75vw] bg-white p-4 rounded relative modal-content">
-        <div className="flex items-center justify-between border-b pb-4">
-          <h2 className="text-gray-500 text-lg font-bold mb-4">Status Duration Timeline</h2>
-          <button className="text-gray-500 hover:text-gray-700" onClick={closeModal}>
-            <Minimize className="text-gray-500" />
-          </button>
-        </div>
-        <CardContent className="pb-0 pt-2">
+    <motion.div
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      exit={{ opacity: 0 }}
+      transition={{ duration: 0.2 }}
+      className="fixed inset-0 bg-black/50 backdrop-blur-sm flex justify-center items-center z-50 p-4"
+      onClick={handleOutsideClick}
+    >
+      <motion.div
+        initial={{ scale: 0.95, opacity: 0, y: 20 }}
+        animate={{ scale: 1, opacity: 1, y: 0 }}
+        exit={{ scale: 0.95, opacity: 0, y: 20 }}
+        transition={{
+          type: "spring",
+          stiffness: 300,
+          damping: 25
+        }}
+        className="bg-white p-6 rounded-lg shadow-xl relative modal-content max-w-4xl w-full"
+        onClick={e => e.stopPropagation()}
+      >
+        <motion.div
+          initial={{ opacity: 0, y: -10 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.2 }}
+          className="flex justify-between items-center mb-6"
+        >
+          <motion.h2 
+            className="text-gray-500 text-xl font-bold"
+            whileHover={{ x: 5 }}
+            transition={{ type: "spring", stiffness: 300 }}
+          >
+            Status Duration Timeline
+          </motion.h2>
+          <motion.button
+            whileHover={{ 
+              scale: 1.1,
+              backgroundColor: "rgba(243, 244, 246, 1)"
+            }}
+            whileTap={{ scale: 0.95 }}
+            onClick={closeModal}
+            className="p-2 rounded-full"
+          >
+            <Minimize className="text-gray-500 w-5 h-5" />
+          </motion.button>
+        </motion.div>
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.3 }}
+          className="flex flex-col items-center"
+        >
           <StatusActivityChart data={data} />
-        </CardContent>
-      </Card>
-    </div>,
+        </motion.div>
+      </motion.div>
+    </motion.div>,
     document.body
   );
 };
