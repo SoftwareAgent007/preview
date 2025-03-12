@@ -30,7 +30,7 @@ const UsersDetailedActivityAnalytics = () => {
           </Button>
         </div>
 
-        <div className="flex items-center justify-between items-center mb-6 px-6">
+        <div className="flex items-center justify-between mb-6 px-6">
           <UsersDetailedNavigation />
         </div>
         <Outlet />

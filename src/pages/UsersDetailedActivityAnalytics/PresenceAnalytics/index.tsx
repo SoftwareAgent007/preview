@@ -5,11 +5,12 @@ import PresenceWeekActivityChart from "@/components/charts/userActivityTimeline/
 import StatCard from "./components/StatCard";
 import ActiveStatusChart from "./components/ActiveStatusChart";
 import ActivityCharts from "./components/ActivityChart";
-
+import PeakActivityHours from "./components/PeakActivityHours";
+import HourlyActivity from "./components/HourlyActivity";
 const PresenceAnalytics = () => {
   // #region Hooks and State
   const presenceAnalyticsResponse = usePresenceAnalyticsResponse();
-  const { 
+  const {
     activeUsers = 0,
     avgSessionTime = 0,
     totalPresenceTime = 0,
@@ -28,9 +29,9 @@ const PresenceAnalytics = () => {
       opacity: 1,
       transition: {
         when: "beforeChildren",
-        staggerChildren: 0.1
-      }
-    }
+        staggerChildren: 0.1,
+      },
+    },
   };
 
   const itemVariants = {
@@ -41,30 +42,49 @@ const PresenceAnalytics = () => {
       transition: {
         type: "spring",
         stiffness: 300,
-        damping: 30
-      }
-    }
+        damping: 30,
+      },
+    },
   };
   // #endregion
 
   // #region Stats Data
   const statsData = [
-    { title: "Active Users", value: activeUsers, subtitle: "Currently active users" },
-    { title: "Avg. Session Time", value: avgSessionTime, subtitle: "Average session duration" },
-    { title: "Peak Users", value: peakUsers, subtitle: "Highest concurrent users" },
-    { title: "Total Presence Time", value: totalPresenceTime, subtitle: "Total hours present" }
+    {
+      title: "Active Users",
+      value: activeUsers,
+      subtitle: "Currently active users",
+    },
+    {
+      title: "Avg. Session Time",
+      value: avgSessionTime,
+      subtitle: "Average session duration",
+    },
+    {
+      title: "Peak Users",
+      value: peakUsers,
+      subtitle: "Highest concurrent users",
+    },
+    {
+      title: "Total Presence Time",
+      value: totalPresenceTime,
+      subtitle: "Total hours present",
+    },
   ];
   // #endregion
 
   return (
-    <motion.div 
-      ref={wrapperRef} 
+    <motion.div
+      ref={wrapperRef}
       className="w-full bg-gray-50 p-4 md:p-6"
       variants={containerVariants}
       initial="hidden"
       animate="visible"
     >
-      <div className="mx-auto" style={{ maxWidth: `${import.meta.env.VITE_MAX_WIDTH || 1200}px` }}>
+      <div
+        className="mx-auto"
+        style={{ maxWidth: `${import.meta.env.VITE_MAX_WIDTH || 1200}px` }}
+      >
         {/* #region Stats Cards */}
         <motion.div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6 mb-6">
           {statsData.map((stat, index) => (
@@ -78,11 +98,19 @@ const PresenceAnalytics = () => {
           <motion.div variants={itemVariants}>
             <PresenceWeekActivityChart />
           </motion.div>
-          
+
           {/* //TODO: Replace any with proper type */}
-          <ActiveStatusChart data={activeRolesNow as any[]} />
-          
-          <ActivityCharts hourlyActivity={hourlyActivity} />
+          <motion.div variants={itemVariants} className="flex w-full h-full">
+            <ActiveStatusChart data={activeRolesNow as any[]} />
+          </motion.div>
+
+          <motion.div variants={itemVariants} className="flex">
+            <PeakActivityHours hourlyActivity={hourlyActivity} />
+          </motion.div>
+
+          <motion.div variants={itemVariants} className="flex">
+            <HourlyActivity hourlyActivity={hourlyActivity} />
+          </motion.div>
         </div>
         {/* #endregion */}
       </div>

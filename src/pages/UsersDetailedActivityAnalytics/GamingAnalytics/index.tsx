@@ -1,13 +1,11 @@
 import { useEffect, useRef, useState } from "react";
 import { motion } from "framer-motion";
 import { Card } from "@/components/ui/card";
-import CircleRoleChart from "@/components/charts/circleChartOfRoles";
 import { useGamingAnalyticsResponse } from "@/hooks/fetchData";
 import UserActivityTimeline from "@/components/charts/userActivityTimeline/userActivityTimelineChart";
 
 import StatCard from "./components/StatCard";
-import { ClickableTooltip } from "@/components/ui/tooltip";
-import TopGamesList from "./components/topGamesList";
+import TopGamesList from "./components/TopGamesList";
 import ActiveRolesChart from "./components/ActiveRolesChart";
 
 const GamingAnalytics = () => {

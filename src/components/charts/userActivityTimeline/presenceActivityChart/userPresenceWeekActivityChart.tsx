@@ -145,7 +145,7 @@ const PresenceWeekActivityChart = ({ data }) => {
   return (
     <motion.div 
       ref={chartRef} 
-      className="w-full h-[384px] sm:h-[480px] md:h-[512px] lg:h-[650px] flex flex-col items-left"
+      className="w-full h-[384px] sm:h-[480px] flex flex-col items-left"
       variants={containerVariants}
       initial="hidden"
       animate="visible"
@@ -243,13 +243,6 @@ const ExpandablePresenceChart = () => {
 
 
 const Modal = ({ closeModal, data }) => {
-  const handleOutsideClick = (event) => {
-    const target = event.target;
-    if (target.closest('.modal-content') === null) {
-      closeModal();
-    }
-  };
-
   return ReactDOM.createPortal(
     <motion.div
       initial={{ opacity: 0 }}
