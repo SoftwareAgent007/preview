@@ -1,7 +1,7 @@
 import { useMemo } from 'react';
 import { useQuery } from 'react-query';
 import { apiService } from '../apiService';
-import { MusicDashboardResponse, TimeRange } from '@/types/dataTypes';
+import { MusicDashboardResponse, TimeRange } from '@/types/music.interface';
 
 export const useMusicData = (
   guildId: string,
@@ -29,6 +29,7 @@ export const useMusicData = (
     return { startDate, endDate };
   }, [period]);
 
+  console.log('MusicDashboardResponse')
   const { data: musicData, isLoading, error } = useQuery<MusicDashboardResponse>(
     ['music-dashboard', guildId, period],
     () =>

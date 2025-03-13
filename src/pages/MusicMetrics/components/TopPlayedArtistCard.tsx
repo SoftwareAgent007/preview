@@ -2,14 +2,10 @@ import { motion } from "framer-motion";
 import { Users } from "lucide-react";
 import ListElement from "@/components/ui/list-element";
 import BaseCard from "./BaseCard";
-
-interface Artist {
-  name: string;
-  plays: number;
-}
+import { TopArtist } from "@/types/music.interface";
 
 interface TopPlayedArtistsCardProps {
-  artists: Artist[];
+  artists: TopArtist[];
 }
 
 const TopPlayedArtistsCard = ({ artists }: TopPlayedArtistsCardProps) => {
