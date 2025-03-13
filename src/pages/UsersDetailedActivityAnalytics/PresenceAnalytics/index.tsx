@@ -4,39 +4,19 @@ import HorizontalBarChart from "@/components/charts/hourActivity/HorizontalBarCh
 import PresenceWeekActivityChart from "@/components/charts/userActivityTimeline/presenceActivityChart/userPresenceWeekActivityChart";
 import { Card } from "@/components/ui/card";
 import { ClickableTooltip } from "@/components/ui/tooltip";
-import { usePresenceAnalyticsResponse } from "@/hooks/mockedApiService";
+import { usePresenceActivity } from "@/hooks/analytics/usePresenceAnalytics";
 import { useRef } from "react";
 
 const PresenceAnalytics = () => {
-  const presenceAnalyticsResponse = usePresenceAnalyticsResponse();
+  const { overview, statusBreakdown, hourlyActivity, peakHours } = usePresenceActivity("guildId", "week");
   const { 
     activeUsers,
-    avgSessionTime = 0,
-    totalPresenceTime = 0,
-    peakUsers = 0,
-    activeRolesNow = [],
-    hourlyActivity = [],
-  } = presenceAnalyticsResponse || {};
+    avgSessionTime,
+    totalPresenceTime,
+    peakUsers,
+  } = overview || {};
 
   const wrapperRef = useRef<HTMLDivElement | null>(null);
-  // const [graphWidth, setGraphWidth] = useState(0);
-
-  // const updateGraphWidth = () => {
-  //   if (wrapperRef.current) {
-  //     setGraphWidth(wrapperRef.current.offsetWidth / 2.3);
-  //   }
-  // };
-
-  // useEffect(() => {
-  //   window.addEventListener("resize", updateGraphWidth);
-  //   return () => window.removeEventListener("resize", updateGraphWidth);
-  // }, []);
-
-  // useEffect(() => {
-  //   if (wrapperRef.current) {
-  //     updateGraphWidth();
-  //   }
-  // }, [wrapperRef.current]);
 
   return (
     <div ref={wrapperRef} className="w-full bg-gray-50">
@@ -46,29 +26,29 @@ const PresenceAnalytics = () => {
           <Card className="flex-1 p-6 h-30">
             <div className="h-full flex flex-col items-left justify-center">
               <span className="text-gray-500 text-sm font-medium">Active Users</span>
-              <span className="text-2xl font-bold">{activeUsers.toLocaleString()}</span>
-              <span className="text-sm text-gray-500">Currently active users</span>
+              <span className="text-2xl font-bold">{activeUsers?.count.toLocaleString()}</span>
+              <span className="text-sm text-gray-500">{activeUsers?.label}</span>
             </div>
           </Card>
           <Card className="flex-1 p-6 h-30">
             <div className="h-full flex flex-col items-left justify-center">
               <span className="text-gray-500 text-sm font-medium">Avg. Session Time</span>
-              <span className="text-2xl font-bold">{avgSessionTime}</span>
-              <span className="text-sm text-gray-500">Average session duration</span>
+              <span className="text-2xl font-bold">{avgSessionTime?.hours}h {avgSessionTime?.minutes}m</span>
+              <span className="text-sm text-gray-500">{avgSessionTime?.label}</span>
             </div>
           </Card>
           <Card className="flex-1 p-6 h-30">
             <div className="h-full flex flex-col items-left justify-center">
               <span className="text-gray-500 text-sm font-medium">Peak Users</span>
-              <span className="text-2xl font-bold">{peakUsers.toLocaleString()}</span>
-              <span className="text-sm text-gray-500">Highest concurrent users</span>
+              <span className="text-2xl font-bold">{peakUsers?.count.toLocaleString()}</span>
+              <span className="text-sm text-gray-500">{peakUsers?.label}</span>
             </div>
           </Card>
           <Card className="flex-1 p-6 h-30">
             <div className="h-full flex flex-col items-left justify-center">
               <span className="text-gray-500 text-sm font-medium">Total Presence Time</span>
-              <span className="text-2xl font-bold">{totalPresenceTime.toLocaleString()}h</span>
-              <span className="text-sm text-gray-500">Total hours present</span>
+              <span className="text-2xl font-bold">{totalPresenceTime?.hours}h</span>
+              <span className="text-sm text-gray-500">{totalPresenceTime?.label}</span>
             </div>
           </Card>
         </div>
@@ -82,7 +62,7 @@ const PresenceAnalytics = () => {
                   <span className="bg-gray-300 bg-opacity-25 text-gray-600 px-[7px] rounded-full cursor-help">?</span>
                 </ClickableTooltip>
               </div>
-              <CircleRoleChart data={activeRolesNow} />
+              <CircleRoleChart data={statusBreakdown} />
               <div className="legend flex justify-center gap-8 mt-6 text-lg">
                 <div className="flex items-center gap-3">
                   <div className="w-6 h-6 rounded-md" style={{ backgroundColor: "#33FF57" }} />
@@ -107,7 +87,7 @@ const PresenceAnalytics = () => {
             <div className="flex h-min flex-col">
               <span className="text-gray-500 text-lg font-bold mb-4">Peak Activity Hours</span>
               <span className="text-gray-500 text-sm mb-2">User activity distribution throughout the day</span>
-              <HorizontalTopHoursChart data={hourlyActivity} height={400} width={500} />
+              <HorizontalTopHoursChart data={peakHours} height={400} width={500} />
             </div>
           </Card>
           <Card className="flex-1 p-6">
@@ -118,7 +98,7 @@ const PresenceAnalytics = () => {
                   <span className="bg-gray-300 bg-opacity-25 text-gray-600 px-[7px] rounded-full cursor-help">?</span>
                 </ClickableTooltip>
               </div>
-              <HorizontalBarChart data={hourlyActivity} height={500} width={500} />
+              <HorizontalBarChart data={hourlyActivity.hourlyDistribution} height={500} width={500} />
             </div>
           </Card>
         </div>

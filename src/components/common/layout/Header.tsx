@@ -40,8 +40,14 @@ const Header = () => {
           
           {/* Left Section */}
           <div className="flex items-center space-x-6">
-            {/* <h2 className="text-2xl font-bold">{currentTitle}</h2> */}
-            
+            <h2
+              className={`font-bold transition-all ${
+                currentTitle.length > 29 ? "text-xl" : "text-2xl"
+              }`}
+            >
+              {currentTitle}
+            </h2>
+
             <div className="hidden xl:flex items-center space-x-4">
               <DatePickerWithRange />
               

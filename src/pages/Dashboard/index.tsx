@@ -108,7 +108,7 @@ const Dashboard = () => {
   const bottomStatsCards = [
     {
       title: "Peak Activity Time",
-      value: peakActivityTime?.time || 0,
+      value: peakActivityTime?.time,
       description: `${peakActivityTime?.users || 0} active users`,
       trend: peakActivityTime?.percentChange,
       isTrendPositive: peakActivityTime?.percentChange > 0,
@@ -178,7 +178,11 @@ const Dashboard = () => {
         {/* #region Stats Cards */}
         <div className="flex flex-col md:flex-row justify-between w-full gap-6 mb-6 h-fit">
           {statsCards.map((card, index) => (
-            <StatCard key={card.title} {...card} index={index} />
+            card.value ? (
+              <StatCard key={card.title} {...card} index={index} />
+            ) : (
+              <ErrorComponent key={card.title} />
+            )
           ))}
         </div>
         {/* #endregion */}
@@ -186,10 +190,18 @@ const Dashboard = () => {
         {/* #region Charts */}
         <div className="flex flex-col md:flex-row gap-6 mb-6">
           <ChartCard index={0} className="flex-1">
-            <UserActivityTimeline activityTimeline={hourlyActivity} width={graphWidth} />
+            {hourlyActivity ? (
+              <UserActivityTimeline activityTimeline={hourlyActivity} width={graphWidth} />
+            ) : (
+              <ErrorComponent />
+            )}
           </ChartCard>
           <ChartCard index={1} className="flex-1">
-            <MessageFrequencyChart width={graphWidth} />
+            {hourlyActivity ? (
+              <MessageFrequencyChart width={graphWidth} />
+            ) : (
+              <ErrorComponent />
+            )}
           </ChartCard>
         </div>
         {/* #endregion */}
@@ -202,22 +214,28 @@ const Dashboard = () => {
             index={0}
             className="w-full md:w-[35%]"
           >
-              <ListElement
-                logo={<Users className="w-8 h-8 text-gray-600" />}
-                title="Active Gamers"
-                description={`${currentActivities.activeGamers?.count || 0} ${currentActivities.activeGamers?.label || 'users'}`}
-              />
-              <ListElement
-                logo={
-                  <img
-                    src="https://storage.googleapis.com/pr-newsroom-wp/1/2023/05/Spotify_Primary_Logo_RGB_Green.png"
-                    alt="Spotify Logo"
-                    className="w-8 h-8"
-                  />
-                }
-                title="Spotify Listeners"
-                description={`${currentActivities.spotifyListeners?.count || 0} ${currentActivities.spotifyListeners?.label || 'users'}`}
-              />
+            {currentActivities ? (
+              <>
+                <ListElement
+                  logo={<Users className="w-8 h-8 text-gray-600" />}
+                  title="Active Gamers"
+                  description={`${currentActivities.activeGamers?.count || 0} ${currentActivities.activeGamers?.label || 'users'}`}
+                />
+                <ListElement
+                  logo={
+                    <img
+                      src="https://storage.googleapis.com/pr-newsroom-wp/1/2023/05/Spotify_Primary_Logo_RGB_Green.png"
+                      alt="Spotify Logo"
+                      className="w-8 h-8"
+                    />
+                  }
+                  title="Spotify Listeners"
+                  description={`${currentActivities.spotifyListeners?.count || 0} ${currentActivities.spotifyListeners?.label || 'users'}`}
+                />
+              </>
+            ) : (
+              <ErrorComponent />
+            )}
           </ChartCard>
 
           <ChartCard
@@ -284,7 +302,11 @@ const Dashboard = () => {
 
           <div className="flex-1 grid grid-cols-2 gap-6 h-fit">
             {bottomStatsCards.map((card) => (
-              <StatCard key={card.title} {...card} />
+              card.value ? (
+                <StatCard key={card.title} {...card} />
+              ) : (
+                <ErrorComponent key={card.title} />
+              )
             ))}
           </div>
         </div>

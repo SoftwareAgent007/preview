@@ -29,13 +29,13 @@ export const useGameDetails = (guildId: string, gameName: string, period: 'day' 
 
   const queryParams = new URLSearchParams({ guildId, startDate, endDate }).toString();
 
-  const { data: gameStats, isLoading: statsLoading, error: statsError } = useQuery<GameStats>(
+  const { data: gameStats = {} as GameStats, isLoading: statsLoading, error: statsError } = useQuery<GameStats>(
     ['gameStats', guildId, gameName, period],
     () => apiService.getData(`/games/${gameName}/stats?${queryParams}`),
     { staleTime: 1000 * 60 * 30, cacheTime: 1000 * 60 * 30, retry: 1 }
   );
 
-  const { data: gameReport, isLoading: reportLoading, error: reportError } = useQuery<GameReport>(
+  const { data: gameReport = {} as GameReport, isLoading: reportLoading, error: reportError } = useQuery<GameReport>(
     ['gameReport', guildId, gameName, period],
     () => apiService.getData(`/games/${gameName}/report?${queryParams}`),
     { staleTime: 1000 * 60 * 30, cacheTime: 1000 * 60 * 30, retry: 1 }
@@ -54,13 +54,13 @@ export const useGamingStats = (guildId: string, period: 'day' | 'week' | 'month'
   
   const queryParams = new URLSearchParams({ guildId, startDate, endDate }).toString();
 
-  const { data: activeGames, isLoading: activeGamesLoading, error: activeGamesError } = useQuery<ActiveGame[]>(
+  const { data: activeGames = [] as ActiveGame[], isLoading: activeGamesLoading, error: activeGamesError } = useQuery<ActiveGame[]>(
     ['activeGames', guildId, period],
     () => apiService.getData(`/games?${queryParams}`),
     { staleTime: 1000 * 60 * 30, cacheTime: 1000 * 60 * 30, retry: 1 }
   );
 
-  const { data: popularGames, isLoading: popularGamesLoading, error: popularGamesError } = useQuery<PopularGame[]>(
+  const { data: popularGames = [] as PopularGame[], isLoading: popularGamesLoading, error: popularGamesError } = useQuery<PopularGame[]>(
     ['popularGames', guildId, period],
     () => apiService.getData(`/games/popular?${queryParams}`),
     { staleTime: 1000 * 60 * 30, cacheTime: 1000 * 60 * 30, retry: 1 }

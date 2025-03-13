@@ -3,7 +3,7 @@ import { useQuery } from 'react-query';
 import { apiService } from '../apiService';
 import { DashboardOverviewResponse, TimeRange } from '@/types/dataTypes';
 
-export const useDashboardData = (period: 'day' | 'week' | 'month' | 'year' = 'year') => {
+export const  useDashboardData = (period: 'day' | 'week' | 'month' | 'year' = 'year') => {
   // const { timeRange } = useContext(DateRangeContext);
   const timeRange = { startDate: new Date((new Date()).setMonth((new Date()).getMonth() - 1)), endDate: new Date() };
 

@@ -78,10 +78,6 @@ const KeywordsAnalytics = () => {
   ];
   // #endregion
 
-  if (hasErrors) {
-    return <ErrorComponent />;
-  }
-
   return (
     <motion.div 
       className="w-full min-h-screen bg-gray-50 p-6"
@@ -110,8 +106,12 @@ const KeywordsAnalytics = () => {
               <Card className="p-6"><CardSkeleton width="100%" height="100px" /></Card>
             </>
           ) : (
-            statsCardsData.map(card => (
-              <KeywordStatCard key={card.index} {...card} />
+            statsCardsData.map((card) => (
+              card.value ? (
+                <KeywordStatCard key={card.title} {...card} />
+              ) : (
+                <ErrorComponent key={card.title} />
+              )
             ))
           )}
         </div>
@@ -173,6 +173,4 @@ const KeywordsAnalytics = () => {
       </div>
     </motion.div>
   );
-};
-
-export default KeywordsAnalytics;
+};export default KeywordsAnalytics;

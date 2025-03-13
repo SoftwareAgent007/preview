@@ -199,6 +199,7 @@ export interface GameStats {
   peakPartySize: number;
   returnRate: number;
   peakHours: PeakHour[];
+  weeklyTrends: WeeklyTrend[];
 }
 
 export interface GameReport {

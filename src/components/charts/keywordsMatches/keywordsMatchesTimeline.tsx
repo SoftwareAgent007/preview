@@ -118,7 +118,7 @@ const KeywordsMatchesTimeline: React.FC<MessageFrequencyChartProps> = ({ matches
                 {isModalOpen && (
                     <Modal 
                         closeModal={() => setIsModalOpen(false)} 
-                        messageFrequency={messageFrequency} 
+                        messageFrequency={matchesTimeline} 
                         width={width} 
                     />
                 )}

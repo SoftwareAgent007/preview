@@ -1,11 +1,11 @@
 import { Card } from "@/components/ui/card";
-import { PopularGame } from "@/types/dataTypes";
+import { ActiveGame } from "@/types/dataTypes";
 
 const colors = ["#4F46E5", "#F59E0B", "#10B981"];
 
-const TopGamesList = ({ topGames }: { topGames: PopularGame[] }) => {
-  const sortedGames = [...topGames].sort((a, b) => b.totalHours - a.totalHours).slice(0, 3);
-  const maxHours = sortedGames[0]?.totalHours || 1;
+const ActiveGamesList = ({ topGames }: { topGames: ActiveGame[] }) => {
+  const sortedGames = [...topGames].sort((a, b) => b.playerCount - a.playerCount).slice(0, 3);
+  const maxHours = sortedGames[0]?.playerCount || 1;
 
   return (
     <Card className="p-6">
@@ -15,13 +15,13 @@ const TopGamesList = ({ topGames }: { topGames: PopularGame[] }) => {
           <li key={index} className="flex flex-col">
             <div className="flex justify-between text-sm font-semibold text-gray-800 mb-1">
               <span>{game.gameName}</span>
-              <span>{game.totalHours} hrs</span>
+              <span>{game.playerCount} hrs</span>
             </div>
             <div className="h-2 rounded-full" style={{ backgroundColor: "#E5E7EB" }}>
               <div
                 className="h-2 rounded-full"
                 style={{
-                  width: `${(game.totalHours / maxHours) * 100}%`,
+                  width: `${(game.playerCount / maxHours) * 100}%`,
                   backgroundColor: colors[index % colors.length],
                 }}
               />
@@ -33,4 +33,4 @@ const TopGamesList = ({ topGames }: { topGames: PopularGame[] }) => {
   );
 };
 
-export { TopGamesList };
+export { ActiveGamesList };

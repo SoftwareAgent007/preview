@@ -1,13 +1,12 @@
-import { useEffect, useRef, useState } from "react";
-import { Card } from "@/components/ui/card";
-import CircleRoleChart from "@/components/charts/circleChartOfRoles";
-import UserActivityTimeline from "@/components/charts/userActivityTimeline/userActivityTimelineChart";
-import { TopGamesList } from "./components/topGamesList";
-import { ClickableTooltip } from "@/components/ui/tooltip";
-import { useGameDetails, useGamingStats } from "@/hooks/analytics/useGamingAnalytics";
-import ContentLoader from "react-content-loader";
 import AreaLineChart from "@/components/charts/AreaLineChart";
 import ErrorComponent from "@/components/common/errorModel";
+import { Card } from "@/components/ui/card";
+import { ClickableTooltip } from "@/components/ui/tooltip";
+import { useGameDetails, useGamingStats } from "@/hooks/analytics/useGamingAnalytics";
+import { useEffect, useRef, useState } from "react";
+import ContentLoader from "react-content-loader";
+import { TopGamesList } from "./components/topGamesList";
+import { ActiveGamesList } from "./components/activeGamesList";
 
 const CardSkeleton = ({ width, height }: { width: string; height: string }) => (
   <ContentLoader speed={2} width={width} height={height} viewBox={`0 0 ${width} ${height}`}>
@@ -105,12 +104,18 @@ const GamingAnalytics = ({ guildId = "1w2dd" }) => {
               </>
             ) : (
               <>
-                <TopGamesList topGames={popularGames} />
+                {popularGames.length > 0 ? (
+                  <TopGamesList topGames={popularGames} />                  
+                ) : (
+                  <Card className="p-6 h-[400px]">
+                    <ErrorComponent height={350} />
+                  </Card>
+                )}
                 <Card className="p-6 h-[400px]">
-                  {weeklyTrends.length > 0 ? (
+                  {weeklyTrends?.length > 0 ? (
                     <AreaLineChart data={weeklyTrends} width={graphWidth} height={300} graphColor="#b1c4f5" />
                   ) : (
-                    <ErrorComponent height={300} />
+                    <ErrorComponent height={350} />
                   )}
                 </Card>
               </>
@@ -129,10 +134,10 @@ const GamingAnalytics = ({ guildId = "1w2dd" }) => {
                     <span className="bg-gray-300 bg-opacity-25 text-gray-600 px-[7px] rounded-full cursor-help">?</span>
                   </ClickableTooltip>
                 </div>
-                {activeGames.length > 0 ? (
-                  <TopGamesList topGames={activeGames} />
+                {activeGames?.length > 0 ? (
+                  <ActiveGamesList topGames={activeGames} />
                 ) : (
-                  <ErrorComponent height={200} />
+                  <ErrorComponent height={530} />
                 )}
               </Card>
             )}

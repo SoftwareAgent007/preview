@@ -1,11 +1,15 @@
 import { useEffect, useRef } from "react";
 import * as d3 from "d3";
+import { StatusBreakdown } from "@/pages/UsersDetailedActivityAnalytics/PresenceAnalytics/interfaces/presence-activirt.interfaces";
 
-type RolesData = { role: string; count: number; percentage: number | string; color: string }[];
-
-const CircleRoleChart = ({ data, width = 500, height = 600 }: { data: RolesData; width?: number; height?: number }) => {
+const CircleRoleChart = ({ data, width = 500, height = 600 }: { data: StatusBreakdown[]; width?: number; height?: number }) => {
   const svgRef = useRef<SVGSVGElement>(null);
 
+  if (data) {
+    data.forEach(item => {
+      item.color = `#${Math.floor(Math.random()*16777215).toString(16)}`;
+    });
+  }
   useEffect(() => {
     if (!svgRef.current) return;
 

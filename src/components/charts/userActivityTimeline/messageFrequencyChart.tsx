@@ -8,13 +8,14 @@ import { ClickableTooltip } from "@/components/ui/tooltip";
 import ErrorComponent from "@/components/common/errorModel";
 
 interface MessageFrequencyChartProps {
+    messageFrequency?: any[];
     width?: number;
 }
 
 const MessageFrequencyChart: React.FC<MessageFrequencyChartProps> = ({
+    messageFrequency = [],
     width = 543,
 }) => {
-    // const { messageFrequency } = useDashboardData("month");
     const [isModalOpen, setIsModalOpen] = useState(false);
 
     const containerVariants = {
@@ -99,7 +100,7 @@ const MessageFrequencyChart: React.FC<MessageFrequencyChartProps> = ({
                 className="chart-parent flex justify-between"
                 variants={itemVariants}
             >
-                {messageFrequency ? (
+                {messageFrequency?.length ? (
                     <AreaLineChart
                         data={messageFrequency}
                         width={width} 
