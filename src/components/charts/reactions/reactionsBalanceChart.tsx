@@ -1,7 +1,13 @@
 import { useEffect, useRef } from "react";
 import * as d3 from "d3";
+import { HistogramData } from "./reaction.interface";
 
-const BackToBackHistogram = ({ data = [], width = 800 }) => {
+interface BackToBackHistogramProps {
+  data: HistogramData[];
+  width?: number;
+}
+
+const BackToBackHistogram: React.FC<BackToBackHistogramProps> = ({ data = [], width = 800 }) => {
   const height = 600;
 
   const COLOR_POSITIVE = "#4682B4";
