@@ -11,7 +11,6 @@ import ContentLoader from "react-content-loader";
 import StatCard from "./components/StatCard";
 import ActiveRolesChart from "./components/ActiveRolesChart";
 import { ActiveGamesList } from "./components/activeGamesList";
-import { useGamingAnalyticsResponse } from "@/hooks/mockedApiService";
 import TopGamesList from "./components/topGamesList";
 
 const CardSkeleton = ({ width, height }: { width: string; height: string }) => (
@@ -21,9 +20,8 @@ const CardSkeleton = ({ width, height }: { width: string; height: string }) => (
 );
 
 const GamingAnalytics = ({ guildId = "1w2dd" }) => {
-  // Data from HEAD branch
   const { activeGames, popularGames, isLoading } = useGamingStats(guildId);
-  const { gameStats, gameReport } = useGameDetails(guildId, "CS2");
+  const { gameStats } = useGameDetails(guildId, "CS2");
 
   const {
     totalPlayers = 0,
@@ -32,17 +30,6 @@ const GamingAnalytics = ({ guildId = "1w2dd" }) => {
     totalHours = 0,
     weeklyTrends = []
   } = gameStats || {};
-
-  // Data from dev branch
-  const gamingAnalyticsResponse = useGamingAnalyticsResponse();
-  const { 
-    activeUsers = totalPlayers || 0,
-    avgSessionTime = avgSessionMinutes || 0,
-    totalGameTime = totalHours || 0,
-    peakPlayers = peakPartySize || 0,
-    activeRolesPlayingNow = [],
-    topGames = popularGames || []
-  } = gamingAnalyticsResponse || {};
 
   const wrapperRef = useRef<HTMLDivElement | null>(null);
   const [graphWidth, setGraphWidth] = useState(0);
@@ -87,10 +74,10 @@ const GamingAnalytics = ({ guildId = "1w2dd" }) => {
 
   // Stats Data
   const statsData = [
-    { title: "Active Users", value: activeUsers, subtitle: "Currently active users" },
-    { title: "Avg. Session Time", value: avgSessionTime, subtitle: "Average session duration", unit: "min" },
-    { title: "Peak Players", value: peakPlayers, subtitle: "Highest concurrent players" },
-    { title: "Total Game Time", value: totalGameTime, subtitle: "Total hours played", unit: "hrs" }
+    { title: "Active Users", value: totalPlayers, subtitle: "Currently active users" },
+    { title: "Avg. Session Time", value: avgSessionMinutes, subtitle: "Average session duration", unit: "min" },
+    { title: "Peak Players", value: peakPartySize, subtitle: "Highest concurrent players" },
+    { title: "Total Game Time", value: totalHours, subtitle: "Total hours played", unit: "hrs" }
   ];
 
   return (
@@ -134,8 +121,8 @@ const GamingAnalytics = ({ guildId = "1w2dd" }) => {
               </>
             ) : (
               <>
-                {topGames && topGames.length > 0 ? (
-                  <TopGamesList topGames={topGames} />                  
+                {popularGames && popularGames.length > 0 ? (
+                  <TopGamesList topGames={popularGames} />                  
                 ) : (
                   <Card className="p-6 h-[400px]">
                     <ErrorComponent height={350} />
@@ -144,9 +131,12 @@ const GamingAnalytics = ({ guildId = "1w2dd" }) => {
                 <motion.div variants={itemVariants}>
                   <Card className="p-6 h-[400px]">
                     {weeklyTrends?.length > 0 ? (
-                      <AreaLineChart data={weeklyTrends} width={graphWidth} height={300} graphColor="#b1c4f5" />
+                      <AreaLineChart data={weeklyTrends.map(trend => ({
+                        date: trend.weekStartDate,
+                        count: trend.totalUsers
+                      }))} width={graphWidth} height={300} graphColor="#b1c4f5" />
                     ) : (
-                      <UserActivityTimeline width={graphWidth} />
+                      <UserActivityTimeline width={graphWidth} activityTimeline={[]} />
                     )}
                   </Card>
                 </motion.div>
@@ -154,33 +144,29 @@ const GamingAnalytics = ({ guildId = "1w2dd" }) => {
             )}
           </motion.div>
 
-          {/* Active Games/Roles Section */}
-          {activeRolesPlayingNow && activeRolesPlayingNow.length > 0 ? (
-            <ActiveRolesChart data={activeRolesPlayingNow} />
-          ) : (
-            <motion.div 
-              className="grid gap-6"
-              variants={itemVariants}
-            >
-              {isLoading ? (
-                <Card className="p-6"><CardSkeleton width="100%" height="550" /></Card>
-              ) : (
-                <Card className="p-6 h-full">
-                  <div className="title text-gray-500 text-lg font-bold mb-4 ">
-                    <span className="mr-5">Active Games</span>
-                    <ClickableTooltip content={<p><strong>Active Games: </strong> Current active games being played.</p>}>
-                      <span className="bg-gray-300 bg-opacity-25 text-gray-600 px-[7px] rounded-full cursor-help">?</span>
-                    </ClickableTooltip>
-                  </div>
-                  {activeGames?.length > 0 ? (
-                    <ActiveGamesList topGames={activeGames} />
-                  ) : (
-                    <ErrorComponent height={530} />
-                  )}
-                </Card>
-              )}
-            </motion.div>
-          )}
+          {/* Active Games Section */}
+          <motion.div 
+            className="grid gap-6"
+            variants={itemVariants}
+          >
+            {isLoading ? (
+              <Card className="p-6"><CardSkeleton width="100%" height="550" /></Card>
+            ) : (
+              <Card className="p-6 h-full">
+                <div className="title text-gray-500 text-lg font-bold mb-4 ">
+                  <span className="mr-5">Active Games</span>
+                  <ClickableTooltip content={<p><strong>Active Games: </strong> Current active games being played.</p>}>
+                    <span className="bg-gray-300 bg-opacity-25 text-gray-600 px-[7px] rounded-full cursor-help">?</span>
+                  </ClickableTooltip>
+                </div>
+                {activeGames?.length > 0 ? (
+                  <ActiveGamesList topGames={activeGames} />
+                ) : (
+                  <ErrorComponent height={530} />
+                )}
+              </Card>
+            )}
+          </motion.div>
         </div>
       </div>
     </motion.div>

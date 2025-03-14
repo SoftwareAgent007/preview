@@ -1,21 +1,17 @@
-import { motion, LayoutGroup } from "framer-motion";
-import { Download, Users } from "lucide-react";
-import { useRef, useEffect, useState } from "react";
-import { Button } from "@/components/ui/button";
-import { Card } from "@/components/ui/card";
-import BreadcrumbsNavigation from "@/components/common/BreadcrumbsNavigation";
-import ErrorComponent from "@/components/common/errorModel";
-import TrendIndicator from "@/components/common/TrendIndicator";
-import { ClickableTooltip } from "@/components/ui/tooltip";
 import HorizontalBarChart from "@/components/charts/hourActivity/HorizontalBarChart";
 import MessageFrequencyChart from "@/components/charts/userActivityTimeline/messageFrequencyChart";
 import UserActivityTimeline from "@/components/charts/userActivityTimeline/userActivityTimelineChart";
+import BreadcrumbsNavigation from "@/components/common/BreadcrumbsNavigation";
+import ErrorComponent from "@/components/common/errorModel";
+import { Button } from "@/components/ui/button";
 import ListElement from "@/components/ui/list-element";
-import { BREADCRUMB_PATHS, ROUTES } from "@/routes/routes.constant";
 import { useDashboardData } from "@/hooks/analytics/useDashboardData";
-import StatCard from "./components/StatCard";
+import { BREADCRUMB_PATHS, ROUTES } from "@/routes/routes.constant";
+import { LayoutGroup, motion } from "framer-motion";
+import { Download, Users } from "lucide-react";
+import { useEffect, useRef, useState } from "react";
 import ChartCard from "./components/ChartCard";
-import LoadingState from "@/components/states/LoadingState";
+import StatCard from "./components/StatCard";
 
 const Dashboard = () => {
   console.log('INITED')

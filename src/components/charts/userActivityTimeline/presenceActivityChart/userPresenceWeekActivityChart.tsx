@@ -6,6 +6,7 @@ import ReactDOM from "react-dom";
 import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from "@/components/ui/select";
 import { ClickableTooltip } from "@/components/ui/tooltip";
 import { motion, AnimatePresence } from "framer-motion";
+import { StatusDistribution } from "@/pages/UsersDetailedActivityAnalytics/PresenceAnalytics/interfaces/presence-activirt.interfaces";
 
 // #region Animation Variants
 const containerVariants = {
@@ -47,20 +48,18 @@ const selectVariants = {
 };
 // #endregion
 
-const PresenceWeekActivityChart = ({ data }) => {
-  const svgRef = useRef();
-  const chartRef = useRef(); 
-  const [selectedStatus, setSelectedStatus] = useState("all");
-
+const PresenceWeekActivityChart = ({ data }: { data: StatusDistribution }) => {
+  const svgRef = useRef<SVGSVGElement>(null);
+  const chartRef = useRef<HTMLDivElement>(null);
+  const [selectedStatus, setSelectedStatus] = useState<string>("all");
   
   const [chartWidth, setChartWidth] = useState(800);
   const [chartHeight, setChartHeight] = useState(500);
-
   
   const updateChartDimensions = () => {
     if (chartRef.current) {
-      setChartWidth(chartRef.current.offsetWidth * 1.01); 
-      setChartHeight(chartRef.current.offsetHeight); 
+      setChartWidth(chartRef.current.offsetWidth * 1.01);
+      setChartHeight(chartRef.current.offsetHeight);
     }
   };
 
@@ -71,6 +70,8 @@ const PresenceWeekActivityChart = ({ data }) => {
   }, []);
 
   useEffect(() => {
+    if (!svgRef.current || !data) return;
+    
     const svg = d3.select(svgRef.current);
     svg.selectAll("*").remove();
 
@@ -84,27 +85,51 @@ const PresenceWeekActivityChart = ({ data }) => {
       .append("g")
       .attr("transform", `translate(${margin.left},${margin.top})`);
 
+    // Get the maximum length of any status array to determine the number of days
+    const maxDays = Math.max(
+      data.online.length,
+      data.idle.length,
+      data.dnd.length,
+      data.offline.length
+    );
+
+    // Create an array of day numbers (1 to maxDays)
+    const days = Array.from({ length: maxDays }, (_, i) => i + 1);
+
+    // Create the x scale
     const x = d3.scaleBand()
-      .domain(data.map(d => d.day))
+      .domain(days.map(d => d.toString()))
       .range([0, width])
       .padding(0.2);
 
+    // Find the maximum value across all status arrays
+    const maxValue = Math.max(
+      ...data.online,
+      ...data.idle,
+      ...data.dnd,
+      ...data.offline
+    );
+
+    // Create the y scale
     const y = d3.scaleLinear()
-      .domain([0, d3.max(data, d => d3.max(Object.values(d.statusCounts)))])
+      .domain([0, maxValue])
       .range([height, 0]);
 
+    // Add the x-axis
     g.append("g")
       .attr("transform", `translate(0,${height})`)
-      .call(d3.axisBottom(x).tickFormat(d => (chartWidth < 768 && d % 2 !== 0 ? "" : d)));
+      .call(d3.axisBottom(x).tickFormat(d => (chartWidth < 768 && parseInt(d) % 2 !== 0 ? "" : d)));
 
+    // Add the y-axis
     g.append("g").call(d3.axisLeft(y));
 
-    const line = d3.line()
+    // Create the line generator
+    const line = d3.line<[number, number]>()
       .curve(d3.curveMonotoneX)
-      .x(d => x(d.day) + x.bandwidth() / 2)
-      .y(d => y(d.value));
+      .x(d => x(d[0].toString())! + x.bandwidth() / 2)
+      .y(d => y(d[1]));
 
-    
+    // Add tooltip
     const tooltip = g.append("g").style("display", "none");
     tooltip.append("rect")
       .attr("fill", "white")
@@ -118,28 +143,67 @@ const PresenceWeekActivityChart = ({ data }) => {
       .attr("y", 20)
       .attr("text-anchor", "middle");
 
+    // Define color scheme
+    const colorScheme: Record<string, string> = {
+      online: "#43b581", // Green
+      idle: "#faa61a", // Yellow
+      dnd: "#f04747", // Red
+      offline: "#747f8d" // Gray
+    };
+
+    // Add mouse event handling
     svg.on("pointermove", (event) => {
       const [xPos] = d3.pointer(event, g.node());
-      const day = Math.round(xPos / (width / data.length));
-      const closestData = data.find(d => d.day === day);
-      if (!closestData) return;
-      const statusKey = selectedStatus === "all" ? Object.keys(closestData.statusCounts)[0] : selectedStatus;
-      const statusValue = closestData.statusCounts[statusKey];
+      const dayIndex = Math.floor(xPos / (width / days.length));
+      const day = days[dayIndex];
+      
+      if (dayIndex < 0 || dayIndex >= days.length) return;
+
+      let statusKey = selectedStatus;
+      let statusValue = 0;
+
+      if (selectedStatus === "all") {
+        // Get the first status in the data object
+        statusKey = "online";
+      }
+
+      // Get the value for the selected status at the current day (1-indexed)
+      switch (statusKey) {
+        case "online":
+          statusValue = data.online[day - 1] || 0;
+          break;
+        case "idle":
+          statusValue = data.idle[day - 1] || 0;
+          break;
+        case "dnd":
+          statusValue = data.dnd[day - 1] || 0;
+          break;
+        case "offline":
+          statusValue = data.offline[day - 1] || 0;
+          break;
+      }
 
       tooltip.style("display", "block")
-        .attr("transform", `translate(${x(closestData.day) + 10},${y(statusValue) - 10})`);
+        .attr("transform", `translate(${x(day.toString())! + 10},${y(statusValue) - 10})`);
       tooltip.select("text").text(`${statusKey}: ${statusValue}`);
     });
 
-    Object.keys(data[0].statusCounts).forEach((key, i) => {
+    // Draw lines for each status
+    const statusKeys = Object.keys(data) as Array<keyof StatusDistribution>;
+    
+    statusKeys.forEach((key) => {
+      // Create points array for this status
+      const points: [number, number][] = data[key].map((value, index) => [index + 1, value]);
+
       g.append("path")
-        .datum(data.map(d => ({ day: d.day, value: d.statusCounts[key] })))
+        .datum(points)
         .attr("fill", "none")
-        .attr("stroke", d3.schemeCategory10[i])
+        .attr("stroke", colorScheme[key])
         .attr("stroke-width", selectedStatus === "all" || selectedStatus === key ? 2 : 1)
         .attr("opacity", selectedStatus === "all" || selectedStatus === key ? 1 : 0.2)
         .attr("d", line);
     });
+
   }, [data, selectedStatus, chartWidth, chartHeight]);
 
   return (
@@ -157,8 +221,8 @@ const PresenceWeekActivityChart = ({ data }) => {
           </SelectTrigger>
           <SelectContent>
             <SelectItem value="all">All</SelectItem>
-            {Object.keys(data[0].statusCounts).map((key) => (
-              <SelectItem key={key} value={key}>{key}</SelectItem>
+            {Object.keys(data).map((key) => (
+              <SelectItem key={key} value={key}>{key.charAt(0).toUpperCase() + key.slice(1)}</SelectItem>
             ))}
           </SelectContent>
         </Select>
@@ -172,21 +236,13 @@ const PresenceWeekActivityChart = ({ data }) => {
   );
 };
 
-const ExpandablePresenceChart = () => {
+const ExpandablePresenceChart = ({ data = {
+  online: Array.from({ length: 30 }, () => Math.floor(Math.random() * 150)),
+  idle: Array.from({ length: 30 }, () => Math.floor(Math.random() * 30)),
+  dnd: Array.from({ length: 30 }, () => Math.floor(Math.random() * 20)),
+  offline: Array.from({ length: 30 }, () => Math.floor(Math.random() * 50))
+} }) => {
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const openModal = () => setIsModalOpen(true);
-  const closeModal = () => setIsModalOpen(false);
-
-  
-  const data = Array.from({ length: 30 }, (_, i) => ({
-    day: i + 1,
-    statusCounts: {
-      Online: Math.floor(Math.random() * 150),
-      Offline: Math.floor(Math.random() * 50),
-      Idle: Math.floor(Math.random() * 30),
-      DND: Math.floor(Math.random() * 20)
-    }
-  }));
 
   return (
     <motion.div
@@ -241,8 +297,7 @@ const ExpandablePresenceChart = () => {
   );
 };
 
-
-const Modal = ({ closeModal, data }) => {
+const Modal = ({ closeModal, data }: { closeModal: () => void, data: StatusDistribution }) => {
   return ReactDOM.createPortal(
     <motion.div
       initial={{ opacity: 0 }}

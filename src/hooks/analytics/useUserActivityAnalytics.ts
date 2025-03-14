@@ -1,11 +1,31 @@
 import { useMemo } from "react";
 import { useQuery } from "react-query";
 import { apiService } from "../apiService";
+import { ActivityOverviewResponse,
+  StatusBreakdown,
+  HourlyActivityResponse,
+  PeakHour,
+  DeviceUsage } from "@/pages/UsersDetailedActivityAnalytics/PresenceAnalytics/interfaces/presence-activirt.interfaces";
+import { AverageSessionResponse } from "@/types/music.interface";
+
+export interface UserActivityAnalytics {
+  activityOverview: ActivityOverviewResponse | null;
+  statusBreakdown: StatusBreakdown[];
+  hourlyActivity: HourlyActivityResponse | null;
+  peakHours: PeakHour[];
+  deviceUsage: DeviceUsage[];
+  activeRoles: any;
+  avgSessionTime: AverageSessionResponse;
+  joins: any;
+  leaves: any;
+  isLoading: boolean;
+  error: string | null;
+}
 
 export const useUserActivityAnalytics = (
   guildId: string,
   period: "day" | "week" | "month" | "year" = "year"
-) => {
+): UserActivityAnalytics => {
   const getPeriodStart = useMemo(() => {
     const now = new Date();
     switch (period) {
@@ -27,8 +47,8 @@ export const useUserActivityAnalytics = (
     endDate: new Date().toISOString(),
   };
 
-  const fetchWithErrorKey = (key, endpoint) =>
-    useQuery(key, () => apiService.getData(endpoint).catch((error) => {
+  const fetchWithErrorKey = (key: string, endpoint: string) =>
+    useQuery(key, () => apiService.getData(endpoint).catch((error: Error) => {
       throw new Error(`${key}: ${error.message}`);
     }), {
       staleTime: 1000 * 60 * 30,
@@ -93,7 +113,7 @@ export const useUserActivityAnalytics = (
     sessionError,
     joinsError,
     leavesError,
-  ].filter(Boolean).map((e) => e.message).join(", ");
+  ].filter(Boolean).map((e: Error) => e.message).join(", ");
 
   return {
     activityOverview: activityOverview ?? null,

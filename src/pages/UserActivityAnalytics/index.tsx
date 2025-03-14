@@ -5,6 +5,7 @@ import { Card } from "@/components/ui/card";
 import { BREADCRUMB_PATHS, ROUTES } from "@/routes/routes.constant";
 import { usePeakHours } from "@/hooks/analytics/useGamingPeakHours";
 import { useUserActivityAnalytics } from "@/hooks/analytics/useUserActivityAnalytics";
+import type { UserActivityAnalytics } from "@/hooks/analytics/useUserActivityAnalytics";
 import { useDashboardData } from "@/hooks/analytics/useDashboardData";
 import { usePlayingStatisticData } from "@/hooks/analytics/usePlayingStatisticData";
 import ContentLoader from "react-content-loader";
@@ -12,8 +13,6 @@ import ErrorComponent from "@/components/common/errorModel";
 import ActivityStatCard from "./components/ActivityStatCard";
 import ActivityChartsSection from "./components/ActivityChartsSection";
 import RolesSection from "./components/RolesSection";
-import { ActivityData } from "@/components/common/types/userAnalytic.types";
-import { useUsersActivityData } from "@/hooks/mockedApiService";
 
 const CardSkeleton = ({ width, height }: { width: string; height: string }) => (
   <ContentLoader speed={2} width={width} height={height} viewBox={`0 0 ${width} ${height}`}>
@@ -28,16 +27,14 @@ const UserActivityAnalytics = () => {
   const { totalUsers, activeUsers, isLoading: dashboardLoading, error: dashboardError } = useDashboardData("year");
   
   // Enhanced data from dev branch
-  const data: ActivityData = useUsersActivityData();
-  const { playingUserStats } = usePlayingStatisticData();
+  const data = useUserActivityAnalytics('month');
+  const { playingUserStats } = usePlayingStatisticData('month');
 
   // Loading and error states
   const isLoading = activityLoading || peakLoading || dashboardLoading;
-  const hasError = activityError || peakError || dashboardError;
 
   // Data validation
-  const hasValidData = totalUsers || activeUsers || avgSessionTime || joins || leaves || 
-                      (data && Object.keys(data).length > 0);
+  const hasValidData = totalUsers || activeUsers || avgSessionTime || joins || leaves || (data && Object.keys(data).length > 0);
 
   // Animation variants from dev branch
   const container = {
@@ -54,44 +51,44 @@ const UserActivityAnalytics = () => {
   const statsData = hasValidData ? [
     {
       title: "Peak Activity Time",
-      value: data?.peakActivityTime 
-        ? new Date(data.peakActivityTime.peakTime).toLocaleTimeString([], {
+      value: data?.hourlyActivity?.peakHour 
+        ? new Date(data.hourlyActivity.peakHour).toLocaleTimeString([], {
             hour: "2-digit",
             minute: "2-digit",
           })
         : peakHours?.[0]?.hour || "No data",
-      trend: data?.peakActivityTime?.trend,
-      isPositive: data?.peakActivityTime?.trend >= 0,
+      // trend: data?.hourlyActivity?.hourlyDistribution?.[0],
+      isPositive: true,
     },
     {
       title: "Online Users",
-      value: data?.onlineUsers?.count || totalUsers?.count || "No data",
-      trend: data?.onlineUsers?.trend,
-      isPositive: data?.onlineUsers?.trend >= 0,
+      value: data?.activityOverview?.activeUsers?.count || totalUsers?.count || "No data",
+      // trend: data?.activityOverview?.activeUsers?.count,
+      isPositive: true,
     },
     {
       title: "Avg Session Time",
-      value: (data?.avgSessionTime?.count || avgSessionTime?.count || 0).toFixed(2),
-      trend: data?.avgSessionTime?.trend,
-      isPositive: data?.avgSessionTime?.trend >= 0,
+      value: data?.avgSessionTime?.formattedDuration || avgSessionTime?.formattedDuration || "0",
+      // trend: data?.avgSessionTime?.change,
+      isPositive: true,
       unit: "minutes",
     },
     {
       title: "Playing Now",
-      value: data?.playingNow?.count || activeUsers?.count || "No data",
-      trend: data?.playingNow?.trend,
-      isPositive: data?.playingNow?.trend >= 0,
+      value: data?.activityOverview?.peakUsers?.count || activeUsers?.count || "No data",
+      // trend: data?.activityOverview?.peakUsers?.count,
+      isPositive: true,
     },
     {
       title: "Joins",
-      value: joins || data?.joins?.count || 120,
-      trend: 1.3,
+      value: joins || data?.joins?.count || 0,
+      // trend: 1.3,
       isPositive: true,
     },
     {
       title: "Leaves",
-      value: leaves || data?.leaves?.count || 80,
-      trend: 12.1,
+      value: leaves || data?.leaves?.count || 0,
+      // trend: 12.1,
       isPositive: false,
     },
   ] : [];
@@ -131,7 +128,10 @@ const UserActivityAnalytics = () => {
             <ActivityCharts data={{}} className="mb-6" />
           )
         ) : (
-          <ErrorComponent />
+          <ErrorComponent 
+            title="Activity Data Error" 
+            message={activityError?.message || "Failed to load activity data"} 
+          />
         )}
 
         <div className="flex flex-col lg:flex-row gap-6">
@@ -151,14 +151,17 @@ const UserActivityAnalytics = () => {
                     index={index}
                     title={stat.title}
                     value={stat.value}
-                    trend={stat.trend}
+                    trend={0}
                     isPositive={stat.isPositive}
                     unit={stat.unit}
                   />
                 ))}
               </>
             ) : (
-              <ErrorComponent />
+              <ErrorComponent 
+                title="Dashboard Data Error" 
+                message={dashboardError?.message || "Failed to load dashboard statistics"} 
+              />
             )}
           </div>
 
@@ -171,7 +174,10 @@ const UserActivityAnalytics = () => {
             ) : activeRoles?.length > 0 ? (
               <RolesSection />
             ) : (
-              <ErrorComponent />
+              <ErrorComponent 
+                title="Peak Hours Error" 
+                message={peakError?.message || "Failed to load roles data"} 
+              />
             )}
           </div>
         </div>
@@ -179,5 +185,4 @@ const UserActivityAnalytics = () => {
     </motion.div>
   );
 };
-
 export default UserActivityAnalytics;

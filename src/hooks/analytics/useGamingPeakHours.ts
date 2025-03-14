@@ -46,10 +46,6 @@ export const usePeakHours = (
       refetchOnWindowFocus: false,
     }
   );
-  
-  // if (!error) {
-  //   peakHours?.sort((a, b) => a.playerCount - b.playerCount)
-  // }
 
   return {
     peakHours: peakHours,

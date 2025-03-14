@@ -1,17 +1,35 @@
 import { useMemo } from 'react';
 import { useQuery } from 'react-query';
 import { apiService } from '../apiService';
-import { DashboardOverviewResponse, TimeRange } from '@/types/dataTypes';
+import { DashboardOverviewResponse } from '@/types/dataTypes';
 
-export const  useDashboardData = (period: 'day' | 'week' | 'month' | 'year' = 'year') => {
-  // const { timeRange } = useContext(DateRangeContext);
-  const timeRange = { startDate: new Date((new Date()).setMonth((new Date()).getMonth() - 1)), endDate: new Date() };
+export const useDashboardData = (period: 'day' | 'week' | 'month' | 'year' = 'year') => {
+  const getPeriodStart = useMemo(() => {
+    const now = new Date();
+    switch (period) {
+      case "day":
+        return new Date(now.setHours(0, 0, 0, 0)).toISOString();
+      case "week":
+        return new Date(now.setDate(now.getDate() - 7)).toISOString();
+      case "month":
+        return new Date(now.setMonth(now.getMonth() - 1)).toISOString();
+      case "year":
+      default:
+        return new Date(now.setFullYear(now.getFullYear() - 1)).toISOString();
+    }
+  }, [period]);
 
-  const { data: activityData, isLoading, error } = useQuery<DashboardOverviewResponse>(
-    ['activity-overview', 323644524268093441],
+  const requestParams = {
+    guildId: "323644524268093441",
+    startDate: getPeriodStart,
+    endDate: new Date().toISOString(),
+  };
+
+  const { data: activityData, isLoading, error } = useQuery<DashboardOverviewResponse, Error>(
+    ['activity-overview', requestParams.guildId],
     () =>
       apiService.getData(
-        `/dashboard/overview?guildId=${323644524268093441}&startDate=${timeRange.startDate.toISOString()}&endDate=${timeRange.endDate.toISOString()}`
+        `/dashboard/overview?guildId=${requestParams.guildId}&startDate=${requestParams.startDate}&endDate=${requestParams.endDate}`
       ),
     {
       retry: 1,
@@ -23,10 +41,10 @@ export const  useDashboardData = (period: 'day' | 'week' | 'month' | 'year' = 'y
   );
 
   const { data: hourlyActivityData } = useQuery(
-    ['hourly-activity', 618826436299456533],
+    ['hourly-activity', requestParams.guildId],
     () =>
       apiService.getData(
-        `/presence-activity/hourly-activity?guildId=618826436299456533&startDate=${timeRange.startDate.toISOString()}&endDate=${timeRange.endDate.toISOString()}`
+        `/presence-activity/hourly-activity?guildId=${requestParams.guildId}&startDate=${requestParams.startDate}&endDate=${requestParams.endDate}`
       ),
     {
       retry: 1,
@@ -37,7 +55,6 @@ export const  useDashboardData = (period: 'day' | 'week' | 'month' | 'year' = 'y
     }
   );
   
-  // Default values for activity statistics
   const defaultStats = {
     totalUsers: {
       count: 0,
@@ -87,7 +104,6 @@ export const  useDashboardData = (period: 'day' | 'week' | 'month' | 'year' = 'y
     }
   };
 
-  // Compute activity statistics with fallbacks
   const activityStats = useMemo(() => {
     if (!activityData) return defaultStats;
 
@@ -112,6 +128,9 @@ export const  useDashboardData = (period: 'day' | 'week' | 'month' | 'year' = 'y
     hourlyActivityData,
     isLoading,
     error,
-    timeRange
+    timeRange: {
+      startDate: new Date(requestParams.startDate),
+      endDate: new Date(requestParams.endDate)
+    }
   };
 };

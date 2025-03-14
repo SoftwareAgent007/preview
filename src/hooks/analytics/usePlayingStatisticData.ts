@@ -1,34 +1,55 @@
 import { useMemo } from 'react';
-import { usePlayingStatisticGraphData } from '../mockedApiService';
+import { useQuery } from 'react-query';
+import { apiService } from '../apiService';
 import { ChartData, DataSet } from '@/components/common/types/userAnalytic.types';
 
-export const usePlayingStatisticData = (period: 'day' | 'week' | 'month' | 'year' = 'year') => {
-  const data = usePlayingStatisticGraphData();
-
+export const usePlayingStatisticData = (
+  guildId: string,
+  period: 'day' | 'week' | 'month' | 'year' = 'year'
+) => {
   const getPeriodStart = useMemo(() => {
     const now = new Date();
-    const year = new Date(now.setFullYear(now.getFullYear() - 1));
     switch (period) {
       case 'day':
-        return new Date(now.setHours(0, 0, 0, 0));
+        return new Date(now.setHours(0, 0, 0, 0)).toISOString();
       case 'week':
-        return new Date(now.setDate(now.getDate() - 7));
+        return new Date(now.setDate(now.getDate() - 7)).toISOString();
       case 'month':
-        return new Date(now.setMonth(now.getMonth() - 1));
+        return new Date(now.setMonth(now.getMonth() - 1)).toISOString();
       case 'year':
-        return new Date(now.setFullYear(now.getFullYear() - 1));
       default:
-        return year;
+        return new Date(now.setFullYear(now.getFullYear() - 1)).toISOString();
     }
   }, [period]);
 
-  
+  const requestParams = {
+    guildId,
+    startDate: getPeriodStart,
+    endDate: new Date().toISOString(),
+  };
+
+  const {
+    data,
+    isLoading,
+    error,
+  } = useQuery<DataSet>(
+    ['playingStatistics', guildId, period],
+    () =>
+      apiService.getData(
+        `/playing-statistics?guildId=${guildId}&startDate=${requestParams.startDate}&endDate=${requestParams.endDate}`
+      ),
+    {
+      staleTime: 1000 * 60 * 30,
+      cacheTime: 1000 * 60 * 30,
+      refetchOnWindowFocus: false,
+    }
+  );
+
   const processChartData = (chartData: ChartData) => ({
     ...chartData,
     data: [...chartData.data]
-      .filter(({ date }) => new Date(date) >= getPeriodStart)
       .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime()),
-    color: `#${Math.floor(Math.random()*16777215).toString(16)}` 
+    color: `#${Math.floor(Math.random()*16777215).toString(16)}`
   });
 
   const playingUserStats = useMemo(() => {
@@ -44,9 +65,11 @@ export const usePlayingStatisticData = (period: 'day' | 'week' | 'month' | 'year
     });
 
     return filteredData;
-  }, [data, getPeriodStart]);
+  }, [data]);
 
   return {
     playingUserStats,
+    isLoading,
+    error,
   };
 };

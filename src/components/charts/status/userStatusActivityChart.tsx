@@ -188,23 +188,17 @@ const StatusActivityChart = ({ data }) => {
     </div>
   );
 };
+export interface DayData {
+  day: number
+  statusCounts: { [key: string]: number }
+}
 
-const ExpandablePresenceChart = () => {
+export interface ExpandablePresenceChartProps {
+  data: DayData[]
+}
+
+const ExpandablePresenceChart = ({ data }: ExpandablePresenceChartProps) => {
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const openModal = () => setIsModalOpen(true);
-  const closeModal = () => setIsModalOpen(false);
-
-  
-  const data = Array.from({ length: 30 }, (_, i) => ({
-    day: i + 1,
-    statusCounts: {
-      "Gaming Time": Math.floor(Math.random() * 150),
-      AFK: Math.floor(Math.random() * 50),
-      Voice: Math.floor(Math.random() * 30),
-      Studying: Math.floor(Math.random() * 20),
-      Chatting: Math.floor(Math.random() * 100)
-    }
-  }));
 
   return (
     <Card className="flex-1 p-6 hover:scale-[101%] transition-all duration-150">
