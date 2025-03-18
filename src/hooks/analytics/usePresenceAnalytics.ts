@@ -1,61 +1,66 @@
-import { useQuery } from 'react-query';
-import { apiService } from '../apiService';
-import { ActivityOverviewResponse, DeviceUsage, HourlyActivityResponse, PeakHour, StatusBreakdown } from '@/pages/UsersDetailedActivityAnalytics/PresenceAnalytics/interfaces/presence-activirt.interfaces';
+// usePresenceAnalytics.ts
 
-const getTimeRange = (period: 'day' | 'week' | 'month' | 'year') => {
-  const endDate = new Date();
-  const startDate = new Date();
+import { ActivityOverviewResponse,
+  StatusBreakdown,
+  HourlyActivityResponse,
+  PeakHour,
+  DeviceUsage } from "@/pages/UsersDetailedActivityAnalytics/PresenceAnalytics/interfaces/presence-activirt.interfaces";
+import { useQueryBuilder } from "./common/useQueryBuilder";
 
-  switch (period) {
-    case 'day':
-      startDate.setDate(endDate.getDate() - 1);
-      break;
-    case 'week':
-      startDate.setDate(endDate.getDate() - 7);
-      break;
-    case 'month':
-      startDate.setMonth(endDate.getMonth() - 1);
-      break;
-    case 'year':
-      startDate.setFullYear(endDate.getFullYear() - 1);
-      break;
-  }
-
-  return { startDate: startDate.toISOString(), endDate: endDate.toISOString() };
-};
-
-export const usePresenceActivity = (guildId: string, period: 'day' | 'week' | 'month' | 'year' = 'year') => {
-  const { startDate, endDate } = getTimeRange(period);
-  const queryParams = new URLSearchParams({ guildId, startDate, endDate }).toString();
-
-  const { data: overview = {} as ActivityOverviewResponse, isLoading: overviewLoading, error: overviewError } = useQuery<ActivityOverviewResponse>(
-    ['activityOverview', guildId, period],
-    () => apiService.getData(`/presence-activity/overview?${queryParams}`),
-    { staleTime: 1000 * 60 * 30, cacheTime: 1000 * 60 * 30, retry: 1 }
+export function usePresenceActivity() {
+  // 1) Обзор
+  const {
+    data: overview = {} as ActivityOverviewResponse,
+    isLoading: overviewLoading,
+    error: overviewError,
+  } = useQueryBuilder<ActivityOverviewResponse>(
+    ['activityOverview'],
+    (guildId, startDate, endDate) =>
+      `/presence-activity/overview?guildId=${guildId}&startDate=${startDate}&endDate=${endDate}`
   );
 
-  const { data: statusBreakdown = [] as StatusBreakdown[], isLoading: statusLoading, error: statusError } = useQuery<StatusBreakdown[]>(
-    ['statusBreakdown', guildId, period],
-    () => apiService.getData(`/presence-activity/status-breakdown?${queryParams}`),
-    { staleTime: 1000 * 60 * 30, cacheTime: 1000 * 60 * 30, retry: 1 }
+  // 2) Разбивка статусов
+  const {
+    data: statusBreakdown = [] as StatusBreakdown[],
+    isLoading: statusLoading,
+    error: statusError,
+  } = useQueryBuilder<StatusBreakdown[]>(
+    ['statusBreakdown'],
+    (guildId, startDate, endDate) =>
+      `/presence-activity/status-breakdown?guildId=${guildId}&startDate=${startDate}&endDate=${endDate}`
   );
 
-  const { data: hourlyActivity = {} as HourlyActivityResponse, isLoading: hourlyLoading, error: hourlyError } = useQuery<HourlyActivityResponse>(
-    ['hourlyActivity', guildId, period],
-    () => apiService.getData(`/presence-activity/hourly-activity?${queryParams}`),
-    { staleTime: 1000 * 60 * 30, cacheTime: 1000 * 60 * 30, retry: 1 }
+  // 3) Почасовая активность
+  const {
+    data: hourlyActivity = {} as HourlyActivityResponse,
+    isLoading: hourlyLoading,
+    error: hourlyError,
+  } = useQueryBuilder<HourlyActivityResponse>(
+    ['hourlyActivity'],
+    (guildId, startDate, endDate) =>
+      `/presence-activity/hourly-activity?guildId=${guildId}&startDate=${startDate}&endDate=${endDate}`
   );
 
-  const { data: peakHours = [] as PeakHour[], isLoading: peakLoading, error: peakError } = useQuery<PeakHour[]>(
-    ['peakHours', guildId, period],
-    () => apiService.getData(`/presence-activity/peak-hours?${queryParams}`),
-    { staleTime: 1000 * 60 * 30, cacheTime: 1000 * 60 * 30, retry: 1 }
+  // 4) Пиковые часы
+  const {
+    data: peakHours = [] as PeakHour[],
+    isLoading: peakLoading,
+    error: peakError,
+  } = useQueryBuilder<PeakHour[]>(
+    ['peakHours'],
+    (guildId, startDate, endDate) =>
+      `/presence-activity/peak-hours?guildId=${guildId}&startDate=${startDate}&endDate=${endDate}`
   );
 
-  const { data: deviceUsage = [] as DeviceUsage[], isLoading: deviceLoading, error: deviceError } = useQuery<DeviceUsage[]>(
-    ['deviceUsage', guildId, period],
-    () => apiService.getData(`/presence-activity/device-usage?${queryParams}`),
-    { staleTime: 1000 * 60 * 30, cacheTime: 1000 * 60 * 30, retry: 1 }
+  // 5) Устройства
+  const {
+    data: deviceUsage = [] as DeviceUsage[],
+    isLoading: deviceLoading,
+    error: deviceError,
+  } = useQueryBuilder<DeviceUsage[]>(
+    ['deviceUsage'],
+    (guildId, startDate, endDate) =>
+      `/presence-activity/device-usage?guildId=${guildId}&startDate=${startDate}&endDate=${endDate}`
   );
 
   return {
@@ -67,5 +72,4 @@ export const usePresenceActivity = (guildId: string, period: 'day' | 'week' | 'm
     isLoading: overviewLoading || statusLoading || hourlyLoading || peakLoading || deviceLoading,
     error: overviewError || statusError || hourlyError || peakError || deviceError,
   };
-};
-
+}
