@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useContext } from "react";
 import { motion } from "framer-motion";
 import {
   Avatar,
@@ -13,11 +13,18 @@ import { LogOut, Search, SwitchCamera } from "lucide-react";
 import { useLocation } from "react-router-dom";
 import { DatePickerWithRange } from "../../ui/data-rande-picker";
 import { BREADCRUMB_PATHS } from "@/routes/routes.constant";
+import { DashboardContext } from "@/common/context/queryContext";
 
 const Header = () => {
   const location = useLocation();
   const [isUserMenuOpen, setIsUserMenuOpen] = useState(false);
-  
+  const dashboardContext = useContext(DashboardContext);
+
+  const selectedPeriod = dashboardContext?.selectedPeriod;
+  const guildId = dashboardContext?.guildId;
+  const setSelectedPeriod = dashboardContext?.setSelectedPeriod;
+  const setGuildId = dashboardContext?.setGuildId;
+
   const getCurrentTitle = (pathname: string) => {
     if (pathname.includes('gaming') || pathname.includes('presence') || pathname.includes('status')) {
       return 'Users Detailed Activity Analytics';
@@ -49,9 +56,12 @@ const Header = () => {
             </h2>
 
             <div className="hidden xl:flex items-center space-x-4">
-              <DatePickerWithRange />
+              <DatePickerWithRange 
+                value={selectedPeriod}
+                onChange={(period) => setSelectedPeriod && period && setSelectedPeriod(period)}
+              />
               
-              <Select>
+              <Select value={guildId} onValueChange={(id) => setGuildId && setGuildId(id)}>
                 <SelectTrigger className="w-[180px]">
                   <SelectValue placeholder="Select Guild" />
                 </SelectTrigger>
@@ -96,8 +106,11 @@ const Header = () => {
         {/* Mobile/Tablet Menu */}
         <div className="xl:hidden p-4 space-y-4">
           <div className="flex space-x-4">
-            <DatePickerWithRange />
-            <Select>
+            <DatePickerWithRange 
+              value={selectedPeriod}
+              onChange={(period) => setSelectedPeriod && period && setSelectedPeriod(period)}
+            />
+            <Select value={guildId} onValueChange={(id) => setGuildId && setGuildId(id)}>
               <SelectTrigger>
                 <SelectValue placeholder="Select Guild" />
               </SelectTrigger>
