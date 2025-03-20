@@ -5,10 +5,13 @@ import { AlertCircle, Loader2 } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import AuthLayout from "@/components/common/layout/AuthLayout";
+import HumanVerification from "@/components/auth/HumanVerification";
 import { ROUTES } from "@/routes/routes.constant";
+import { useAuth } from "@/contexts/AuthContext";
 
 const Register = () => {
   const navigate = useNavigate();
+  const { register } = useAuth();
   const [formData, setFormData] = useState({
     name: "",
     email: "",
@@ -17,6 +20,7 @@ const Register = () => {
   });
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [isHumanVerified, setIsHumanVerified] = useState(false);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
@@ -33,15 +37,16 @@ const Register = () => {
       return;
     }
     
+    if (!isHumanVerified) {
+      setError("Please verify that you are human before creating an account.");
+      return;
+    }
+    
     setIsLoading(true);
     
-    // Simulate API call
     try {
-      // Replace with actual registration logic
-      await new Promise(resolve => setTimeout(resolve, 1500));
-      
-      // For demo purposes, let's navigate to login
-      navigate(ROUTES.LOGIN);
+      await register(formData.name, formData.email, formData.password);
+      navigate(ROUTES.DASHBOARD);
     } catch (err) {
       setError("Registration failed. Please try again.");
     } finally {
@@ -161,14 +166,7 @@ const Register = () => {
           </p>
         </div>
         
-        <div className="mt-8 pt-8 border-t border-gray-200">
-          <div className="flex items-center justify-center gap-2">
-            <div className="w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center">
-              <span className="text-sm font-medium">?</span>
-            </div>
-            <span className="text-sm text-gray-500">I am human</span>
-          </div>
-        </div>
+        <HumanVerification onVerificationChange={setIsHumanVerified} />
       </motion.div>
     </AuthLayout>
   );

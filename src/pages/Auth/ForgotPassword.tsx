@@ -6,22 +6,32 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import AuthLayout from "@/components/common/layout/AuthLayout";
 import { ROUTES } from "@/routes/routes.constant";
+import HumanVerification from "@/components/auth/HumanVerification";
 
 const ForgotPassword = () => {
   const [email, setEmail] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [isSubmitted, setIsSubmitted] = useState(false);
+  const [isHumanVerified, setIsHumanVerified] = useState(false);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError(null);
+
+    if (!isHumanVerified) {
+      setError(
+        "Please verify that you are human before requesting a password reset."
+      );
+      return;
+    }
+
     setIsLoading(true);
-    
+
     // Simulate API call
     try {
       // Replace with actual password reset logic
-      await new Promise(resolve => setTimeout(resolve, 1500));
+      await new Promise((resolve) => setTimeout(resolve, 1500));
       setIsSubmitted(true);
     } catch (err) {
       setError("Failed to send reset link. Please try again.");
@@ -41,7 +51,7 @@ const ForgotPassword = () => {
         {!isSubmitted ? (
           <>
             <div className="mb-6">
-              <Link 
+              <Link
                 to={ROUTES.LOGIN}
                 className="inline-flex items-center text-sm text-gray-600 hover:text-gray-900"
               >
@@ -49,12 +59,13 @@ const ForgotPassword = () => {
                 Back to login
               </Link>
             </div>
-            
+
             <h1 className="text-2xl font-bold mb-2">Forgot your password?</h1>
             <p className="text-gray-600 mb-6">
-              Enter your email address and we'll send you a link to reset your password.
+              Enter your email address and we'll send you a link to reset your
+              password.
             </p>
-            
+
             {error && (
               <div className="bg-red-50 border border-red-200 rounded-md p-4 mb-6 flex items-start gap-3">
                 <div className="text-red-500 mt-0.5">
@@ -63,7 +74,7 @@ const ForgotPassword = () => {
                 <p className="text-sm text-red-700">{error}</p>
               </div>
             )}
-            
+
             <form onSubmit={handleSubmit} className="space-y-6">
               <div className="space-y-2">
                 <label htmlFor="email" className="block text-sm font-medium">
@@ -79,7 +90,7 @@ const ForgotPassword = () => {
                   className="w-full"
                 />
               </div>
-              
+
               <Button
                 type="submit"
                 className="w-full bg-emerald-600 hover:bg-emerald-700 text-white"
@@ -95,6 +106,8 @@ const ForgotPassword = () => {
                 )}
               </Button>
             </form>
+
+            <HumanVerification onVerificationChange={setIsHumanVerified} />
           </>
         ) : (
           <motion.div
@@ -118,10 +131,7 @@ const ForgotPassword = () => {
                 Try another email
               </Button>
               <Link to={ROUTES.LOGIN}>
-                <Button
-                  variant="link"
-                  className="w-full text-emerald-600"
-                >
+                <Button variant="link" className="w-full text-emerald-600">
                   Back to login
                 </Button>
               </Link>
