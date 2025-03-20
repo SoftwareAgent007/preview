@@ -4,6 +4,7 @@ import { Menu } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import Header from "./Header";
 import Sidebar from "./Sidebar";
+import { Outlet } from "react-router-dom";
 
 interface DashboardLayoutProps {
   children: ReactNode;
@@ -91,6 +92,7 @@ const DashboardLayout = ({ children }: DashboardLayoutProps) => {
           layout
         >
           {children}
+          <Outlet/>
         </motion.main>
       </motion.div>
     </div>

@@ -1,26 +1,39 @@
 import { useState } from "react";
 import { motion } from "framer-motion";
-import {
-  Avatar,
-  AvatarFallback,
-  AvatarImage,
-} from "@/components/ui/avatar";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { LogOut, Search, SwitchCamera } from "lucide-react";
-import { useLocation } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom";
 import { DatePickerWithRange } from "../../ui/data-rande-picker";
-import { BREADCRUMB_PATHS } from "@/routes/routes.constant";
+import { BREADCRUMB_PATHS, ROUTES } from "@/routes/routes.constant";
+import { useAuth } from "@/contexts/AuthContext";
 
 const Header = () => {
   const location = useLocation();
+  const navigate = useNavigate();
+  const { logout } = useAuth();
   const [isUserMenuOpen, setIsUserMenuOpen] = useState(false);
-  
+
   const getCurrentTitle = (pathname: string) => {
-    if (pathname.includes('gaming') || pathname.includes('presence') || pathname.includes('status')) {
-      return 'Users Detailed Activity Analytics';
+    if (
+      pathname.includes("gaming") ||
+      pathname.includes("presence") ||
+      pathname.includes("status")
+    ) {
+      return "Users Detailed Activity Analytics";
     }
     const breadcrumbs = BREADCRUMB_PATHS[pathname];
     return breadcrumbs ? breadcrumbs[breadcrumbs.length - 1].label : "DataPlay";
@@ -28,8 +41,14 @@ const Header = () => {
 
   const currentTitle = getCurrentTitle(location.pathname);
 
+  const handleLogout = () => {
+    logout();
+    setIsUserMenuOpen(false);
+    navigate(ROUTES.LOGIN);
+  };
+
   return (
-    <motion.header 
+    <motion.header
       className="w-full border-b backdrop-blur bg-white"
       initial={{ y: -20, opacity: 0 }}
       animate={{ y: 0, opacity: 1 }}
@@ -37,14 +56,13 @@ const Header = () => {
     >
       <div className="mx-auto" style={{ maxWidth: "1500px" }}>
         <div className="flex h-16 items-center px-4 justify-between">
-          
           {/* Left Section */}
           <div className="flex items-center space-x-6">
             {/* <h2 className="text-2xl font-bold">{currentTitle}</h2> */}
-            
+
             <div className="hidden xl:flex items-center space-x-4">
               <DatePickerWithRange />
-              
+
               <Select>
                 <SelectTrigger className="w-[180px]">
                   <SelectValue placeholder="Select Guild" />
@@ -67,13 +85,20 @@ const Header = () => {
             <Popover open={isUserMenuOpen} onOpenChange={setIsUserMenuOpen}>
               <PopoverTrigger asChild>
                 <Avatar className="cursor-pointer">
-                  <AvatarImage src="https://github.com/shadcn.png" alt="@shadcn" />
+                  <AvatarImage
+                    src="https://github.com/shadcn.png"
+                    alt="@shadcn"
+                  />
                   <AvatarFallback>CN</AvatarFallback>
                 </Avatar>
               </PopoverTrigger>
               <PopoverContent className="w-fit bg-white">
                 <div className="flex flex-col space-y-1">
-                  <Button variant="ghost" className="justify-start w-[180px]">
+                  <Button
+                    variant="ghost"
+                    className="justify-start w-[180px]"
+                    onClick={handleLogout}
+                  >
                     <LogOut className="h-4 mr-2" />
                     Logout
                   </Button>

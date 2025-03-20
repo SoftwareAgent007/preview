@@ -16,6 +16,7 @@ import Register from "./pages/Auth/Register.tsx";
 import Login from "./pages/Auth/Login.tsx";
 import { AuthProvider } from "./contexts/AuthContext.tsx";
 import ProtectedRoute from "./components/common/ProtectedRoute.tsx";
+import PublicRoute from "./components/common/PublicRoute.tsx";
 function App() {
   return (
     <ThemeProvider defaultTheme="light" storageKey="vite-ui-theme">
@@ -24,13 +25,15 @@ function App() {
           <AnimatePresence mode="wait">
             <Routes>
               {/* Public routes */}
-              <Route path="/login" element={<Login />} />
-              <Route path="/register" element={<Register />} />
-              <Route path="/forgot-password" element={<ForgotPassword />} />
+              <Route element={<PublicRoute />}>
+                <Route path="/login" element={<Login />} />
+                <Route path="/register" element={<Register />} />
+                <Route path="/forgot-password" element={<ForgotPassword />} />
+              </Route>
               
               {/* Protected routes */}
               <Route element={<ProtectedRoute />}>
-                <Route element={<DashboardLayout children={<></>}/>}>
+                <Route element={<DashboardLayout children/>}>
                   <Route path="/" element={<Dashboard />}/>
                   <Route path="keyword-analytics" element={<KeywordAnalytics />} />
                   <Route path="user-activity" element={<UserActivityAnalytics />} />
