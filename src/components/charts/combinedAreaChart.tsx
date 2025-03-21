@@ -153,49 +153,105 @@ const MultiLayerAreaChart = ({
         .attr("stop-opacity", 0.1);
     });
 
-    // Draw each dataset with proper typing and animations
-    Object.entries(datasets).forEach(([key, { data, color }]) => {
-      const gradientId = `area-gradient-${key.replace(/\s+/g, "-")}`;
+    // Create a clip path for the running animation if animation is enabled
+    if (animate) {
+      const clipId = `clip-${Math.random().toString(36).substring(2, 9)}`;
+      
+      defs.append("clipPath")
+        .attr("id", clipId)
+        .append("rect")
+        .attr("width", 0)
+        .attr("height", chartHeight)
+        .transition()
+        .duration(1800)
+        .ease(d3.easeQuadInOut)
+        .attr("width", chartWidth);
+      
+      // Draw each dataset with running animation
+      Object.entries(datasets).forEach(([key, { data, color }], index) => {
+        const gradientId = `area-gradient-${key.replace(/\s+/g, "-")}`;
+        const delay = index * 100; // Stagger the animations slightly
+        
+        // Add area with gradient and clip path
+        svg.append("path")
+          .datum(data)
+          .attr("fill", `url(#${gradientId})`)
+          .attr("clip-path", `url(#${clipId})`)
+          .attr("d", area);
+        
+        // Add line with clip path
+        const linePath = svg.append("path")
+          .datum(data)
+          .attr("fill", "none")
+          .attr("stroke", color)
+          .attr("stroke-width", 2.5)
+          .attr("stroke-linejoin", "round")
+          .attr("stroke-linecap", "round")
+          .attr("clip-path", `url(#${clipId})`)
+          .attr("d", line);
+        
+        // Add data points with delayed appearance based on x position
+        const dataPoints = svg.selectAll(`.data-point-${key}`)
+          .data(data)
+          .enter()
+          .append("circle")
+          .attr("class", `data-point-${key}`)
+          .attr("cx", d => x(new Date(d.date)))
+          .attr("cy", d => y(d.count))
+          .attr("r", 0)
+          .attr("fill", "white")
+          .attr("stroke", color)
+          .attr("stroke-width", 2)
+          .style("opacity", 0);
+        
+        // Delay the appearance of points based on their x position
+        dataPoints.each(function(d) {
+          const point = d3.select(this);
+          const xPos = x(new Date(d.date));
+          const pointDelay = (xPos / chartWidth) * 1800 + delay; // Sync with clip path animation
+          
+          point.transition()
+            .delay(pointDelay)
+            .duration(300)
+            .attr("r", 4)
+            .style("opacity", 1);
+        });
+      });
+    } else {
+      // Non-animated version (existing code)
+      Object.entries(datasets).forEach(([key, { data, color }]) => {
+        const gradientId = `area-gradient-${key.replace(/\s+/g, "-")}`;
 
-      // Add area with gradient
-      const areaPath = svg
-        .append("path")
-        .datum(data)
-        .attr("fill", `url(#${gradientId})`)
-        .attr("d", area);
+        // Add area with gradient
+        svg.append("path")
+          .datum(data)
+          .attr("fill", `url(#${gradientId})`)
+          .attr("d", area);
 
-      // Add line
-      const linePath = svg
-        .append("path")
-        .datum(data)
-        .attr("fill", "none")
-        .attr("stroke", color)
-        .attr("stroke-width", 2.5)
-        .attr("stroke-linejoin", "round")
-        .attr("stroke-linecap", "round")
-        .attr("d", line);
-
-      // Add animation if enabled
-      if (animate) {
-        // Animate area
-        areaPath
-          .style("opacity", 0)
-          .transition()
-          .duration(1000)
-          .ease(d3.easeCubicOut)
-          .style("opacity", 1);
-
-        // Animate line with drawing effect
-        const totalLength = linePath.node()?.getTotalLength() || 0;
-        linePath
-          .attr("stroke-dasharray", totalLength)
-          .attr("stroke-dashoffset", totalLength)
-          .transition()
-          .duration(1500)
-          .ease(d3.easeCubicInOut)
-          .attr("stroke-dashoffset", 0);
-      }
-    });
+        // Add line
+        svg.append("path")
+          .datum(data)
+          .attr("fill", "none")
+          .attr("stroke", color)
+          .attr("stroke-width", 2.5)
+          .attr("stroke-linejoin", "round")
+          .attr("stroke-linecap", "round")
+          .attr("d", line);
+        
+        // Add data points
+        svg.selectAll(`.data-point-${key}`)
+          .data(data)
+          .enter()
+          .append("circle")
+          .attr("class", `data-point-${key}`)
+          .attr("cx", d => x(new Date(d.date)))
+          .attr("cy", d => y(d.count))
+          .attr("r", 4)
+          .attr("fill", "white")
+          .attr("stroke", color)
+          .attr("stroke-width", 2);
+      });
+    }
 
     // Format the date ticks properly
     const formatDate = d3.timeFormat(dateFormat);
