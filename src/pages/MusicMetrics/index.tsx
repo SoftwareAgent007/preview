@@ -5,7 +5,7 @@ import { BREADCRUMB_PATHS, ROUTES } from "@/routes/routes.constant";
 import TrendIndicator from "@/components/common/TrendIndicator";
 import ListElement from "@/components/ui/list-element";
 import HorizontalBarChartRelatedGenres from "@/components/charts/music/musicActivityChart";
-import PeakListeningHoursChart from "@/components/charts/music/peackHoursChart";
+import PeakListeningHoursChart from "@/components/charts/music/peakHoursChart";
 import { useState } from "react";
 import MusicStatCard from "./components/MusicStatCard";
 import { motion } from "framer-motion";
