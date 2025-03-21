@@ -136,24 +136,6 @@ const RolesChart = () => {
                                 data={mockData} 
                             />
                         </div>
-                        <motion.div 
-                            className="absolute bottom-0 lg:bottom-12 legend grid grid-cols-2 sm:grid-cols-4 gap-2 w-full"
-                            variants={itemVariants}
-                        >
-                            {mockData.map((item) => (
-                                <motion.div 
-                                    key={item.role} 
-                                    className="flex items-center gap-2 justify-center text-xs sm:text-sm"
-                                    whileHover={{ scale: 1.05 }}
-                                >
-                                    <div 
-                                        className="w-3 h-3 rounded-md" 
-                                        style={{ backgroundColor: item.color }} 
-                                    />
-                                    <span className="font-medium">{item.role}</span>
-                                </motion.div>
-                            ))}
-                        </motion.div>
                     </motion.div>
                 </motion.div>
             </Card>

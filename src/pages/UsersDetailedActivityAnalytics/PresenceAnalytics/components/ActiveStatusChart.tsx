@@ -30,17 +30,38 @@ const ActiveStatusChart = ({ data }: ActiveStatusChartProps) => {
   useEffect(() => {
     const updateDimensions = () => {
       if (chartRef.current) {
+        const parentElement = chartRef.current.parentElement;
+        const parentHeight = parentElement ? parentElement.offsetHeight : 0;
+        
+        // Get the width of the container
         const width = chartRef.current.offsetWidth;
-        // Make height responsive based on width and viewport
-        const height = Math.min(width * 0.8, window.innerHeight * 0.6);
+        
+        // Calculate height based on available space in the parent
+        // Subtract any padding/margins if needed
+        const availableHeight = parentHeight - 80; // Subtract space for title and padding
+        
+        // Use the available height, but ensure it's not too small
+        const height = Math.max(availableHeight, width * 0.7);
+        
         setChartDimensions({ width, height });
       }
     };
 
     updateDimensions();
+    
+    // Create a ResizeObserver to detect container size changes
+    const resizeObserver = new ResizeObserver(updateDimensions);
+    if (chartRef.current) {
+      resizeObserver.observe(chartRef.current);
+    }
+    
+    // Also listen for window resize events
     window.addEventListener('resize', updateDimensions);
 
-    return () => window.removeEventListener('resize', updateDimensions);
+    return () => {
+      resizeObserver.disconnect();
+      window.removeEventListener('resize', updateDimensions);
+    };
   }, []);
 
   return (
@@ -48,10 +69,10 @@ const ActiveStatusChart = ({ data }: ActiveStatusChartProps) => {
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ type: "spring", stiffness: 300, damping: 30 }}
-      className="w-full"
+      className="w-full h-full flex flex-col"
     >
-      <Card className="flex-1 p-4 md:p-6 hover:scale-[101%] transition-all duration-150 h-full">
-        <motion.div className="flex flex-col">
+      <Card className="flex-1 p-4 md:p-6 hover:scale-[101%] transition-all duration-150 h-full flex flex-col">
+        <motion.div className="flex flex-col h-full">
           <motion.div 
             className="title flex items-center mb-4"
             whileHover={{ x: 5 }}
@@ -86,38 +107,13 @@ const ActiveStatusChart = ({ data }: ActiveStatusChartProps) => {
             initial={{ opacity: 0, scale: 0.95 }}
             animate={{ opacity: 1, scale: 1 }}
             transition={{ delay: 0.2 }}
-            className="w-full aspect-square md:aspect-auto"
-            style={{ height: chartDimensions.height }}
+            className="w-full flex-1 flex"
           >
             <CircleRoleChart 
               data={data} 
               width={chartDimensions.width} 
               height={chartDimensions.height}
             />
-          </motion.div>
-
-          <motion.div 
-            className="legend flex flex-wrap justify-center gap-2 md:gap-4 lg:gap-8 mt-4 md:mt-6"
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.3 }}
-          >
-            {statusColors.map((status, index) => (
-              <motion.div 
-                key={status.label}
-                className="flex items-center gap-2 md:gap-3"
-                initial={{ opacity: 0, x: -20 }}
-                animate={{ opacity: 1, x: 0 }}
-                transition={{ delay: 0.4 + index * 0.1 }}
-                whileHover={{ scale: 1.05 }}
-              >
-                <div 
-                  className="w-4 h-4 md:w-6 md:h-6 rounded-md" 
-                  style={{ backgroundColor: status.color }} 
-                />
-                <span className="text-sm md:text-lg font-medium">{status.label}</span>
-              </motion.div>
-            ))}
           </motion.div>
         </motion.div>
       </Card>
