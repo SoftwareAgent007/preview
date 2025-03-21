@@ -5,6 +5,8 @@ import { AnimatePresence, motion } from "framer-motion";
 import { Expand, Minimize } from "lucide-react";
 import React, { useState } from "react";
 import ReactDOM from "react-dom";
+import ErrorComponent from "@/components/common/errorModel";
+
 interface MessageFrequencyChartProps {
     matchesTimeline: TimelineDataDto[]
     width?: number;
@@ -54,7 +56,7 @@ const KeywordsMatchesTimeline: React.FC<MessageFrequencyChartProps> = ({ matches
                         variants={itemVariants}
                         whileHover={{ scale: 1.02 }}
                     >
-                        Message Activity
+                        Matches Timeline
                     </motion.span>
                     <ClickableTooltip content={
                         <motion.p
@@ -103,15 +105,19 @@ const KeywordsMatchesTimeline: React.FC<MessageFrequencyChartProps> = ({ matches
                 </motion.div>
             </motion.div>
             <motion.div 
-                className="chart-parent"
+                className="chart-parent flex justify-between"
                 variants={itemVariants}
             >
-                <AreaLineChart
-                    data={matchesTimeline}
-                    width={width}
-                    height={300}
-                    graphColor="#b1c4f5"
-                />
+                {matchesTimeline?.length ? (
+                    <AreaLineChart
+                        data={matchesTimeline}
+                        width={width}
+                        height={300}
+                        graphColor="#b1c4f5"
+                    />
+                ) : (
+                    <ErrorComponent height={300}/>
+                )}
             </motion.div>
 
             <AnimatePresence>
@@ -129,7 +135,7 @@ const KeywordsMatchesTimeline: React.FC<MessageFrequencyChartProps> = ({ matches
 
 interface ModalProps {
     closeModal: () => void;
-    messageFrequency: any;
+    messageFrequency: TimelineDataDto[];
     width: number;
 }
 
@@ -192,12 +198,16 @@ const Modal: React.FC<ModalProps> = ({ closeModal, messageFrequency, width }) =>
                         animate={{ opacity: 1, y: 0 }}
                         transition={{ delay: 0.3 }}
                     >
-                        <AreaLineChart
-                            data={messageFrequency}
-                            width={width * 1.5}
-                            height={500}
-                            graphColor="#b1c4f5"
-                        />
+                        {messageFrequency?.length ? (
+                            <AreaLineChart
+                                data={messageFrequency}
+                                width={width * 1.5}
+                                height={500}
+                                graphColor="#b1c4f5"
+                            />
+                        ) : (
+                            <ErrorComponent height={500}/>
+                        )}
                     </motion.div>
                 </motion.div>
             </motion.div>

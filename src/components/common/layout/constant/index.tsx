@@ -40,7 +40,6 @@ export const menuCategories: MenuCategories = {
       nested: [
         { label: "Gaming", path: "/user-activity/detailed/gaming" },
         { label: "Presence", path: "/user-activity/detailed/presence" },
-        { label: "Status", path: "/user-activity/detailed/status" },
       ]
     },
     { icon: <Music2 />, label: "Music Metrics", path: ROUTES.MUSIC_METRICS, beta: true },

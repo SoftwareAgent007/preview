@@ -1,28 +1,34 @@
 import React, { useEffect, useRef } from "react";
 import * as d3 from "d3";
+import { GenreData } from "@/pages/MusicMetrics/interfaces/music.interfaces";
 
-interface DataPoint {
-  genre: string;
+interface DataPoint extends GenreData {
   artist: string;
-  count: number;
   total: number;
 }
 
 interface HorizontalBarChartRelatedGenresProps {
-  data: DataPoint[];
+  data: GenreData[];
   width?: number;
   height?: number;
 }
 
 const HorizontalBarChartRelatedGenres: React.FC<HorizontalBarChartRelatedGenresProps> = ({
   data,
-  width = 500,
+  width = 400,
   height = 450,
 }) => {
   const svgRef = useRef<SVGSVGElement>(null);
 
   useEffect(() => {
     if (!svgRef.current || data.length === 0) return;
+
+    const chartData: DataPoint[] = data.map(d => ({
+      ...d,
+      artist: "Artist", // TODO: Add artist data
+      total: d.playCount,
+      count: d.playCount
+    }));
 
     d3.select(svgRef.current).selectAll("*").remove();
 
@@ -37,19 +43,19 @@ const HorizontalBarChartRelatedGenres: React.FC<HorizontalBarChartRelatedGenresP
       .append("g")
       .attr("transform", `translate(${margin.left},${margin.top})`);
 
-    const maxCount = d3.max(data, (d) => d.total) || 0;
+    const maxCount = d3.max(chartData, (d) => d.total) || 0;
 
     const x = d3.scaleLinear().domain([0, maxCount]).range([0, chartWidth]);
 
     const y = d3
       .scaleBand()
       .range([0, chartHeight])
-      .domain(data.map((d) => d.genre))
+      .domain(chartData.map((d) => d.genre))
       .padding(0.3);
 
     svg
       .selectAll("backgroundRect")
-      .data(data)
+      .data(chartData)
       .join("rect")
       .attr("x", 0)
       .attr("y", (d) => y(d.genre) + 3 || 0)
@@ -61,7 +67,7 @@ const HorizontalBarChartRelatedGenres: React.FC<HorizontalBarChartRelatedGenresP
 
     svg
       .selectAll("dataRect")
-      .data(data)
+      .data(chartData)
       .join("rect")
       .attr("x", 0)
       .attr("y", (d) => y(d.genre) + 3 || 0)
@@ -73,7 +79,7 @@ const HorizontalBarChartRelatedGenres: React.FC<HorizontalBarChartRelatedGenresP
 
     svg
       .selectAll("genreLabels")
-      .data(data)
+      .data(chartData)
       .join("text")
       .attr("x", -10)
       .attr("y", (d) => (y(d.genre) -5 || 0) + y.bandwidth() / 3)
@@ -85,7 +91,7 @@ const HorizontalBarChartRelatedGenres: React.FC<HorizontalBarChartRelatedGenresP
 
     svg
       .selectAll("artistLabels")
-      .data(data)
+      .data(chartData)
       .join("text")
       .attr("x", -10)
       .attr("y", (d) => (y(d.genre) -5 || 0) + y.bandwidth() / 1.2)
@@ -100,13 +106,13 @@ const HorizontalBarChartRelatedGenres: React.FC<HorizontalBarChartRelatedGenresP
 
     svg
       .selectAll("percentageLabels")
-      .data(data)
+      .data(chartData)
       .join("text")
       .attr("x", (d) => x(d.count) + 5)
       .attr("y", (d) => (y(d.genre) || 0) + y.bandwidth() / 2.5)
       .attr("dy", ".35em")
       .attr("text-anchor", "start")
-      .text((d) => `${((d.count / d.total) * 100).toFixed(1)}%`)
+      .text((d) => `${d.percentage.toFixed(1)}%`)
       .attr("font-size", "12px")
       .attr("fill", "#4a4a4a");
 

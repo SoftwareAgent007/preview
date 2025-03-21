@@ -5,11 +5,11 @@ import BreadcrumbsNavigation from "@/components/common/BreadcrumbsNavigation";
 import { Card } from "@/components/ui/card";
 import { useKeywordsAnalytics } from "@/hooks/analytics/useKeywordsAnalytics";
 import { BREADCRUMB_PATHS, ROUTES } from "@/routes/routes.constant";
-import DataTableComponent from "@/components/common/KeywordsDataTable";
 import ActiveKeywordsList from "./components/keywordsList";
 import KeywordStatCard from "./components/KeywordStatCard";
 import ContentLoader from "react-content-loader";
 import ErrorComponent from "@/components/common/errorModel";
+import KeywordsTable from "./components/KeywordsTable";
 
 const CardSkeleton = ({ width, height }: { width: string; height: string }) => (
   <ContentLoader speed={2} width={width} height={height} viewBox={`0 0 ${width} ${height}`}>
@@ -22,7 +22,6 @@ const KeywordsAnalytics = () => {
   const [searchTerm, setSearchTerm] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
   const [pageSize, setPageSize] = useState(10);
-  const guildId = "YOUR_GUILD_ID"; // Replace with actual guildId or fetch dynamically
 
   const {
     totalKeywords,
@@ -34,7 +33,7 @@ const KeywordsAnalytics = () => {
     pagination,
     isLoading,
     error
-  } = useKeywordsAnalytics(guildId, "year", currentPage, pageSize);
+  } = useKeywordsAnalytics();
   
   const hasErrors = useMemo(() => Boolean(error), [error]);
   // #endregion
@@ -51,28 +50,29 @@ const KeywordsAnalytics = () => {
   };
   // #endregion
 
+  const isValidValue = (value: number | undefined): boolean => {
+    return value !== undefined && value >= 0;
+  };
+
   // #region Stats Cards Data
   const statsCardsData = [
     {
       index: 0,
       title: "Keywords",
-      value: totalKeywords,
-      subValue: { label: "active", value: activeKeywords },
-      trend: { value: 5, isPositive: true },
+      value: isValidValue(totalKeywords) ? totalKeywords : undefined,
+      subValue: { label: "active", value: isValidValue(activeKeywords) ? activeKeywords : undefined },
       tooltipContent: "Total number of keywords in the system"
     },
     {
       index: 1,
       title: "Active Keywords",
-      value: activeKeywords,
-      trend: { value: 5, isPositive: true },
+      value: isValidValue(activeKeywords) ? activeKeywords : undefined,
       tooltipContent: "Currently active keywords"
     },
     {
       index: 2,
       title: "Total Matches",
-      value: totalMatches,
-      trend: { value: 5, isPositive: true },
+      value: isValidValue(totalMatches) ? totalMatches : undefined,
       tooltipContent: "Total keyword matches found"
     }
   ];
@@ -107,7 +107,7 @@ const KeywordsAnalytics = () => {
             </>
           ) : (
             statsCardsData.map((card) => (
-              card.value ? (
+              card.value !== undefined ? (
                 <KeywordStatCard key={card.title} {...card} />
               ) : (
                 <ErrorComponent key={card.title} />
@@ -125,10 +125,8 @@ const KeywordsAnalytics = () => {
           <Card className="flex-1 p-6">
             {isLoading ? (
               <CardSkeleton width="100%" height="200px" />
-            ) : matchesTimeline?.length > 0 ? (
-              <MessageFrequencyChart matchesTimeline={matchesTimeline} />
             ) : (
-              <ErrorComponent />
+              <MessageFrequencyChart matchesTimeline={matchesTimeline ?? []} />
             )}
           </Card>
 
@@ -136,7 +134,7 @@ const KeywordsAnalytics = () => {
             {isLoading ? (
               <CardSkeleton width="100%" height="200px" />
             ) : activeKeywordTags?.length > 0 ? (
-              <ActiveKeywordsList activeKeywords={[]} />
+              <ActiveKeywordsList activeKeywordTags={activeKeywordTags ?? []} keywordsList={keywordsList ?? []} />
             ) : (
               <ErrorComponent />
             )}
@@ -152,20 +150,8 @@ const KeywordsAnalytics = () => {
           <Card className="p-6 h-150">
             {isLoading ? (
               <CardSkeleton width="100%" height="200px" />
-            ) : keywordsList?.length > 0 ? (
-              <DataTableComponent 
-                displayedKeywords={[]} 
-                totalKeywords={keywordsList.length}
-                searchTerm={searchTerm} 
-                setSearchTerm={setSearchTerm} 
-                currentPage={pagination?.currentPage || currentPage} 
-                setCurrentPage={setCurrentPage} 
-                totalPages={pagination?.totalPages || Math.ceil(keywordsList.length / pageSize)}
-                onPageSizeChange={setPageSize}
-                pageSize={pagination?.itemsPerPage || pageSize}
-              />
             ) : (
-              <ErrorComponent />
+              <KeywordsTable />
             )}
           </Card>
         </motion.div>
@@ -173,4 +159,6 @@ const KeywordsAnalytics = () => {
       </div>
     </motion.div>
   );
-};export default KeywordsAnalytics;
+};
+
+export default KeywordsAnalytics;

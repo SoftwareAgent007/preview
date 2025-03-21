@@ -1,4 +1,3 @@
-import { useDashboardData } from "@/hooks/analytics/useDashboardData";
 import React, { useState } from "react";
 import ReactDOM from "react-dom";
 import { motion, AnimatePresence } from "framer-motion";
@@ -6,9 +5,10 @@ import { Expand, Minimize } from "lucide-react";
 import AreaLineChart from "@/components/charts/AreaLineChart";
 import { ClickableTooltip } from "@/components/ui/tooltip";
 import ErrorComponent from "@/components/common/errorModel";
+import { DailyMetric, TimelineDataDto } from "@/types/dataTypes";
 
 interface MessageFrequencyChartProps {
-    messageFrequency?: any[];
+    messageFrequency?: DailyMetric[];
     width?: number;
 }
 
@@ -40,6 +40,11 @@ const MessageFrequencyChart: React.FC<MessageFrequencyChartProps> = ({
         }
     };
 
+    const transformedData: TimelineDataDto[] = messageFrequency.map(metric => ({
+        date: metric.date.toISOString(),
+        count: metric.messageCount
+    }));
+
     return (
         <motion.div 
             className="flex flex-col"
@@ -59,7 +64,7 @@ const MessageFrequencyChart: React.FC<MessageFrequencyChartProps> = ({
                         variants={itemVariants}
                         whileHover={{ scale: 1.02 }}
                     >
-                        Keywords Activity
+                        Message Frequency
                     </motion.span>
                     <ClickableTooltip content={
                         <motion.p
@@ -102,7 +107,7 @@ const MessageFrequencyChart: React.FC<MessageFrequencyChartProps> = ({
             >
                 {messageFrequency?.length ? (
                     <AreaLineChart
-                        data={messageFrequency}
+                        data={transformedData}
                         width={width} 
                         height={300}
                         graphColor="#b1c4f5"
@@ -116,7 +121,7 @@ const MessageFrequencyChart: React.FC<MessageFrequencyChartProps> = ({
                 {isModalOpen && (
                     <Modal 
                         closeModal={() => setIsModalOpen(false)} 
-                        messageFrequency={messageFrequency} 
+                        messageFrequency={transformedData} 
                         width={width} 
                     />
                 )}
@@ -127,7 +132,7 @@ const MessageFrequencyChart: React.FC<MessageFrequencyChartProps> = ({
 
 interface ModalProps {
     closeModal: () => void;
-    messageFrequency: any;
+    messageFrequency: TimelineDataDto[];
     width: number;
 }
 

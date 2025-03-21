@@ -7,7 +7,6 @@ import { Card } from "@/components/ui/card";
 import { ClickableTooltip } from "@/components/ui/tooltip";
 import { useGameDetails, useGamingStats } from "@/hooks/analytics/useGamingAnalytics";
 import ContentLoader from "react-content-loader";
-
 import StatCard from "./components/StatCard";
 import ActiveRolesChart from "./components/ActiveRolesChart";
 import { ActiveGamesList } from "./components/activeGamesList";
@@ -28,7 +27,9 @@ const GamingAnalytics = ({ guildId = "1w2dd" }) => {
     avgSessionMinutes = 0,
     peakPartySize = 0,
     totalHours = 0,
-    weeklyTrends = []
+    returnRate = 0,
+    weeklyTrends = [],
+    peakHours = []
   } = gameStats || {};
 
   const wrapperRef = useRef<HTMLDivElement | null>(null);
@@ -72,12 +73,12 @@ const GamingAnalytics = ({ guildId = "1w2dd" }) => {
     }
   };
 
-  // Stats Data
+  // Updated Stats Data with all available fields
   const statsData = [
     { title: "Active Users", value: totalPlayers, subtitle: "Currently active users" },
     { title: "Avg. Session Time", value: avgSessionMinutes, subtitle: "Average session duration", unit: "min" },
     { title: "Peak Players", value: peakPartySize, subtitle: "Highest concurrent players" },
-    { title: "Total Game Time", value: totalHours, subtitle: "Total hours played", unit: "hrs" }
+    { title: "Total Game Time", value: totalHours, subtitle: "Total hours played", unit: "hrs" },
   ];
 
   return (
@@ -121,13 +122,7 @@ const GamingAnalytics = ({ guildId = "1w2dd" }) => {
               </>
             ) : (
               <>
-                {popularGames && popularGames.length > 0 ? (
-                  <TopGamesList topGames={popularGames} />                  
-                ) : (
-                  <Card className="p-6 h-[400px]">
-                    <ErrorComponent height={350} />
-                  </Card>
-                )}
+                <TopGamesList topGames={popularGames} />                  
                 <motion.div variants={itemVariants}>
                   <Card className="p-6 h-[400px]">
                     {weeklyTrends?.length > 0 ? (
@@ -152,19 +147,43 @@ const GamingAnalytics = ({ guildId = "1w2dd" }) => {
             {isLoading ? (
               <Card className="p-6"><CardSkeleton width="100%" height="550" /></Card>
             ) : (
-              <Card className="p-6 h-full">
-                <div className="title text-gray-500 text-lg font-bold mb-4 ">
-                  <span className="mr-5">Active Games</span>
-                  <ClickableTooltip content={<p><strong>Active Games: </strong> Current active games being played.</p>}>
-                    <span className="bg-gray-300 bg-opacity-25 text-gray-600 px-[7px] rounded-full cursor-help">?</span>
-                  </ClickableTooltip>
-                </div>
-                {activeGames?.length > 0 ? (
-                  <ActiveGamesList topGames={activeGames} />
-                ) : (
-                  <ErrorComponent height={530} />
-                )}
-              </Card>
+              <>
+                <Card className="p-6 h-full">
+                  <div className="title text-gray-500 text-lg font-bold mb-4">
+                    <span className="mr-5">Active Games</span>
+                    <ClickableTooltip content={<p><strong>Active Games: </strong> Current active games being played.</p>}>
+                      <span className="bg-gray-300 bg-opacity-25 text-gray-600 px-[7px] rounded-full cursor-help">?</span>
+                    </ClickableTooltip>
+                  </div>
+                  {activeGames?.length > 0 ? (
+                    <ActiveGamesList topGames={activeGames} />
+                  ) : (
+                    <ErrorComponent height={530} />
+                  )}
+                </Card>
+
+                <Card className="p-6">
+                  <div className="title text-gray-500 text-lg font-bold mb-4">
+                    <span className="mr-5">Peak Hours Distribution</span>
+                    <ClickableTooltip content={<p><strong>Peak Hours: </strong> Player activity by hour of day.</p>}>
+                      <span className="bg-gray-300 bg-opacity-25 text-gray-600 px-[7px] rounded-full cursor-help">?</span>
+                    </ClickableTooltip>
+                  </div>
+                  {peakHours?.length > 0 ? (
+                    <AreaLineChart 
+                      data={peakHours.map(peak => ({
+                        date: new Date(2024, 0, 1, peak.hour).toISOString(),
+                        count: peak.playerCount
+                      }))}
+                      width={graphWidth}
+                      height={300}
+                      graphColor="#82ca9d"
+                    />
+                  ) : (
+                    <ErrorComponent height={300} />
+                  )}
+                </Card>
+              </>
             )}
           </motion.div>
         </div>

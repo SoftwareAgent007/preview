@@ -1,13 +1,10 @@
 import React, { useEffect, useRef, useState } from 'react';
 import * as d3 from 'd3';
+import { HourlyActivity } from '@/types/dataTypes';
 
-interface DataPoint {
-  hour: number;
-  count: number;
-}
 
 interface HorizontalBarChartProps {
-  data: DataPoint[];
+  data: HourlyActivity[];
   width?: number;
   height?: number;
 }

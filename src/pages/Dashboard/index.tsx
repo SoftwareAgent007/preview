@@ -9,9 +9,17 @@ import { useDashboardData } from "@/hooks/analytics/useDashboardData";
 import { BREADCRUMB_PATHS, ROUTES } from "@/routes/routes.constant";
 import { LayoutGroup, motion } from "framer-motion";
 import { Download, Users } from "lucide-react";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, useMemo } from "react";
 import ChartCard from "./components/ChartCard";
 import StatCard from "./components/StatCard";
+import ContentLoader from "react-content-loader";
+
+const CardSkeleton = ({ width, height }: { width: string; height: string }) => (
+  <ContentLoader speed={2} width={width} height={height} viewBox={`0 0 ${width} ${height}`}>
+    <rect x="0" y="0" rx="10" ry="10" width="100%" height="100%" />
+  </ContentLoader>
+);
+
 const Dashboard = () => {
   const {
     totalUsers,
@@ -22,11 +30,12 @@ const Dashboard = () => {
     peakActivityTime,
     topKeywords,
     topUsers,
+    usersDailyActivity,
+    dailyMessageMetrics,
     totalGameTime,
     hourlyActivity,
     activeListeners,
     keywordsCount,
-    keywordsList,
     isLoading,
     error
   } = useDashboardData();
@@ -34,10 +43,10 @@ const Dashboard = () => {
   const [graphWidth, setGraphWidth] = useState(0);
   const wrapperRef = useRef<HTMLDivElement | null>(null);
 
-  const keywordStats = {
-    total: keywordsCount?.count || 0,
-    active: keywordsList?.length || 0
-  };
+  const keywordStats = useMemo(() => ({
+    total: keywordsCount?.count ?? 0,
+    active: keywordsCount?.count ?? 0,
+  }), [keywordsCount]);
 
   const updateGraphWidth = () => {
     if (wrapperRef.current) {
@@ -56,63 +65,70 @@ const Dashboard = () => {
     }
   }, [isLoading, wrapperRef.current]);
 
-  // Helper function to check for errors
-  const hasError = (value) => !isLoading && (!value && value !== 0);
+  const hasError = (value: unknown): boolean => !isLoading && (!value && value !== 0);
 
-  const statsCards = [
+  const statsCards = useMemo(() => [
     {
       title: "Total Users",
-      value: totalUsers?.count,
-      description: totalUsers?.label,
+      value: totalUsers?.count ?? 0,
+      description: totalUsers?.label ?? '',
+      trend: totalUsers?.trend?.percentChange ?? 0,
+      isTrendPositive: totalUsers?.trend?.isPositive ?? false,
       tooltipContent: "Total number of users registered during this period",
     },
     {
       title: "Active Users",
-      value: activeUsers?.count,
-      description: activeUsers?.label,
+      value: activeUsers?.count ?? 0,
+      description: activeUsers?.label ?? '',
+      trend: activeUsers?.trend?.percentChange ?? 0,
+      isTrendPositive: activeUsers?.trend?.isPositive ?? false,
       tooltipContent: "Users who are currently active in the platform",
     },
     {
       title: "Total Messages",
-      value: totalMessages?.count,
-      description: totalMessages?.label,
+      value: totalMessages?.count ?? 0,
+      description: totalMessages?.label ?? '',
+      trend: totalMessages?.trend?.percentChange ?? 0,
+      isTrendPositive: totalMessages?.trend?.isPositive ?? false,
       tooltipContent: "Total number of messages sent during this period",
     },
     {
       title: "Total Reactions",
-      value: totalReactions?.count,
-      description: totalReactions?.label,
+      value: totalReactions?.count ?? 0,
+      description: totalReactions?.label ?? '',
+      trend: totalReactions?.trend?.percentChange ?? 0,
+      isTrendPositive: totalReactions?.trend?.isPositive ?? false,
       tooltipContent: "Total number of reactions made during this period",
     },
-  ];
+  ], [totalUsers, activeUsers, totalMessages, totalReactions]);
 
-  const bottomStatsCards = [
+  const bottomStatsCards = useMemo(() => [
     {
       title: "Peak Activity Time",
-      value: peakActivityTime?.time,
-      description: `${peakActivityTime?.users || 0} active users`,
-      trend: peakActivityTime?.percentChange,
-      isTrendPositive: peakActivityTime?.percentChange > 0,
+      value: peakActivityTime?.time ?? '00:00',
+      description: `${peakActivityTime?.users ?? 0} active users`,
+      trend: peakActivityTime?.percentChange ?? 0,
+      isTrendPositive: (peakActivityTime?.percentChange ?? 0) > 0,
       trendUnit: "%",
       tooltipContent: "Time with the highest user activity",
       index: 1,
     },
     {
       title: "Total Game Time",
-      value: `${totalGameTime?.hours || 0}h`,
+      value: totalGameTime?.hours ?? 0,
       description: "hours played",
-      trend: parseInt(totalGameTime?.hourChange || "0"),
-      isTrendPositive: totalGameTime?.hourChange?.startsWith('+'),
+      trend: parseInt(totalGameTime?.hourChange ?? "0"),
+      isTrendPositive: (totalGameTime?.hourChange ?? "").startsWith('+'),
       trendUnit: "h",
       tooltipContent: "Total time spent playing games",
       index: 2,
     },
     {
       title: "Active Listeners",
-      value: activeListeners?.count || 0,
+      value: activeListeners?.count ?? 0,
       description: "currently listening",
-      trend: activeListeners?.percentChange,
-      isTrendPositive: activeListeners?.percentChange > 0,
+      trend: activeListeners?.percentChange ?? 0,
+      isTrendPositive: (activeListeners?.percentChange ?? 0) > 0,
       trendUnit: "%",
       tooltipContent: "Listeners currently active on the platform",
       index: 3,
@@ -121,13 +137,13 @@ const Dashboard = () => {
       title: "Keywords",
       value: keywordStats.total,
       description: `${keywordStats.active} active`,
-      trend: keywordsCount?.percentChange,
-      isTrendPositive: keywordsCount?.percentChange > 0,
+      trend: keywordsCount?.percentChange ?? 0,
+      isTrendPositive: (keywordsCount?.percentChange ?? 0) > 0,
       trendUnit: "%",
       tooltipContent: "Active keywords mentioned in the guild within the timerange",
       index: 4,
     },
-  ];
+  ], [peakActivityTime, totalGameTime, activeListeners, keywordStats, keywordsCount]);
 
   return (
     <LayoutGroup> 
@@ -155,29 +171,37 @@ const Dashboard = () => {
 
           {/* Stats Cards */}
           <div className="flex flex-col md:flex-row justify-between w-full gap-6 mb-6 h-fit">
-            {statsCards.map((card, index) => (
-              hasError(card.value) ? (
-                <ErrorComponent key={card.title} />
-              ) : (
-                <StatCard key={card.title} {...card} value={card.value ?? 0} index={index} />
-              )
-            ))}
+            {isLoading ? (
+              Array(4).fill(0).map((_, i) => (
+                <ChartCard key={i} className="flex-1">
+                  <CardSkeleton width="100%" height="120px" />
+                </ChartCard>
+              ))
+            ) : (
+              statsCards.map((card) => (
+                hasError(card.value) ? (
+                  <ErrorComponent key={card.title} />
+                ) : (
+                  <StatCard key={card.title} {...card} />
+                )
+              ))
+            )}
           </div>
 
           {/* Charts */}
           <div className="flex flex-col md:flex-row gap-6 mb-6">
             <ChartCard index={0} className="flex-1">
-              {hasError(hourlyActivity) ? (
-                <ErrorComponent />
+              {isLoading ? (
+                <CardSkeleton width="100%" height="300px" />
               ) : (
-                <UserActivityTimeline activityTimeline={hourlyActivity} width={graphWidth} />
+                <UserActivityTimeline activityTimeline={usersDailyActivity ?? []} width={graphWidth} />
               )}
             </ChartCard>
             <ChartCard index={1} className="flex-1">
-              {hasError(hourlyActivity) ? (
-                <ErrorComponent />
+              {isLoading ? (
+                <CardSkeleton width="100%" height="300px" />
               ) : (
-                <MessageFrequencyChart messageFrequency={} width={graphWidth} />
+                <MessageFrequencyChart messageFrequency={dailyMessageMetrics ?? []} width={graphWidth} />
               )}
             </ChartCard>
           </div>
@@ -190,16 +214,88 @@ const Dashboard = () => {
               index={0}
               className="w-full md:w-[35%]"
             >
-              {hasError(currentActivities) ? (
+              {isLoading ? (
+                <CardSkeleton width="100%" height="200px" />
+              ) : hasError(currentActivities) ? (
                 <ErrorComponent />
               ) : (
                 <>
                   <ListElement
                     logo={<Users className="w-8 h-8 text-gray-600" />}
                     title="Active Gamers"
-                    description={`${currentActivities?.activeGamers?.count || 0} ${currentActivities?.activeGamers?.label || 'users'}`}
+                    description={`${currentActivities?.activeGamers?.count ?? 0} ${currentActivities?.activeGamers?.label ?? 'users'}`}
+                  />
+                  <ListElement
+                    logo={
+                      <img
+                        src="https://storage.googleapis.com/pr-newsroom-wp/1/2023/05/Spotify_Primary_Logo_RGB_Green.png"
+                        alt="Spotify Logo"
+                        className="w-8 h-8"
+                      />
+                    }
+                    title="Spotify Listeners"
+                    description={`${currentActivities?.spotifyListeners?.count ?? 0} ${currentActivities?.spotifyListeners?.label ?? 'users'}`}
                   />
                 </>
+              )}
+            </ChartCard>
+            <ChartCard
+              title="Top Keywords"
+              tooltipContent="Keywords that are frequently mentioned"
+              index={1}
+              className="w-full md:w-[35%]"
+            >
+            {isLoading ? (
+              <div className="flex flex-col gap-4 p-4">
+                <div className="h-12 bg-gray-100 rounded-md animate-pulse"></div>
+                <div className="h-12 bg-gray-100 rounded-md animate-pulse"></div>
+                <div className="h-12 bg-gray-100 rounded-md animate-pulse"></div>
+              </div>
+            ) : hasError(topKeywords) ? (
+                <ErrorComponent />
+              ) : topKeywords?.length === 0 ? (
+                <div className="flex flex-col items-center justify-center h-full">
+                  <p className="text-gray-500">No keywords data available</p>
+                </div>
+              ) : (
+                topKeywords?.map((keyword, index) => (
+                  <ListElement
+                    key={index}
+                    logo={<span className="text-gray-600 text-3xl">#</span>}
+                    title={keyword.keyword}
+                    description={`${keyword.matches} matches`}
+                  />
+                ))
+              )}
+            </ChartCard>
+
+            <ChartCard
+              title="Top Users" 
+              tooltipContent="Users with the highest message counts"
+              index={2}
+              className="w-full md:w-[35%]"
+            >
+              {isLoading ? (
+                <div className="flex flex-col gap-4 p-4">
+                  <div className="h-12 bg-gray-100 rounded-md animate-pulse"></div>
+                  <div className="h-12 bg-gray-100 rounded-md animate-pulse"></div>
+                  <div className="h-12 bg-gray-100 rounded-md animate-pulse"></div>
+                </div>
+              ) : hasError(topUsers) ? (
+                <ErrorComponent />
+              ) : topUsers?.length === 0 ? (
+                <div className="flex flex-col items-center justify-center h-full">
+                  <p className="text-gray-500">No user data available</p>
+                </div>
+              ) : (
+                topUsers?.map((user, index) => (
+                  <ListElement
+                    key={index}
+                    logo={<Users className="w-8 h-8 text-gray-600" />}
+                    title={user.username}
+                    description={`${user.messages} messages`}
+                  />
+                ))
               )}
             </ChartCard>
           </div>
@@ -212,7 +308,9 @@ const Dashboard = () => {
               index={0}
               className="flex-1"
             >
-              {hasError(hourlyActivity?.length) ? (
+              {isLoading ? (
+                <CardSkeleton width="100%" height="500px" />
+              ) : hasError(hourlyActivity?.length) ? (
                 <ErrorComponent />
               ) : (
                 <HorizontalBarChart
@@ -223,19 +321,27 @@ const Dashboard = () => {
               )}
             </ChartCard>
             <div className="flex-1 grid grid-cols-2 gap-6 h-fit">
-              {bottomStatsCards.map((card) => (
-                hasError(card.value) ? (
-                  <ErrorComponent key={card.title} />
-                ) : (
-                  <StatCard key={card.title} {...card} />
-                )
-              ))}
+              {isLoading ? (
+                Array(4).fill(0).map((_, i) => (
+                  <ChartCard key={i} className="flex-1">
+                    <CardSkeleton width="100%" height="120px" />
+                  </ChartCard>
+                ))
+              ) : (
+                bottomStatsCards.map((card) => (
+                  hasError(card.value) ? (
+                    <ErrorComponent key={card.title} />
+                  ) : (
+                    <StatCard key={card.title} {...card} />
+                  )
+                ))
+              )}
             </div>
           </div>
-
         </motion.div>
       </motion.div>
     </LayoutGroup>
   );
 };
+
 export default Dashboard;

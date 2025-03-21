@@ -1,81 +1,56 @@
 import { useMemo } from 'react';
-import { useQuery } from 'react-query';
-import { apiService } from '../apiService';
-import { MusicDashboardResponse, TimeRange } from '@/types/music.interface';
+import { MusicDashboardResponse } from '@/types/music.interface';
+import { useQueryBuilder } from './common/useQueryBuilder';
 
-export const useMusicData = (
-  guildId: string,
-  period: 'day' | 'week' | 'month' | 'year' = 'month'
-) => {
-  const timeRange: TimeRange = useMemo(() => {
-    const endDate = new Date();
-    const startDate = new Date();
-
-    switch (period) {
-      case 'day':
-        startDate.setDate(endDate.getDate() - 1);
-        break;
-      case 'week':
-        startDate.setDate(endDate.getDate() - 7);
-        break;
-      case 'month':
-        startDate.setMonth(endDate.getMonth() - 1);
-        break;
-      case 'year':
-        startDate.setFullYear(endDate.getFullYear() - 1);
-        break;
-    }
-
-    return { startDate, endDate };
-  }, [period]);
-
-  console.log('MusicDashboardResponse')
-  const { data: musicData, isLoading, error } = useQuery<MusicDashboardResponse>(
-    ['music-dashboard', guildId, period],
-    () =>
-      apiService.getData(
-        `/music-metrics/dashboard?guildId=${guildId}&startDate=${timeRange.startDate.toISOString()}&endDate=${timeRange.endDate.toISOString()}`
-      ),
-    {
-      retry: 1,
-      refetchOnWindowFocus: false,
-      staleTime: 1000 * 60 * 30,
-      cacheTime: 1000 * 60 * 30,
-      onError: (err) => console.error('Error fetching music data:', err),
-    }
-  );
-
-  const defaultMusicStats = {
-    overview: {
-      totalPlays: { value: 0, change: 0 },
-      activeListeners: { value: 0, change: 0 },
-      uniqueArtists: { value: 0, change: 0 },
-      dualListenings: { value: 0, change: 0 },
-    },
-    genres: [],
-    topArtists: [],
-    peakHours: { hourlyDistribution: [], peakHour: 0, totalListens: 0 },
-    avgSession: { averageMinutes: 0, formattedDuration: '0m', change: 0 },
-    popularTracks: [],
-  };
-
-  const musicStats = useMemo(() => {
-    if (!musicData) return defaultMusicStats;
-
-    return {
-      overview: musicData.overview ?? defaultMusicStats.overview,
-      genres: musicData.genres ?? defaultMusicStats.genres,
-      topArtists: musicData.topArtists ?? defaultMusicStats.topArtists,
-      peakHours: musicData.peakHours ?? defaultMusicStats.peakHours,
-      avgSession: musicData.avgSession ?? defaultMusicStats.avgSession,
-      popularTracks: musicData.popularTracks ?? defaultMusicStats.popularTracks,
-    };
-  }, [musicData]);
-
-  return {
-    ...musicStats,
+export const useMusicData = () => {
+  const {
+    data: musicData,
     isLoading,
     error,
-    timeRange,
-  };
+  } = useQueryBuilder<MusicDashboardResponse>(
+    ['music-dashboard'],
+    (guildId, startDate, endDate) =>
+      `/music-metrics/dashboard?guildId=${guildId}&startDate=${startDate}&endDate=${endDate}`
+  );
+
+  const hasError = (value: unknown): boolean => !isLoading && !error;
+
+  const musicStats = useMemo(() => ({
+    overview: {
+      totalPlays: {
+        current: musicData?.overview?.totalPlays?.value,
+        previous: musicData?.overview?.totalPlays?.value - (musicData?.overview?.totalPlays?.change || 0),
+        isPositive: (musicData?.overview?.totalPlays?.change || 0) > 0
+      },
+      uniqueArtists: {
+        current: musicData?.overview?.uniqueArtists?.value,
+        previous: musicData?.overview?.uniqueArtists?.value - (musicData?.overview?.uniqueArtists?.change || 0),
+        isPositive: (musicData?.overview?.uniqueArtists?.change || 0) > 0
+      },
+      activeListeners: {
+        current: musicData?.overview?.activeListeners?.value,
+        previous: musicData?.overview?.activeListeners?.value - (musicData?.overview?.activeListeners?.change || 0),
+        isPositive: (musicData?.overview?.activeListeners?.change || 0) > 0
+      },
+    },
+    genres: musicData?.genres || [],
+    topArtists: musicData?.topArtists || [],
+    peakHours: {
+      hourlyDistribution: musicData?.peakHours || [],
+    },
+    avgSession: musicData?.avgSession ? {
+      current: musicData.avgSession.averageMinutes,
+      previous: musicData.avgSession.averageMinutes - (musicData.avgSession.change || 0),
+      isPositive: musicData.avgSession.change > 0,
+      formattedDuration: musicData.avgSession.formattedDuration
+    } : null,
+    popularTracks: musicData?.popularTracks || [],
+    hasError,
+  }), [musicData, isLoading]);
+
+  return {
+    ...musicStats, 
+    isLoading,
+    error,
+  } as const;
 };

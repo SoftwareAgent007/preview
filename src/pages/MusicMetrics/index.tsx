@@ -20,7 +20,7 @@ const CardSkeleton = ({ width, height }: { width: string; height: string }) => (
 );
 
 const MusicMetrics = () => {
-  const { overview, genres, topArtists, peakHours, avgSession, isLoading, error } = useMusicData("618826436299456533", "month");
+  const { overview, genres, topArtists, peakHours, avgSession, hasError, isLoading, error } = useMusicData();
 
   // #region Animation Variants
   const container = {
@@ -51,6 +51,12 @@ const MusicMetrics = () => {
     return <ErrorComponent />;
   }
 
+  const stats = [
+    { label: "Total Plays", ...overview.totalPlays },
+    { label: "Unique Artists", ...overview.uniqueArtists },
+    { label: "Active Listeners", ...overview.activeListeners },
+  ];
+
   return (
     <motion.div
       className="w-full min-h-screen bg-gray-50 p-6"
@@ -78,26 +84,22 @@ const MusicMetrics = () => {
         {/* #region Stats Cards */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
           {isLoading ? (
-            <>
-              <Card className="p-6"><CardSkeleton width="100%" height="100px" /></Card>
-              <Card className="p-6"><CardSkeleton width="100%" height="100px" /></Card>
-              <Card className="p-6"><CardSkeleton width="100%" height="100px" /></Card>
-            </>
+            Array(3).fill(0).map((_, i) => (
+              <Card key={i} className="p-6">
+                <CardSkeleton width="100%" height="100px" />
+              </Card>
+            ))
           ) : (
-            [
-              { label: "Total Plays", value: overview.totalPlays.value, change: overview.totalPlays.change, isPositive: overview.totalPlays.change > 0 },
-              { label: "Unique Artists", value: overview.uniqueArtists.value, change: overview.uniqueArtists.change, isPositive: overview.uniqueArtists.change > 0 },
-              { label: "Active Listeners", value: overview.activeListeners.value, change: overview.activeListeners.change, isPositive: overview.activeListeners.change > 0 },
-            ].map((stat, index) => (
-              <MusicStatCard
-                key={index}
-                index={index}
-                label={stat.label}
-                value={stat.value}
-                change={stat.change}
-                isPositive={stat.isPositive}
-                tooltipContent={`Statistics for ${stat.label.toLowerCase()}`}
-              />
+            stats.map((stat, index) => (
+                <MusicStatCard
+                  key={stat.label}
+                  index={index}
+                  label={stat.label}
+                  value={stat.current}
+                  change={stat.previous}
+                  isPositive={stat.isPositive}
+                  tooltipContent={`Statistics for ${stat.label.toLowerCase()}`}
+                />
             ))
           )}
         </div>
@@ -109,29 +111,31 @@ const MusicMetrics = () => {
           variants={container}
         >
           {isLoading ? (
-            <>
-              <Card className="p-6"><CardSkeleton width="100%" height="200px" /></Card>
-              <Card className="p-6"><CardSkeleton width="100%" height="200px" /></Card>
-            </>
+            Array(2).fill(0).map((_, i) => (
+              <Card key={i} className="p-6">
+                <CardSkeleton width="100%" height="200px" />
+              </Card>
+            ))
           ) : (
             <>
-              {topArtists.length > 0 ? (
+              {topArtists?.length > 0 ? (
                 <TopPlayedArtistsCard artists={topArtists} />
               ) : (
-                <Card className="flex-1 p-6">
-                  <span className="text-gray-500 text-lg font-bold mb-4">Top Played Artists</span>
-                  <ErrorComponent height="90%" />
-                </Card>
+                <div className="flex items-center justify-center h-[200px] text-gray-500">
+                  No artist data available
+                </div>
               )}
               
-              {genres.length > 0 ? (
-                <GenrePreferencesCard data={genres} />
-              ) : (
-                <Card className="flex-1 p-6">
-                  <span className="text-gray-500 text-lg font-bold mb-4">Genre Preferences</span>
-                  <ErrorComponent height="90%" />
-                </Card>
-              )}
+              <Card className="flex-1 p-6">
+                <span className="text-gray-500 text-lg font-bold mb-4">Genre Preferences</span>
+                {genres?.length > 0 ? (
+                  <GenrePreferencesCard data={genres} />
+                ) : (
+                  <div className="flex items-center justify-center h-[200px] text-gray-500">
+                    No genre data available
+                  </div>
+                )}
+              </Card>
             </>
           )}
         </motion.div>
@@ -143,10 +147,11 @@ const MusicMetrics = () => {
           variants={container}
         >
           {isLoading ? (
-            <>
-              <Card className="p-6"><CardSkeleton width="100%" height="200px" /></Card>
-              <Card className="p-6"><CardSkeleton width="100%" height="200px" /></Card>
-            </>
+            Array(2).fill(0).map((_, i) => (
+              <Card key={i} className="p-6">
+                <CardSkeleton width="100%" height="200px" />
+              </Card>
+            ))
           ) : (
             <>
               <BaseCard>
@@ -156,23 +161,36 @@ const MusicMetrics = () => {
                     <span className="bg-gray-300 bg-opacity-25 text-gray-600 px-[7px] rounded-full cursor-help">?</span>
                   </ClickableTooltip>
                 </div>
-                {peakHours.hourlyDistribution.length > 0 ? (
+                {hasError(peakHours?.hourlyDistribution) ? (
+                  <ErrorComponent />
+                ) : peakHours?.hourlyDistribution?.length > 0 ? (
                   <motion.div variants={item}>
                     <PeakListeningHoursChart data={peakHours.hourlyDistribution} />
                   </motion.div>
                 ) : (
-                  <ErrorComponent height="90%" />
+                  <div className="flex items-center justify-center h-[200px] text-gray-500">
+                    No peak hours data available
+                  </div>
                 )}
               </BaseCard>
               
-              {avgSession ? (
-                <SessionStatsCard stats={avgSession} />
-              ) : (
-                <Card className="flex-1 p-6 flex flex-col items-center">
-                  <span className="text-gray-500 text-lg font-bold mb-4">Average Listening Session</span>
-                  <ErrorComponent height="90%" />
-                </Card>
-              )}
+              <Card className="flex-1 p-6 flex flex-col">
+                <span className="text-gray-500 text-lg font-bold mb-4">Average Listening Session</span>
+                {hasError(avgSession) ? (
+                  <ErrorComponent />
+                ) : avgSession ? (
+                  <SessionStatsCard stats={{
+                    current: avgSession.current,
+                    previous: avgSession.previous,
+                    change: ((avgSession.current - avgSession.previous) / avgSession.previous) * 100,
+                    isPositive: avgSession.isPositive
+                  }} />
+                ) : (
+                  <div className="flex items-center justify-center h-[200px] text-gray-500">
+                    No session data available
+                  </div>
+                )}
+              </Card>
             </>
           )}
         </motion.div>

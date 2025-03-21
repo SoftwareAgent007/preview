@@ -29,16 +29,19 @@ export interface GenrePreference {
 }
 
 export interface Artist {
-  id: bigint;
+  id: string;
   name: string;
-  imageUrl?: string;
-  genres?: string[];
-  popularity?: number;
+  spotifyId: string | null;
+  genres: string[];
+  createdAt: any;
+  updatedAt: any;
 }
 
 export interface TopArtist {
   artist: Artist;
-  plays: number;
+  _count: {
+    songName: number;
+  };
 }
 
 export interface PeakHoursResponse {

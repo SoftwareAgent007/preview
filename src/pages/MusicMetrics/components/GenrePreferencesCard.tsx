@@ -1,10 +1,6 @@
 import { motion } from "framer-motion";
-import BaseCard from "./BaseCard";
 import HorizontalBarChartRelatedGenres from "@/components/charts/music/musicActivityChart";
-
-interface GenrePreferencesCardProps {
-  data: any[];
-}
+import { GenrePreferencesCardProps } from "../interfaces/music.interfaces";
 
 const GenrePreferencesCard = ({ data }: GenrePreferencesCardProps) => {
   const item = {
@@ -16,21 +12,13 @@ const GenrePreferencesCard = ({ data }: GenrePreferencesCardProps) => {
   };
 
   return (
-    <BaseCard>
-      <motion.span
-        className="text-gray-500 text-lg font-bold mb-4"
-        variants={item}
-      >
-        Genre Preferences
-      </motion.span>
-      <motion.div variants={item}>
-        <HorizontalBarChartRelatedGenres
-          data={data.slice(0, 5)}
-          width={500}
-          height={370}
-        />
-      </motion.div>
-    </BaseCard>
+    <motion.div variants={item}>
+      <HorizontalBarChartRelatedGenres
+        data={data.slice(0, 5)}
+        width={500}
+        height={370}
+      />
+    </motion.div>
   );
 };
 

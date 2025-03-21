@@ -1,14 +1,15 @@
+import AreaLineChart from "@/components/charts/AreaLineChart";
+import ErrorComponent from "@/components/common/errorModel";
+import { ClickableTooltip } from "@/components/ui/tooltip";
+import { DailyActivity } from "@/types/dataTypes";
+import { AnimatePresence, motion } from "framer-motion";
+import { Expand, Minimize } from "lucide-react";
 import React, { useState } from "react";
 import ReactDOM from "react-dom";
-import { motion, AnimatePresence } from "framer-motion";
-import { Expand, Minimize } from "lucide-react";
-import AreaLineChart from "@/components/charts/AreaLineChart";
-import { ClickableTooltip } from "@/components/ui/tooltip";
-import ErrorComponent from "@/components/common/errorModel";
 
 interface ActivityTimelineProps {
     width?: number;
-    activityTimeline: any[];
+    activityTimeline: DailyActivity[];
 }
 
 const ActivityTimeline: React.FC<ActivityTimelineProps> = ({

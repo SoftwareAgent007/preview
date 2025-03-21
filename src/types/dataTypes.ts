@@ -31,7 +31,7 @@ export interface UserActivity {
   messages: number;
 }
 
-export interface DailyKeywordActivity {
+export interface DailyActivity {
   date: string; // ISO date string (YYYY-MM-DD)
   count: number;
 }
@@ -67,27 +67,54 @@ export interface KeywordCountMetric {
   percentChange: number;
 }
 
+export interface MetricWithTrend extends MetricCount {
+  trend: {
+    isPositive: boolean;
+    percentChange: number;
+  };
+}
+
+export interface ExtendedUserMetric extends MetricWithTrend {
+  sevenDayCount: number;
+  thirtyDayCount: number;
+}
+
 export interface DashboardOverviewResponse {
-  totalUsers: MetricCount;
-  activeUsers: MetricCount;
-  totalMessages: MetricCount;
-  totalReactions: MetricCount;
-  keywordsActivity: DailyKeywordActivity[];
+  totalUsers: MetricWithTrend;
+  activeUsers: ExtendedUserMetric;
+  totalMessages: MetricWithTrend;
+  totalReactions: MetricWithTrend;
+  keywordsActivity: DailyActivity[];
   currentActivities: CurrentActivities;
   topKeywords: KeywordMetric[];
   topUsers: UserActivity[];
-  hourlyActivity: HourlyActivity[];
+  usersDailyActivity: DailyActivity[];
   peakActivityTime: PeakActivityTime;
   totalGameTime: GameTimeMetric;
   activeListeners: ListenerMetric;
   keywordsCount: KeywordCountMetric;
-  
-  // Fields removed but kept for reference
-  // userActivityTimeline: { date: string; count: number }[];
-  // messageFrequency: { date: string; count: number }[];
-  // keywordsAnalytics: { keyword: string; count: number }[];
-  // usersStatistics: { user: string; messageCount: number }[];
+  hourlyActivity: HourlyActivity[];
 }
+
+/**
+ * 1.1 Response type for message metrics analytics
+ */
+
+export interface DailyMetric {
+  date: Date;
+  messageCount: number;
+  uniqueAuthors: number;
+  activeHours: number;
+  peakHour: number;
+  avgMessagesPerUser: number;
+}
+
+export interface HourlyMetric {
+  hour: Date;
+  messageCount: number;
+  uniqueAuthors: number;
+} 
+
 
 /**
  * 2 Response type for keywords analytics
@@ -130,10 +157,12 @@ export interface KeywordAnalyticsResponseDto {
 }
 
 export interface KeywordListItemDto {
-  id: string;
+  id: bigint;
   keyword: string;
-  volume: number;
+  matches: { count: number };
+  createdAt: Date;
   active: boolean;
+  guildId: bigint;
 }
 
 export interface TimelineDataDto {

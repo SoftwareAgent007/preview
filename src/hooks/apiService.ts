@@ -1,12 +1,28 @@
 type ApiService<T> = {
   getData: (endpoint: string) => Promise<T>;
-  postData: (endpoint: string, data: T) => Promise<T>;
+  postData: (endpoint: string, body: any) => Promise<T>;
+  deleteData: (endpoint: string) => Promise<T>;
+  patchData: (endpoint: string, body: any) => Promise<T>;
+  putData: (endpoint: string, body: any) => Promise<T>;
 };
 
 const API_CONTROL_URL = import.meta.env.VITE_API_ANALYTICS_URL || '';
+const AUTH_TOKEN = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJmYWQ3NDFlZi1kNzc3LTQyM2MtYTE0NS1lNjZjMjAzNjU4YTQiLCJlbWFpbCI6InJhYmNodWsuYWxla3NhbmRyQGdtaWFsLmNvbSIsImd1aWxkSWRzIjpbIjEzMDY3NDgyNzk5MDM2MjExNDIiLCIxMTkyMTYzODU4MTk0OTAzMTAxIl0sImlhdCI6MTc0MTg4NjAzOSwiZXhwIjoxNzQyNDkwODM5fQ.Zd4WJdJx5PiMmZQ57Uz3T4bZBEvz0fBjkAUDw_fKAaM';
 
 const requestInterceptor = (url: string, options: RequestInit) => {
-  return { url, options };
+  const headers = {
+    ...options.headers,
+    'Authorization': `Bearer ${AUTH_TOKEN}`,
+    'Content-Type': 'application/json'
+  };
+  
+  const interceptedOptions = {
+    ...options,
+    headers,
+    body: options.body ? JSON.stringify(options.body) : undefined
+  };
+
+  return { url, options: interceptedOptions };
 };
 
 const responseInterceptor = async (response: Response) => {
@@ -14,7 +30,8 @@ const responseInterceptor = async (response: Response) => {
     const errorData = await response.json().catch(() => null);
     throw new Error(errorData?.message || `API Error: ${response.statusText}`);
   }
-  return response.json();
+  const data = await response.json();
+  return data.body;
 };
 
 const createApiService = <T>(baseUrl: string): ApiService<T> => {
@@ -25,18 +42,45 @@ const createApiService = <T>(baseUrl: string): ApiService<T> => {
     return responseInterceptor(response);
   };
 
-  const postData = async (endpoint: string, data: T): Promise<T> => {
+  const postData = async (endpoint: string, body: any): Promise<T> => {
     if (!baseUrl) throw new Error("API URL is missing!");
+    console.log("postData", body);
     const { url, options } = requestInterceptor(`${baseUrl}${endpoint}`, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(data),
+      body
     });
     const response = await fetch(url, options);
     return responseInterceptor(response);
   };
 
-  return { getData, postData };
+  const deleteData = async (endpoint: string): Promise<T> => {
+    if (!baseUrl) throw new Error("API URL is missing!");
+    const { url, options } = requestInterceptor(`${baseUrl}${endpoint}`, { method: 'DELETE' });
+    const response = await fetch(url, options);
+    return responseInterceptor(response);
+  };
+
+  const patchData = async (endpoint: string, body: any): Promise<T> => {
+    if (!baseUrl) throw new Error("API URL is missing!");
+    const { url, options } = requestInterceptor(`${baseUrl}${endpoint}`, {
+      method: 'PATCH',
+      body
+    });
+    const response = await fetch(url, options);
+    return responseInterceptor(response);
+  };
+
+  const putData = async (endpoint: string, body: any): Promise<T> => {
+    if (!baseUrl) throw new Error("API URL is missing!");
+    const { url, options } = requestInterceptor(`${baseUrl}${endpoint}`, {
+      method: 'PUT',
+      body
+    });
+    const response = await fetch(url, options);
+    return responseInterceptor(response);
+  };
+
+  return { getData, postData, deleteData, patchData, putData };
 };
 
 export const apiService = createApiService<any>(API_CONTROL_URL);

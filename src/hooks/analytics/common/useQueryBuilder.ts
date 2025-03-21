@@ -5,8 +5,8 @@ import { useQuery, UseQueryOptions } from 'react-query';
 
 const defaultContext = {
   selectedPeriod: {
-    from: new Date("2025-03-15T00:46:16.937Z"),
-    to: new Date("2025-03-15T00:46:16.937Z")
+    from: "2024-02-06T21:55:45.854Z",
+    to: "2026-02-06T21:55:45.854Z"
   },
   guildId: "1306748279903621142"
 };
@@ -27,7 +27,13 @@ export function useQueryBuilder<TData>(  queryKey: any[], // ключ для use
   const guildId = defaultContext.guildId;
 
   const queryFn = async (): Promise<TData> => {
-    const url = buildUrl(guildId, selectedPeriod?.from?.toISOString() || '2025-03-10T00:00:00Z', selectedPeriod?.to?.toISOString() || '2025-03-13T23:59:59Z');
+    const url = buildUrl(
+      guildId,
+      // (selectedPeriod?.from instanceof Date ? selectedPeriod.from.toISOString() : '2024-02-06T21:55:45.854Z'),
+      ('2024-02-06T21:55:45.854Z'),
+      // (selectedPeriod?.to instanceof Date ? selectedPeriod.to.toISOString() : '2026-02-06T21:55:45.854Z')
+      ('2026-02-06T21:55:45.854Z')
+    );
     return apiService.getData(url);
   };
 
