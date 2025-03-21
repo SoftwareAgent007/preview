@@ -1,10 +1,5 @@
 import BreadcrumbsNavigation from "@/components/common/BreadcrumbsNavigation";
-import { Card } from "@/components/ui/card";
-import { Users } from "lucide-react";
 import { BREADCRUMB_PATHS, ROUTES } from "@/routes/routes.constant";
-import TrendIndicator from "@/components/common/TrendIndicator";
-import ListElement from "@/components/ui/list-element";
-import HorizontalBarChartRelatedGenres from "@/components/charts/music/musicActivityChart";
 import PeakListeningHoursChart from "@/components/charts/music/peakHoursChart";
 import { useState } from "react";
 import MusicStatCard from "./components/MusicStatCard";

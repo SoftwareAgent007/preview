@@ -1,12 +1,18 @@
 import { motion } from "framer-motion";
 import BaseCard from "./BaseCard";
 import HorizontalBarChartRelatedGenres from "@/components/charts/music/musicActivityChart";
+import { ClickableTooltip } from "@/components/ui/tooltip";
+import { Info } from "lucide-react";
+import { useTheme } from "@/components/theme/ThemeProvider";
 
 interface GenrePreferencesCardProps {
   data: any[];
 }
 
 const GenrePreferencesCard = ({ data }: GenrePreferencesCardProps) => {
+  const { theme } = useTheme();
+  const isDarkMode = theme === "dark";
+  
   const item = {
     hidden: { opacity: 0, y: 10 },
     show: { 
@@ -17,17 +23,25 @@ const GenrePreferencesCard = ({ data }: GenrePreferencesCardProps) => {
 
   return (
     <BaseCard>
-      <motion.span
-        className="text-gray-500 text-lg font-bold mb-4"
+      <motion.div
+        className="flex items-center gap-2 mb-2"
         variants={item}
       >
-        Genre Preferences
-      </motion.span>
-      <motion.div variants={item}>
+        <h3 className={`text-base font-medium ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>
+          Genre Preferences
+        </h3>
+        <ClickableTooltip content="Shows user genre preferences based on listening history">
+          <Info className={`w-4 h-4 ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`} />
+        </ClickableTooltip>
+      </motion.div>
+      
+      <motion.div 
+        variants={item}
+        className="h-[350px] w-full"
+      >
         <HorizontalBarChartRelatedGenres
-          data={data.slice(0, 5)}
-          width={500}
-          height={370}
+          data={data.slice(0, 7)}
+          darkMode={isDarkMode}
         />
       </motion.div>
     </BaseCard>
