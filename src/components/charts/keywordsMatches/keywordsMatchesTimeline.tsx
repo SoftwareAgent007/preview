@@ -108,7 +108,7 @@ const KeywordsMatchesTimeline: React.FC<MessageFrequencyChartProps> = ({ matches
                 className="chart-parent flex justify-between"
                 variants={itemVariants}
             >
-                {matchesTimeline?.length ? (
+                {matchesTimeline?.length >= 3 ? (
                     <AreaLineChart
                         data={matchesTimeline}
                         width={width}
@@ -116,7 +116,7 @@ const KeywordsMatchesTimeline: React.FC<MessageFrequencyChartProps> = ({ matches
                         graphColor="#b1c4f5"
                     />
                 ) : (
-                    <ErrorComponent height={300}/>
+                    <ErrorComponent height={300} message="Not enough data points (minimum 3 required)"/>
                 )}
             </motion.div>
 
@@ -198,7 +198,7 @@ const Modal: React.FC<ModalProps> = ({ closeModal, messageFrequency, width }) =>
                         animate={{ opacity: 1, y: 0 }}
                         transition={{ delay: 0.3 }}
                     >
-                        {messageFrequency?.length ? (
+                        {messageFrequency?.length >= 3 ? (
                             <AreaLineChart
                                 data={messageFrequency}
                                 width={width * 1.5}
@@ -206,7 +206,7 @@ const Modal: React.FC<ModalProps> = ({ closeModal, messageFrequency, width }) =>
                                 graphColor="#b1c4f5"
                             />
                         ) : (
-                            <ErrorComponent height={500}/>
+                            <ErrorComponent height={500} message="Not enough data points (minimum 3 required)"/>
                         )}
                     </motion.div>
                 </motion.div>

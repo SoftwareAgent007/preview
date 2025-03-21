@@ -7,7 +7,7 @@ type ApiService<T> = {
 };
 
 const API_CONTROL_URL = import.meta.env.VITE_API_ANALYTICS_URL || '';
-const AUTH_TOKEN = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJmYWQ3NDFlZi1kNzc3LTQyM2MtYTE0NS1lNjZjMjAzNjU4YTQiLCJlbWFpbCI6InJhYmNodWsuYWxla3NhbmRyQGdtaWFsLmNvbSIsImd1aWxkSWRzIjpbIjEzMDY3NDgyNzk5MDM2MjExNDIiLCIxMTkyMTYzODU4MTk0OTAzMTAxIl0sImlhdCI6MTc0MTg4NjAzOSwiZXhwIjoxNzQyNDkwODM5fQ.Zd4WJdJx5PiMmZQ57Uz3T4bZBEvz0fBjkAUDw_fKAaM';
+const AUTH_TOKEN = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJmYWQ3NDFlZi1kNzc3LTQyM2MtYTE0NS1lNjZjMjAzNjU4YTQiLCJlbWFpbCI6InJhYmNodWsuYWxla3NhbmRyQGdtaWFsLmNvbSIsImd1aWxkSWRzIjpbIjEzMDY3NDgyNzk5MDM2MjExNDIiXSwiaWF0IjoxNzQyNTU1MTkzLCJleHAiOjE3NDMxNTk5OTN9.TIsREcA5lBkB77zwtWee6ip1PcJ-RqwnY3-HC-xuPmM';
 
 const requestInterceptor = (url: string, options: RequestInit) => {
   const headers = {

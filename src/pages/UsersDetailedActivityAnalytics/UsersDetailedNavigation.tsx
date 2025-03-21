@@ -33,7 +33,6 @@ const UsersDetailedNavigation = () => {
   const navigationItems = [
     { label: "Gaming", path: ROUTES.USER_ACTIVITY_DETAILED_GAMING },
     { label: "Presence", path: ROUTES.USER_ACTIVITY_DETAILED_PRESENCE },
-    { label: "Status", path: ROUTES.USER_ACTIVITY_DETAILED_STATUS },
   ];
 
   return (
