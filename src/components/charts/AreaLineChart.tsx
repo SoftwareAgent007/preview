@@ -189,68 +189,90 @@ const AreaLineChart: React.FC<AreaLineChartProps> = ({
       .y(d => y(d.count))
       .curve(d3.curveMonotoneX);
     
-    // Add area path with animation if enabled
-    const areaPath = svg.append("path")
-      .datum(filteredData)
-      .attr("fill", `url(#${gradientId})`)
-      .attr("stroke", "none");
-    
     if (animate) {
-      areaPath
-        .attr("d", area.y1(() => chartHeight))
-        .transition()
-        .duration(1000)
-        .attr("d", area);
-    } else {
-      areaPath.attr("d", area);
-    }
-    
-    // Add line path with animation if enabled
-    const linePath = svg.append("path")
-      .datum(filteredData)
-      .attr("fill", "none")
-      .attr("stroke", graphColor)
-      .attr("stroke-width", 2.5)
-      .attr("stroke-linejoin", "round")
-      .attr("stroke-linecap", "round");
-    
-    if (animate) {
-      linePath
-        .attr("stroke-dasharray", function() {
-          const length = (this as SVGPathElement).getTotalLength();
-          return `${length} ${length}`;
-        })
-        .attr("stroke-dashoffset", function() {
-          return (this as SVGPathElement).getTotalLength();
-        })
-        .attr("d", line)
+      // Create a clip path for the running animation
+      const clipId = `clip-${Math.random().toString(36).substring(2, 9)}`;
+      
+      svg.append("defs")
+        .append("clipPath")
+        .attr("id", clipId)
+        .append("rect")
+        .attr("width", 0)
+        .attr("height", chartHeight)
         .transition()
         .duration(1500)
-        .attr("stroke-dashoffset", 0);
+        .ease(d3.easeQuadInOut)
+        .attr("width", chartWidth);
+      
+      // Add area path with running animation
+      const areaPath = svg.append("path")
+        .datum(filteredData)
+        .attr("fill", `url(#${gradientId})`)
+        .attr("stroke", "none")
+        .attr("clip-path", `url(#${clipId})`)
+        .attr("d", area);
+      
+      // Add line path with running animation
+      const linePath = svg.append("path")
+        .datum(filteredData)
+        .attr("fill", "none")
+        .attr("stroke", graphColor)
+        .attr("stroke-width", 2.5)
+        .attr("stroke-linejoin", "round")
+        .attr("stroke-linecap", "round")
+        .attr("clip-path", `url(#${clipId})`)
+        .attr("d", line);
+      
+      // Add data points with delayed appearance
+      const dataPoints = svg.selectAll(".data-point")
+        .data(filteredData)
+        .join("circle")
+        .attr("class", "data-point")
+        .attr("cx", d => x(new Date(d.date)))
+        .attr("cy", d => y(d.count))
+        .attr("r", 0)
+        .attr("fill", "white")
+        .attr("stroke", graphColor)
+        .attr("stroke-width", 2);
+      
+      // Delay the appearance of points based on their x position
+      dataPoints.each(function(d, i) {
+        const point = d3.select(this);
+        const xPos = x(new Date(d.date));
+        const delay = (xPos / chartWidth) * 1500; // Sync with clip path animation
+        
+        point.transition()
+          .delay(delay)
+          .duration(300)
+          .attr("r", 4);
+      });
     } else {
-      linePath.attr("d", line);
-    }
-    
-    // Add data points with hover effect
-    const dataPoints = svg.selectAll(".data-point")
-      .data(filteredData)
-      .join("circle")
-      .attr("class", "data-point")
-      .attr("cx", d => x(new Date(d.date)))
-      .attr("cy", d => y(d.count))
-      .attr("r", 0)
-      .attr("fill", "white")
-      .attr("stroke", graphColor)
-      .attr("stroke-width", 2);
-    
-    if (animate) {
-      dataPoints
-        .transition()
-        .delay((_, i) => i * 10)
-        .duration(500)
-        .attr("r", 4);
-    } else {
-      dataPoints.attr("r", 4);
+      // Non-animated version
+      svg.append("path")
+        .datum(filteredData)
+        .attr("fill", `url(#${gradientId})`)
+        .attr("stroke", "none")
+        .attr("d", area);
+      
+      svg.append("path")
+        .datum(filteredData)
+        .attr("fill", "none")
+        .attr("stroke", graphColor)
+        .attr("stroke-width", 2.5)
+        .attr("stroke-linejoin", "round")
+        .attr("stroke-linecap", "round")
+        .attr("d", line);
+      
+      svg.selectAll(".data-point")
+        .data(filteredData)
+        .join("circle")
+        .attr("class", "data-point")
+        .attr("cx", d => x(new Date(d.date)))
+        .attr("cy", d => y(d.count))
+        .attr("r", 4)
+        .attr("fill", "white")
+        .attr("stroke", graphColor)
+        .attr("stroke-width", 2);
     }
     
     // Add interactive overlay for tooltip
