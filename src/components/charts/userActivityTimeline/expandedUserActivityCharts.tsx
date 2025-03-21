@@ -182,6 +182,49 @@ interface ModalProps {
 }
 
 const Modal: React.FC<ModalProps> = ({ closeModal, datasets, width, height }) => {
+    const [modalDimensions, setModalDimensions] = useState({ width: 0, height: 0 });
+    const modalContentRef = useRef<HTMLDivElement>(null);
+    
+    // Calculate the actual width needed for the full dataset
+    const calculateRequiredWidth = () => {
+        // Get the number of data points in the largest dataset
+        const maxDataPoints = Math.max(
+            ...Object.values(datasets).map(dataset => dataset.data.length)
+        );
+        
+        // Ensure we have enough width for all data points (with some padding)
+        // Use at least the original width or calculate based on data points
+        return Math.max(width, maxDataPoints * 50); // 50px per data point is a reasonable estimate
+    };
+    
+    const requiredChartWidth = calculateRequiredWidth();
+    
+    useEffect(() => {
+        // Calculate available space for the modal content
+        const updateModalDimensions = () => {
+            if (modalContentRef.current) {
+                const viewportHeight = window.innerHeight;
+                const viewportWidth = window.innerWidth;
+                
+                // Use 85% of viewport height and width for the modal container
+                const maxHeight = viewportHeight * 0.85;
+                const maxWidth = viewportWidth * 0.9;
+                
+                setModalDimensions({
+                    width: maxWidth,
+                    height: maxHeight
+                });
+            }
+        };
+        
+        updateModalDimensions();
+        window.addEventListener('resize', updateModalDimensions);
+        
+        return () => {
+            window.removeEventListener('resize', updateModalDimensions);
+        };
+    }, []);
+
     const handleOutsideClick = (event: React.MouseEvent) => {
         if (event.target === event.currentTarget) {
             closeModal();
@@ -199,6 +242,7 @@ const Modal: React.FC<ModalProps> = ({ closeModal, datasets, width, height }) =>
                 onClick={handleOutsideClick}
             >
                 <motion.div 
+                    ref={modalContentRef}
                     initial={{ scale: 0.95, opacity: 0, y: 20 }}
                     animate={{ scale: 1, opacity: 1, y: 0 }}
                     exit={{ scale: 0.95, opacity: 0, y: 20 }}
@@ -207,14 +251,18 @@ const Modal: React.FC<ModalProps> = ({ closeModal, datasets, width, height }) =>
                         stiffness: 300,
                         damping: 25
                     }}
-                    className="bg-white p-6 rounded-lg shadow-xl relative modal-content max-w-4xl w-full"
+                    className="bg-white p-6 rounded-lg shadow-xl relative modal-content max-w-4xl w-full max-h-[85vh] flex flex-col"
                     onClick={e => e.stopPropagation()}
+                    style={{ 
+                        width: modalDimensions.width,
+                        maxHeight: modalDimensions.height
+                    }}
                 >
                     <motion.div
                         initial={{ opacity: 0, y: -10 }}
                         animate={{ opacity: 1, y: 0 }}
                         transition={{ delay: 0.2 }}
-                        className="flex justify-between items-center mb-6"
+                        className="flex justify-between items-center mb-4"
                     >
                         <motion.h2 
                             className="text-gray-500 text-xl font-bold"
@@ -235,17 +283,57 @@ const Modal: React.FC<ModalProps> = ({ closeModal, datasets, width, height }) =>
                             <Minimize className="text-gray-500 w-5 h-5" />
                         </motion.button>
                     </motion.div>
+                    
+                    {/* Legend section at the top */}
+                    <motion.div 
+                        initial={{ opacity: 0, y: 10 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ delay: 0.3 }}
+                        className="flex flex-wrap gap-4 mb-4"
+                    >
+                        {Object.entries(datasets).map(([key, value]) => (
+                            <motion.div 
+                                key={key} 
+                                className="flex items-center gap-2"
+                                whileHover={{ scale: 1.05 }}
+                            >
+                                <div className="w-6 h-6 bg-gray-200 rounded-full flex items-center justify-center">
+                                    <div 
+                                        className="w-3 h-3 rounded-full"
+                                        style={{ backgroundColor: value.color }}
+                                    />
+                                </div>
+                                <span className="text-sm font-medium">
+                                    {key}
+                                </span>
+                            </motion.div>
+                        ))}
+                    </motion.div>
+                    
+                    {/* Scrollable chart container */}
                     <motion.div
                         initial={{ opacity: 0, y: 20 }}
                         animate={{ opacity: 1, y: 0 }}
                         transition={{ delay: 0.3 }}
-                        className="flex flex-col items-center"
+                        className="flex-1 overflow-auto min-h-0"
                     >
-                        <MultiLayerAreaChart 
-                            datasets={datasets} 
-                            width={width} 
-                            height={height}
-                        />
+                        <div 
+                            style={{ 
+                                width: requiredChartWidth, 
+                                minHeight: height,
+                                paddingBottom: "20px" // Add padding to ensure visibility of x-axis labels
+                            }}
+                        >
+                            <MultiLayerAreaChart 
+                                datasets={datasets} 
+                                width={requiredChartWidth} 
+                                height={height}
+                                showLegend={false} // We're showing our own legend above
+                                showTooltip={true}
+                                animate={true}
+                                useFullNumbers={true}
+                            />
+                        </div>
                     </motion.div>
                 </motion.div>
             </motion.div>
