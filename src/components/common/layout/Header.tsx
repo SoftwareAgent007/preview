@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useContext, useEffect } from "react";
 import { motion } from "framer-motion";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
@@ -20,13 +20,20 @@ import { useLocation, useNavigate } from "react-router-dom";
 import { DatePickerWithRange } from "../../ui/data-rande-picker";
 import { BREADCRUMB_PATHS, ROUTES } from "@/routes/routes.constant";
 import { useAuth } from "@/contexts/AuthContext";
+import { useDashboardContext } from "@/common/context/queryContext";
+import { DEFAULT_DATE_RANGE } from "@/hooks/apiService";
 
 const Header = () => {
   const location = useLocation();
   const navigate = useNavigate();
   const { logout } = useAuth();
   const [isUserMenuOpen, setIsUserMenuOpen] = useState(false);
+  const { selectedPeriod, guildId, setSelectedPeriod, setGuildId } = useDashboardContext();
 
+  useEffect(() => {
+    console.log('Header selectedPeriod changed:', selectedPeriod);
+  }, [selectedPeriod]);
+  
   const getCurrentTitle = (pathname: string) => {
     if (
       pathname.includes("gaming") ||
@@ -58,12 +65,27 @@ const Header = () => {
         <div className="flex h-16 items-center px-4 justify-between">
           {/* Left Section */}
           <div className="flex items-center space-x-6">
-            {/* <h2 className="text-2xl font-bold">{currentTitle}</h2> */}
+            <h2
+              className={`font-bold transition-all ${
+                currentTitle.length > 29 ? "text-xl" : "text-2xl"
+              }`}
+            >
+              {currentTitle}
+            </h2>
 
             <div className="hidden xl:flex items-center space-x-4">
-              <DatePickerWithRange />
-
-              <Select>
+              <DatePickerWithRange 
+                value={selectedPeriod}
+                onClose={() => {
+                  console.log('DatePicker closed');
+                }}
+                onChange={(period) => {
+                  console.log('DatePicker period changed:', period);
+                  setSelectedPeriod && period && setSelectedPeriod(period);
+                }}
+              />
+              
+              <Select value={guildId} onValueChange={(id) => setGuildId && setGuildId(id)}>
                 <SelectTrigger className="w-[180px]">
                   <SelectValue placeholder="Select Guild" />
                 </SelectTrigger>
@@ -115,8 +137,17 @@ const Header = () => {
         {/* Mobile/Tablet Menu */}
         <div className="xl:hidden p-4 space-y-4">
           <div className="flex space-x-4">
-            <DatePickerWithRange />
-            <Select>
+            <DatePickerWithRange 
+              value={selectedPeriod}
+              onClose={() => {
+                console.log('DatePicker closed');
+              }}
+              onChange={(period) => {
+                console.log('DatePicker period changed desk:', period);
+                setSelectedPeriod && period && setSelectedPeriod(period);
+              }}
+            />
+            <Select value={guildId} onValueChange={(id) => setGuildId && setGuildId(id)}>
               <SelectTrigger>
                 <SelectValue placeholder="Select Guild" />
               </SelectTrigger>

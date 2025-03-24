@@ -95,7 +95,7 @@ const MusicStatCard = ({
               animate={{ scale: 1, opacity: 1 }}
               transition={{ delay: index * 0.1 + 0.2 }}
             >
-              {value.toLocaleString()}
+              {value !== null ? value.toLocaleString() : 0}
             </motion.span>
           </motion.div>
 

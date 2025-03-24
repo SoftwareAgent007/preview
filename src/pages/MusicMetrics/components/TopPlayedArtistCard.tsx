@@ -2,14 +2,24 @@ import { motion } from "framer-motion";
 import { Users } from "lucide-react";
 import ListElement from "@/components/ui/list-element";
 import BaseCard from "./BaseCard";
+import ErrorComponent from "@/components/common/errorModel";
 
 interface Artist {
+  id: string;
   name: string;
+  spotifyId: string | null;
+  genres: string[];
+  createdAt: any;
+  updatedAt: any;
+}
+
+interface TopArtist {
+  artist: Artist;
   plays: number;
 }
 
 interface TopPlayedArtistsCardProps {
-  artists: Artist[];
+  artists: TopArtist[];
 }
 
 const TopPlayedArtistsCard = ({ artists }: TopPlayedArtistsCardProps) => {
@@ -50,21 +60,22 @@ const TopPlayedArtistsCard = ({ artists }: TopPlayedArtistsCardProps) => {
         >
           Top Played Artists
         </motion.span>
-        {artists.map((artist, index) => (
-          <motion.div
+        {artists 
+          ? artists.map((artist, index) => (
+            <motion.div
             key={index}
-            variants={item}
-            whileHover={{ scale: 1.02 }}
-            whileTap={{ scale: 0.98 }}
-          >
-            <ListElement
-              logo={<Users className="w-8 h-8 text-gray-600" />}
-              title={artist.name}
-              description={`${artist.plays} plays`}
-              backgroundColor=""
-            />
-          </motion.div>
-        ))}
+              whileHover={{ scale: 1.02 }}
+              whileTap={{ scale: 0.98 }}
+            >
+              <ListElement
+                logo={<Users className="w-8 h-8 text-gray-600" />}
+              title={artist?.artist?.name}
+              description={`${artist?.plays} plays`}
+                backgroundColor=""
+              />
+            </motion.div>
+          ))
+          : <ErrorComponent />}
       </motion.div>
     </BaseCard>
   );

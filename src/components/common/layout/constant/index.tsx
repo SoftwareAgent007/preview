@@ -40,21 +40,20 @@ export const menuCategories: MenuCategories = {
       nested: [
         { label: "Gaming", path: "/user-activity/detailed/gaming" },
         { label: "Presence", path: "/user-activity/detailed/presence" },
-        { label: "Status", path: "/user-activity/detailed/status" },
       ]
     },
     { icon: <Music2 />, label: "Music Metrics", path: ROUTES.MUSIC_METRICS, beta: true },
     { icon: <MessageSquare />, label: "Message Reactions", path: ROUTES.MESSAGE_REACTIONS },
   ],
-  Community: [
-    { icon: <UserCircle />, label: "Members", path: "/members" },
-    { icon: <Calendar />, label: "Scheduled posts", path: "/scheduled" },
-    { icon: <ArrowUpDown />, label: "Levelling", path: "/levelling" },
-    { icon: <MessageSquare />, label: "UGC", path: "/ugc" },
-  ],
-  Integrations: [
-    { icon: <Music2 />, label: "Streaming", path: "/streaming" },
-    { icon: <GamepadIcon />, label: "Gaming", path: "/gaming" },
-    { icon: <ShoppingCart />, label: "Ecommerce", path: "/ecommerce" },
-  ],
+  // Community: [
+  //   { icon: <UserCircle />, label: "Members", path: "/members" },
+  //   { icon: <Calendar />, label: "Scheduled posts", path: "/scheduled" },
+  //   { icon: <ArrowUpDown />, label: "Levelling", path: "/levelling" },
+  //   { icon: <MessageSquare />, label: "UGC", path: "/ugc" },
+  // ],
+  // Integrations: [
+  //   { icon: <Music2 />, label: "Streaming", path: "/streaming" },
+  //   { icon: <GamepadIcon />, label: "Gaming", path: "/gaming" },
+  //   { icon: <ShoppingCart />, label: "Ecommerce", path: "/ecommerce" },
+  // ],
 };

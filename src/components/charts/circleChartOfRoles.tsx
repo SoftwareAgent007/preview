@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import * as d3 from "d3";
 import { motion, AnimatePresence } from "framer-motion";
+import { StatusBreakdown } from "@/pages/UsersDetailedActivityAnalytics/PresenceAnalytics/interfaces/presence-activirt.interfaces";
 
 interface RoleData {
   role: string;
@@ -9,19 +10,8 @@ interface RoleData {
   color: string;
 }
 
-type RolesData = RoleData[];
 
-const CircleRoleChart = ({
-  data,
-  width = 500,
-  height = 600,
-  darkMode = false,
-}: {
-  data: RolesData;
-  width?: number;
-  height?: number;
-  darkMode?: boolean;
-}) => {
+const CircleRoleChart = ({ data, width = 500, height = 600, darkMode = false }: { data: StatusBreakdown[]; width?: number; height?: number; darkMode?: boolean; }) => {
   const svgRef = useRef<SVGSVGElement>(null);
   const [activeSlice, setActiveSlice] = useState<string | null>(null);
   const [tooltipData, setTooltipData] = useState<{
@@ -36,6 +26,11 @@ const CircleRoleChart = ({
   const textColor = darkMode ? "#e2e8f0" : "#1e293b";
   const backgroundColor = darkMode ? "#1e293b" : "white";
   
+  if (data) {
+    data.forEach(item => {
+      item.color = `#${Math.floor(Math.random()*16777215).toString(16)}`;
+    });
+  }
   useEffect(() => {
     if (!svgRef.current) return;
 

@@ -3,22 +3,25 @@ import * as d3 from "d3";
 import { motion } from "framer-motion";
 import { Info } from "lucide-react";
 import { ClickableTooltip } from "@/components/ui/tooltip";
+import { GenreData } from "@/pages/MusicMetrics/interfaces/music.interfaces";
 
-interface DataPoint {
-  genre: string;
+interface DataPoint extends GenreData {
   artist: string;
-  count: number;
   total: number;
 }
 
 interface HorizontalBarChartRelatedGenresProps {
-  data: DataPoint[];
+  data: GenreData[];
   darkMode?: boolean;
+  width?: number;
+  height?: number;
 }
 
 const HorizontalBarChartRelatedGenres: React.FC<HorizontalBarChartRelatedGenresProps> = ({
   data,
-  darkMode = false
+  darkMode = false,
+  width = 400,
+  height = 450
 }) => {
   const svgRef = useRef<SVGSVGElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
@@ -87,6 +90,13 @@ const HorizontalBarChartRelatedGenres: React.FC<HorizontalBarChartRelatedGenresP
   useEffect(() => {
     if (!svgRef.current || data.length === 0 || dimensions.width === 0) return;
 
+    const chartData: DataPoint[] = data.map(d => ({
+      ...d,
+      artist: "Artist", // TODO: Add artist data
+      total: d.playCount,
+      count: d.playCount
+    }));
+
     const actualWidth = dimensions.width;
     const actualHeight = dimensions.height;
     
@@ -134,7 +144,7 @@ const HorizontalBarChartRelatedGenres: React.FC<HorizontalBarChartRelatedGenresP
       .attr("transform", `translate(${margin.left},${margin.top})`);
 
     // Sort data by count in descending order
-    const sortedData = [...data].sort((a, b) => b.count - a.count);
+    const sortedData = [...chartData].sort((a, b) => b.count - a.count);
 
     const maxCount = d3.max(sortedData, d => d.total) || 0;
 

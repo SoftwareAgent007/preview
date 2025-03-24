@@ -2,9 +2,10 @@ import { motion } from "framer-motion";
 import { Card } from "@/components/ui/card";
 import HorizontalTopHoursChart from "@/components/charts/hourActivity/HorisontalTopHoursChart";
 import { useEffect, useRef, useState } from "react";
+import { PeakHour } from "../interfaces/presence-activirt.interfaces";
 
 interface PeakActivityHoursProps {
-  hourlyActivity: Array<{ hour: number; count: number }>;
+  hourlyActivity: PeakHour[];
 }
 
 const PeakActivityHours = ({ hourlyActivity }: PeakActivityHoursProps) => {

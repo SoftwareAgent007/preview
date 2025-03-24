@@ -5,6 +5,7 @@ import { useEffect, useRef, useState } from "react";
 import ReactDOM from "react-dom";
 import { Expand, Minimize } from "lucide-react";
 import { ClickableTooltip } from "@/components/ui/tooltip";
+import ErrorComponent from "@/components/common/errorModel";
 import { motion, AnimatePresence } from "framer-motion";
 
 const ActivityCharts = ({ data, className }: { data: DataSet; className?: string }) => {
@@ -130,7 +131,7 @@ const ActivityCharts = ({ data, className }: { data: DataSet; className?: string
                                 className="flex flex-wrap gap-4 mb-2"
                                 variants={itemVariants}
                             >
-                                {Object.entries(data).map(([key, value]) => (
+                                {Object.keys(data).length ? Object.entries(data).map(([key, value]) => (
                                     <motion.div 
                                         key={key} 
                                         className="flex items-center gap-2"
@@ -146,15 +147,18 @@ const ActivityCharts = ({ data, className }: { data: DataSet; className?: string
                                             {key}
                                         </span>
                                     </motion.div>
-                                ))}
+                                )) : <></>}
                             </motion.div>
-                            <motion.div variants={itemVariants}>
-                                <MultiLayerAreaChart 
-                                    datasets={data} 
-                                    width={chartWidth} 
-                                    height={chartHeight} 
-                                />
-                            </motion.div>
+                            {Object.keys(data).length
+                                ? <motion.div variants={itemVariants}>
+                                    <MultiLayerAreaChart 
+                                        datasets={data} 
+                                        width={chartWidth} 
+                                        height={chartHeight} 
+                                    />
+                                  </motion.div>
+                                : <ErrorComponent />
+                            }
                         </motion.div>
                     </CardContent>
                 </motion.div>

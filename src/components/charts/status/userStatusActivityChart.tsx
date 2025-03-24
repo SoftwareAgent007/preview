@@ -458,23 +458,19 @@ const StatusActivityChart: React.FC<StatusActivityChartProps> = ({ data, darkMod
     </div>
   );
 };
+export interface DayData {
+  day: number
+  statusCounts: { [key: string]: number }
+}
+export interface ExpandablePresenceChartProps {
+  data: DayData[];
+  darkMode?: boolean;
+}
 
-const ExpandablePresenceChart: React.FC<{darkMode?: boolean}> = ({ darkMode = false }) => {
+const ExpandablePresenceChart = ({ data, darkMode = false }: ExpandablePresenceChartProps) => {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const openModal = () => setIsModalOpen(true);
   const closeModal = () => setIsModalOpen(false);
-
-  // Sample data
-  const data: DataPoint[] = Array.from({ length: 30 }, (_, i) => ({
-    day: i + 1,
-    statusCounts: {
-      "Gaming Time": Math.floor(Math.random() * 150),
-      "AFK": Math.floor(Math.random() * 50),
-      "Voice": Math.floor(Math.random() * 30),
-      "Studying": Math.floor(Math.random() * 20),
-      "Chatting": Math.floor(Math.random() * 100)
-    }
-  }));
 
   return (
     <Card className="flex-1 p-6 hover:shadow-md transition-all duration-150 h-[724px] dark:bg-gray-800 border border-gray-100 dark:border-gray-700">

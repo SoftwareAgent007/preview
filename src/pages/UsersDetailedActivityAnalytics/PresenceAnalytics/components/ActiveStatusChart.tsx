@@ -3,16 +3,10 @@ import { Card } from "@/components/ui/card";
 import { ClickableTooltip } from "@/components/ui/tooltip";
 import CircleRoleChart from "@/components/charts/circleChartOfRoles";
 import { useEffect, useRef, useState } from "react";
-
-interface RolesData {
-  role: string;
-  count: number;
-  percentage: number;
-  color: string;
-}
+import { StatusBreakdown } from "../interfaces/presence-activirt.interfaces";
 
 interface ActiveStatusChartProps {
-  data: RolesData[];
+  data: StatusBreakdown[];
 }
 
 const statusColors = [

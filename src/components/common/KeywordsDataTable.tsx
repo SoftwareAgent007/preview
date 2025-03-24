@@ -23,19 +23,11 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { Trash } from "lucide-react";
+import { Trash, Loader2 } from "lucide-react";
 import { Badge } from "../ui/badge";
+import { KeywordListItemDto } from "@/types/dataTypes";
 
-export type Keyword = {
-  id: bigint;
-  keyword: string;
-  matches: { count: number };
-  createdAt: Date;
-  active: boolean;
-  guildId: bigint;
-};
-
-const columns: ColumnDef<Keyword>[] = [
+const columns: ColumnDef<KeywordListItemDto>[] = [
   {
     accessorKey: "keyword",
     header: ({ column }) => (
@@ -90,8 +82,9 @@ const KeywordsDataTableComponent = ({
   totalKeywords,
   onPageSizeChange,
   pageSize,
+  isLoading,
 }: {
-  displayedKeywords: Keyword[];
+  displayedKeywords: KeywordListItemDto[];
   searchTerm: string;
   setSearchTerm: (term: string) => void;
   currentPage: number;
@@ -100,6 +93,7 @@ const KeywordsDataTableComponent = ({
   totalKeywords: number;
   onPageSizeChange: (size: number) => void;
   pageSize: number;
+  isLoading: boolean;
 }) => {
   const table = useReactTable({
     data: displayedKeywords,
@@ -111,6 +105,19 @@ const KeywordsDataTableComponent = ({
         pageSize: pageSize,
       },
     },
+    state: {
+      pagination: {
+        pageSize: pageSize,
+        pageIndex: currentPage - 1,
+      },
+    },
+    onPaginationChange: (updater) => {
+      if (typeof updater === 'function') {
+        const newState = updater(table.getState().pagination);
+        onPageSizeChange(newState.pageSize);
+      }
+    },
+    manualPagination: true,
   });
 
   
@@ -138,8 +145,7 @@ const KeywordsDataTableComponent = ({
 
   const handlePageSizeChange = (value: string) => {
     const newSize = parseInt(value, 10);
-    onPageSizeChange(newSize);
-    
+    table.setPageSize(newSize);
     setCurrentPage(1);
   };
 
@@ -153,8 +159,9 @@ const KeywordsDataTableComponent = ({
         <div className="flex items-center gap-2">
           <span className="text-sm text-gray-500">Rows per page:</span>
           <Select
-            value={`${pageSize}`}
+            value={`${table.getState().pagination.pageSize}`}
             onValueChange={handlePageSizeChange}
+            disabled={isLoading}
           >
             <SelectTrigger className="w-[100px]">
               <SelectValue placeholder="10" />
@@ -175,9 +182,18 @@ const KeywordsDataTableComponent = ({
         value={searchTerm}
         onChange={(e) => setSearchTerm(e.target.value)}
         className="mb-4"
+        disabled={isLoading}
       />
       
-      <div className="rounded-md border">
+      <div className="rounded-md border min-h-[400px] relative">
+        {isLoading && (
+          <div className="absolute inset-0 bg-white/50 backdrop-blur-sm flex items-center justify-center z-10">
+            <div className="flex items-center gap-2">
+              <Loader2 className="h-6 w-6 animate-spin" />
+              <span>Loading...</span>
+            </div>
+          </div>
+        )}
         <Table>
           <TableHeader className="bg-gray-50">
             {table.getHeaderGroups().map((headerGroup) => (
@@ -226,7 +242,7 @@ const KeywordsDataTableComponent = ({
             variant="outline"
             size="sm"
             onClick={() => setCurrentPage(Math.max(currentPage - 1, 1))}
-            disabled={currentPage === 1}
+            disabled={currentPage === 1 || isLoading}
           >
             Previous
           </Button>
@@ -238,6 +254,7 @@ const KeywordsDataTableComponent = ({
               size="sm"
               onClick={() => setCurrentPage(pageNum)}
               className="min-w-[32px]"
+              disabled={isLoading}
             >
               {pageNum}
             </Button>
@@ -247,7 +264,7 @@ const KeywordsDataTableComponent = ({
             variant="outline"
             size="sm"
             onClick={() => setCurrentPage(Math.min(currentPage + 1, totalPages))}
-            disabled={currentPage === totalPages}
+            disabled={currentPage === totalPages || isLoading}
           >
             Next
           </Button>

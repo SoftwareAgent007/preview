@@ -6,6 +6,7 @@ import { Expand, Minimize, Info } from "lucide-react";
 import { Card } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { ClickableTooltip } from "@/components/ui/tooltip";
+import { StatusDistribution } from "@/pages/UsersDetailedActivityAnalytics/PresenceAnalytics/interfaces/presence-activirt.interfaces";
 
 // Define proper interfaces for type safety
 interface StatusCounts {
@@ -23,13 +24,13 @@ interface LineDataPoint {
 }
 
 interface PresenceWeekActivityChartProps {
-  data?: DataPoint[];
+  data: StatusDistribution;
   darkMode?: boolean;
 }
 
 interface ModalProps {
   closeModal: () => void;
-  data: DataPoint[];
+  data: StatusDistribution;
   darkMode?: boolean;
 }
 
@@ -77,30 +78,14 @@ const chartVariants = {
 
 // Status colors with semantic meaning
 const statusColors: Record<string, string> = {
-  Online: "#10b981", // Green
-  Offline: "#6b7280", // Gray
-  Idle: "#f59e0b", // Amber
-  DND: "#ef4444", // Red
-  Gaming: "#3b82f6", // Blue
-  Streaming: "#8b5cf6", // Purple
-  Working: "#0ea5e9", // Sky
-  Studying: "#8b5cf6", // Purple
-  Chatting: "#ec4899", // Pink
+  online: "#10b981", // Green
+  offline: "#6b7280", // Gray
+  idle: "#f59e0b", // Amber
+  dnd: "#ef4444", // Red
 };
 
-// Sample data
-const sampleData: DataPoint[] = [
-  { day: 1, statusCounts: { Online: 100, Offline: 50, Idle: 30, DND: 20 } }, 
-  { day: 2, statusCounts: { Online: 120, Offline: 40, Idle: 25, DND: 15 } }, 
-  { day: 3, statusCounts: { Online: 140, Offline: 30, Idle: 20, DND: 10 } }, 
-  { day: 4, statusCounts: { Online: 130, Offline: 35, Idle: 22, DND: 12 } }, 
-  { day: 5, statusCounts: { Online: 125, Offline: 38, Idle: 24, DND: 14 } }, 
-  { day: 6, statusCounts: { Online: 135, Offline: 28, Idle: 18, DND: 9 } }, 
-  { day: 7, statusCounts: { Online: 145, Offline: 25, Idle: 15, DND: 8 } }
-];
-
 const PresenceWeekActivityChart: React.FC<PresenceWeekActivityChartProps> = ({ 
-  data = sampleData,
+  data,
   darkMode = false
 }) => {
   const svgRef = useRef<SVGSVGElement | null>(null);
@@ -113,8 +98,8 @@ const PresenceWeekActivityChart: React.FC<PresenceWeekActivityChartProps> = ({
 
   const updateChartDimensions = () => {
     if (chartRef.current) {
-      setChartWidth(chartRef.current.offsetWidth * 1.01); 
-      setChartHeight(chartRef.current.offsetHeight); 
+      setChartWidth(chartRef.current.offsetWidth * 1.01);
+      setChartHeight(chartRef.current.offsetHeight);
     }
   };
 
@@ -125,7 +110,7 @@ const PresenceWeekActivityChart: React.FC<PresenceWeekActivityChartProps> = ({
   }, []);
 
   useEffect(() => {
-    if (!svgRef.current || !data.length) return;
+    if (!svgRef.current || !data) return;
     
     const svg = d3.select(svgRef.current);
     svg.selectAll("*").remove();
@@ -140,15 +125,30 @@ const PresenceWeekActivityChart: React.FC<PresenceWeekActivityChartProps> = ({
       .append("g")
       .attr("transform", `translate(${margin.left},${margin.top})`);
 
-    // Create scales
+    // Get the maximum length of any status array to determine the number of days
+    const maxDays = Math.max(
+      data.online.length,
+      data.idle.length,
+      data.dnd.length,
+      data.offline.length
+    );
+
+    // Create an array of day numbers (1 to maxDays)
+    const days = Array.from({ length: maxDays }, (_, i) => i + 1);
+
+    // Create the x scale
     const x = d3.scaleBand()
-      .domain(data.map(d => d.day.toString()))
+      .domain(days.map(d => d.toString()))
       .range([0, width])
       .padding(0.2);
 
-    const maxValue = d3.max(data, d => {
-      return d3.max(Object.values(d.statusCounts)) || 0;
-    }) || 0;
+    // Find the maximum value across all status arrays
+    const maxValue = Math.max(
+      ...data.online,
+      ...data.idle,
+      ...data.dnd,
+      ...data.offline
+    );
 
     const y = d3.scaleLinear()
       .domain([0, maxValue])
@@ -192,17 +192,10 @@ const PresenceWeekActivityChart: React.FC<PresenceWeekActivityChartProps> = ({
       .attr("color", darkMode ? "rgba(255,255,255,0.7)" : "rgba(0,0,0,0.7)");
 
     // Create line generator
-    const line = d3.line<LineDataPoint>()
+    const line = d3.line<[number, number]>()
       .curve(d3.curveMonotoneX)
-      .x(d => (x(d.day.toString()) || 0) + (x.bandwidth() / 2))
-      .y(d => y(d.value));
-
-    // Create area generator for fills
-    const area = d3.area<LineDataPoint>()
-      .curve(d3.curveMonotoneX)
-      .x(d => (x(d.day.toString()) || 0) + (x.bandwidth() / 2))
-      .y0(height)
-      .y1(d => y(d.value));
+      .x(d => x(d[0].toString())! + x.bandwidth() / 2)
+      .y(d => y(d[1]));
 
     // Add tooltip
     const tooltip = g.append("g")
@@ -246,32 +239,45 @@ const PresenceWeekActivityChart: React.FC<PresenceWeekActivityChartProps> = ({
     // Handle mouse events
     svg.on("mousemove", (event) => {
       const [xPos] = d3.pointer(event, g.node());
-      const dayIndex = Math.floor(xPos / (width / data.length));
-      const dayNum = dayIndex + 1;
+      const dayIndex = Math.floor(xPos / (width / days.length));
+      const day = days[dayIndex];
       
-      if (dayIndex < 0 || dayIndex >= data.length) return;
-      
-      const closestData = data[dayIndex];
-      if (!closestData) return;
-      
-      const statusKey = selectedStatus === "all" 
-        ? Object.keys(closestData.statusCounts)[0] 
-        : selectedStatus;
-      
-      const statusValue = closestData.statusCounts[statusKey];
-      
+      if (dayIndex < 0 || dayIndex >= days.length) return;
+
+      let statusKey = selectedStatus;
+      let statusValue = 0;
+
+      if (selectedStatus === "all") {
+        statusKey = "online";
+      }
+
+      switch (statusKey) {
+        case "online":
+          statusValue = data.online[day - 1] || 0;
+          break;
+        case "idle":
+          statusValue = data.idle[day - 1] || 0;
+          break;
+        case "dnd":
+          statusValue = data.dnd[day - 1] || 0;
+          break;
+        case "offline":
+          statusValue = data.offline[day - 1] || 0;
+          break;
+      }
+
       // Position vertical line
       verticalLine
-        .attr("x1", (x(dayNum.toString()) || 0) + (x.bandwidth() / 2))
-        .attr("x2", (x(dayNum.toString()) || 0) + (x.bandwidth() / 2))
+        .attr("x1", x(day.toString())! + x.bandwidth() / 2)
+        .attr("x2", x(day.toString())! + x.bandwidth() / 2)
         .style("display", "block");
       
       // Update tooltip
       tooltip.style("display", "block")
-        .attr("transform", `translate(${(x(dayNum.toString()) || 0) + (x.bandwidth() / 2) - 60},${y(statusValue) - 60})`);
+        .attr("transform", `translate(${x(day.toString())! + x.bandwidth() / 2 - 60},${y(statusValue) - 60})`);
       
       tooltip.select("text:nth-child(2)")
-        .text(`Day ${dayNum}`);
+        .text(`Day ${day}`);
       
       tooltip.select("text:nth-child(3)")
         .text(`${statusKey}: ${statusValue}`)
@@ -279,7 +285,7 @@ const PresenceWeekActivityChart: React.FC<PresenceWeekActivityChartProps> = ({
       
       // Update hovered point state
       setHoveredPoint({
-        day: dayNum,
+        day,
         status: statusKey,
         value: statusValue
       });
@@ -291,14 +297,17 @@ const PresenceWeekActivityChart: React.FC<PresenceWeekActivityChartProps> = ({
       setHoveredPoint(null);
     });
 
-    // Enhanced running animation on load
-    Object.keys(data[0].statusCounts).forEach((key, statusIndex) => {
+    // Draw lines for each status
+    const statusKeys = Object.keys(data) as Array<keyof StatusDistribution>;
+    
+    statusKeys.forEach((key, statusIndex) => {
       if (selectedStatus !== "all" && selectedStatus !== key) return;
-      
-      const lineData = data.map(d => ({ day: d.day, value: d.statusCounts[key] || 0 }));
-      
+
+      // Create points array for this status
+      const points: [number, number][] = data[key].map((value, index) => [index + 1, value]);
+
       // Create gradient for area
-      const gradientId = `gradient-${key.replace(/\s+/g, '-').toLowerCase()}`;
+      const gradientId = `gradient-${key}`;
       const gradient = svg.append("defs")
         .append("linearGradient")
         .attr("id", gradientId)
@@ -316,25 +325,30 @@ const PresenceWeekActivityChart: React.FC<PresenceWeekActivityChartProps> = ({
         .attr("offset", "100%")
         .attr("stop-color", statusColors[key])
         .attr("stop-opacity", 0.05);
-      
-      // Add area with progressive reveal animation
+
+      // Add area with gradient
+      const area = d3.area<[number, number]>()
+        .x(d => x(d[0].toString())! + x.bandwidth() / 2)
+        .y0(height)
+        .y1(d => y(d[1]));
+
       const areaPath = g.append("path")
-        .datum(lineData)
+        .datum(points)
         .attr("fill", `url(#${gradientId})`)
         .attr("d", area)
         .attr("opacity", 0);
-      
-      // Add line with progressive drawing animation
+
+      // Add line with animation
       const path = g.append("path")
-        .datum(lineData)
+        .datum(points)
         .attr("fill", "none")
         .attr("stroke", statusColors[key])
         .attr("stroke-width", selectedStatus === key ? 3 : 2)
         .attr("stroke-linejoin", "round")
         .attr("stroke-linecap", "round")
         .attr("d", line);
-      
-      // Animate path drawing with running effect
+
+      // Animate path drawing
       const pathLength = path.node()?.getTotalLength() || 0;
       path
         .attr("stroke-dasharray", pathLength)
@@ -345,7 +359,6 @@ const PresenceWeekActivityChart: React.FC<PresenceWeekActivityChartProps> = ({
         .ease(d3.easeQuadInOut)
         .attr("stroke-dashoffset", 0)
         .on("start", function() {
-          // Fade in area as line is drawn
           areaPath
             .transition()
             .duration(1800)
@@ -353,24 +366,23 @@ const PresenceWeekActivityChart: React.FC<PresenceWeekActivityChartProps> = ({
             .ease(d3.easeQuadInOut)
             .attr("opacity", 0.7);
         });
-      
-      // Add points with sequential appearance following the line
-      const points = g.selectAll(`.point-${key}`)
-        .data(lineData)
+
+      // Add points
+      const circles = g.selectAll(null)
+        .data(points)
         .enter()
         .append("circle")
-        .attr("class", `point-${key}`)
-        .attr("cx", d => (x(d.day.toString()) || 0) + (x.bandwidth() / 2))
-        .attr("cy", d => y(d.value))
+        .attr("cx", d => x(d[0].toString())! + x.bandwidth() / 2)
+        .attr("cy", d => y(d[1]))
         .attr("r", 0)
         .attr("fill", statusColors[key])
         .attr("stroke", darkMode ? "#1F2937" : "white")
         .attr("stroke-width", 2);
-      
-      // Animate points to appear sequentially along the path
-      lineData.forEach((_, i) => {
-        const pointDelay = statusIndex * 200 + (i / (lineData.length - 1)) * 1800;
-        points.filter((_, j) => j === i)
+
+      // Animate points
+      points.forEach((_, i) => {
+        const pointDelay = statusIndex * 200 + (i / (points.length - 1)) * 1800;
+        circles.filter((_, j) => j === i)
           .transition()
           .duration(400)
           .delay(pointDelay)
@@ -378,6 +390,7 @@ const PresenceWeekActivityChart: React.FC<PresenceWeekActivityChartProps> = ({
           .attr("r", selectedStatus === key ? 6 : 4);
       });
     });
+
   }, [data, selectedStatus, chartWidth, chartHeight, darkMode]);
 
   return (
@@ -389,13 +402,13 @@ const PresenceWeekActivityChart: React.FC<PresenceWeekActivityChartProps> = ({
           </SelectTrigger>
           <SelectContent>
             <SelectItem value="all">All Statuses</SelectItem>
-            {data.length > 0 && Object.keys(data[0].statusCounts).map((key) => (
+            {Object.keys(data).map((key) => (
               <SelectItem key={key} value={key} className="flex items-center gap-2">
                 <div 
                   className="w-2 h-2 rounded-full inline-block mr-2" 
                   style={{ backgroundColor: statusColors[key] || '#888' }}
                 />
-                {key}
+                {key.charAt(0).toUpperCase() + key.slice(1)}
               </SelectItem>
             ))}
           </SelectContent>
@@ -413,9 +426,7 @@ const PresenceWeekActivityChart: React.FC<PresenceWeekActivityChartProps> = ({
   );
 };
 
-// Enhanced modal animations
-const Modal: React.FC<ModalProps> = ({ closeModal, data, darkMode = false }) => {
-  // Create portal for modal
+const Modal = ({ closeModal, data, darkMode = false }: ModalProps) => {
   const modalRoot = document.getElementById('modal-root') || document.body;
   
   return ReactDOM.createPortal(
@@ -459,8 +470,7 @@ const Modal: React.FC<ModalProps> = ({ closeModal, data, darkMode = false }) => 
   );
 };
 
-// Expandable chart component
-const ExpandablePresenceChart: React.FC<PresenceWeekActivityChartProps> = ({ data = sampleData, darkMode = false }) => {
+const ExpandablePresenceChart: React.FC<PresenceWeekActivityChartProps> = ({ data, darkMode = false }) => {
   const [isModalOpen, setIsModalOpen] = useState(false);
   
   const openModal = () => setIsModalOpen(true);

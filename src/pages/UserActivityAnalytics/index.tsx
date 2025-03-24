@@ -1,25 +1,42 @@
 import { motion } from "framer-motion";
-import { ActivityData } from "@/components/common/types/userAnalytic.types";
-import { usePlayingStatisticData } from "@/hooks/analytics/usePlayingStatisticData";
-import { useUsersActivityData } from "@/hooks/fetchData";
-import { BREADCRUMB_PATHS, ROUTES } from "@/routes/routes.constant";
+import ActivityCharts from "@/components/charts/userActivityTimeline/expandedUserActivityCharts";
 import BreadcrumbsNavigation from "@/components/common/BreadcrumbsNavigation";
+import { Card } from "@/components/ui/card";
+import { BREADCRUMB_PATHS, ROUTES } from "@/routes/routes.constant";
+import { usePeakHours } from "@/hooks/analytics/useGamingPeakHours";
+import { useUserActivityAnalytics } from "@/hooks/analytics/useUserActivityAnalytics";
+import type { UserActivityAnalytics } from "@/hooks/analytics/useUserActivityAnalytics";
+import { useDashboardData } from "@/hooks/analytics/useDashboardData";
+import { usePlayingStatisticData } from "@/hooks/analytics/usePlayingStatisticData";
+import ContentLoader from "react-content-loader";
+import ErrorComponent from "@/components/common/errorModel";
 import ActivityStatCard from "./components/ActivityStatCard";
 import ActivityChartsSection from "./components/ActivityChartsSection";
 import RolesSection from "./components/RolesSection";
 
+const CardSkeleton = ({ width, height }: { width: string; height: string }) => (
+  <ContentLoader speed={2} width={width} height={height} viewBox={`0 0 ${width} ${height}`}>
+    <rect x="0" y="0" rx="10" ry="10" width="100%" height="100%" />
+  </ContentLoader>
+);
+
 const UserActivityAnalytics = () => {
-  // #region Data Fetching
-  const data: ActivityData = useUsersActivityData();
-  const { playingUserStats } = usePlayingStatisticData();
-  // #endregion
+  // Core data from HEAD branch
+  const { activeRoles, avgSessionTime, joins, leaves, isLoading: activityLoading, error: activityError } = useUserActivityAnalytics("");
+  const { peakHours, isLoading: peakLoading, error: peakError } = usePeakHours("");
+  const { totalUsers, activeUsers, isLoading: dashboardLoading, error: dashboardError } = useDashboardData("year");
+  
+  // Enhanced data from dev branch
+  const data = useUserActivityAnalytics('month');
+  const { playingUserStats } = usePlayingStatisticData('month');
 
-  // #region Constants
-  const mockedJoins = 120;
-  const mockedLeaves = 80;
-  // #endregion
+  // Loading and error states
+  const isLoading = activityLoading || peakLoading || dashboardLoading;
 
-  // #region Animation Variants
+  // Data validation
+  const hasValidData = totalUsers || activeUsers || avgSessionTime || joins || leaves || (data && Object.keys(data).length > 0);
+
+  // Animation variants from dev branch
   const container = {
     hidden: { opacity: 0 },
     show: {
@@ -29,54 +46,52 @@ const UserActivityAnalytics = () => {
       },
     },
   };
-  // #endregion
 
-  // #region Stats Data
-  const statsData = [
+  // Combine stats data from both branches
+  const statsData = hasValidData ? [
     {
       title: "Peak Activity Time",
-      value: data.peakActivityTime
-        ? new Date(data.peakActivityTime.peakTime).toLocaleTimeString([], {
+      value: data?.hourlyActivity?.peakHour 
+        ? new Date(data.hourlyActivity.peakHour).toLocaleTimeString([], {
             hour: "2-digit",
             minute: "2-digit",
           })
-        : "No data",
-      trend: data.peakActivityTime.trend,
-      isPositive: data.peakActivityTime.trend >= 0,
+        : peakHours?.[0]?.hour || "No data",
+      // trend: data?.hourlyActivity?.hourlyDistribution?.[0],
+      isPositive: true,
     },
     {
-      title: "Online users",
-      value: data.onlineUsers.count,
-      trend: data.onlineUsers.trend,
-      isPositive: data.onlineUsers.trend >= 0,
+      title: "Online Users",
+      value: data?.activityOverview?.activeUsers?.count || totalUsers?.count || "No data",
+      // trend: data?.activityOverview?.activeUsers?.count,
+      isPositive: true,
     },
     {
       title: "Avg Session Time",
-      value: data.avgSessionTime.count.toFixed(2),
-      trend: data.avgSessionTime.trend,
-      isPositive: data.avgSessionTime.trend >= 0,
+      value: data?.avgSessionTime?.formattedDuration || avgSessionTime?.formattedDuration || "0",
+      // trend: data?.avgSessionTime?.change,
+      isPositive: true,
       unit: "minutes",
     },
     {
       title: "Playing Now",
-      value: data.playingNow.count,
-      trend: data.playingNow.trend,
-      isPositive: data.playingNow.trend >= 0,
+      value: data?.activityOverview?.peakUsers?.count || activeUsers?.count || "No data",
+      // trend: data?.activityOverview?.peakUsers?.count,
+      isPositive: true,
     },
     {
       title: "Joins",
-      value: mockedJoins,
-      trend: 1.3,
+      value: joins || data?.joins?.count || 0,
+      // trend: 1.3,
       isPositive: true,
     },
     {
       title: "Leaves",
-      value: mockedLeaves,
-      trend: 12.1,
+      value: leaves || data?.leaves?.count || 0,
+      // trend: 12.1,
       isPositive: false,
     },
-  ];
-  // #endregion
+  ] : [];
 
   return (
     <motion.div
@@ -89,7 +104,7 @@ const UserActivityAnalytics = () => {
         className="mx-auto"
         style={{ maxWidth: `${import.meta.env.VITE_MAX_WIDTH || 1200}px` }}
       >
-        {/* #region Header */}
+        {/* Header */}
         <motion.div
           className="flex justify-between items-center mb-6"
           initial={{ opacity: 0, y: -20 }}
@@ -100,36 +115,74 @@ const UserActivityAnalytics = () => {
             items={BREADCRUMB_PATHS[ROUTES.USER_ACTIVITY]}
           />
         </motion.div>
-        {/* #endregion */}
 
-        {/* #region Activity Charts */}
-        <ActivityChartsSection data={playingUserStats} className="mb-6" />
-        {/* #endregion */}
+        {/* Activity Charts Section */}
+        {isLoading ? (
+          <Card className="p-6 w-full h-[300px]">
+            <CardSkeleton width="100%" height="100%" />
+          </Card>
+        ) : hasValidData ? (
+          playingUserStats && Object.keys(playingUserStats).length > 0 ? (
+            <ActivityChartsSection data={playingUserStats} className="mb-6" />
+          ) : (
+            <ActivityCharts data={{}} className="mb-6" />
+          )
+        ) : (
+          <ErrorComponent 
+            title="Activity Data Error" 
+            message={activityError?.message || "Failed to load activity data"} 
+          />
+        )}
 
         <div className="flex flex-col lg:flex-row gap-6">
-          {/* #region Stats Grid */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 md:gap-6">
-            {statsData.map((stat, index) => (
-              <ActivityStatCard
-                key={index}
-                index={index}
-                title={stat.title}
-                value={stat.value}
-                trend={stat.trend}
-                isPositive={stat.isPositive}
-                unit={stat.unit}
+          {/* Stats Grid */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 md:gap-6 flex-1">
+            {isLoading ? (
+              [...Array(6)].map((_, i) => (
+                <Card key={i} className="flex-1 p-6">
+                  <CardSkeleton width="100%" height="100px" />
+                </Card>
+              ))
+            ) : hasValidData ? (
+              <>
+                {statsData.map((stat, index) => (
+                  <ActivityStatCard
+                    key={index}
+                    index={index}
+                    title={stat.title}
+                    value={stat.value}
+                    trend={0}
+                    isPositive={stat.isPositive}
+                    unit={stat.unit}
+                  />
+                ))}
+              </>
+            ) : (
+              <ErrorComponent 
+                title="Dashboard Data Error" 
+                message={dashboardError?.message || "Failed to load dashboard statistics"} 
               />
-            ))}
+            )}
           </div>
-          {/* #endregion */}
 
-          {/* #region Roles Chart */}
-          <RolesSection />
-          {/* #endregion */}
+          {/* Roles Section */}
+          <div className="flex-1">
+            {isLoading ? (
+              <Card className="p-6 h-full">
+                <CardSkeleton width="100%" height="100%" />
+              </Card>
+            ) : activeRoles?.length > 0 ? (
+              <RolesSection />
+            ) : (
+              <ErrorComponent 
+                title="Peak Hours Error" 
+                message={peakError?.message || "Failed to load roles data"} 
+              />
+            )}
+          </div>
         </div>
       </div>
     </motion.div>
   );
 };
-
 export default UserActivityAnalytics;

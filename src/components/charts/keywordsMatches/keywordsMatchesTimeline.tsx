@@ -1,19 +1,18 @@
-import { useDashboardData } from "@/hooks/analytics/useDashboardData";
-import React, { useState } from "react";
-import ReactDOM from "react-dom";
-import { motion, AnimatePresence } from "framer-motion";
-import { Expand, Minimize } from "lucide-react";
 import AreaLineChart from "@/components/charts/AreaLineChart";
 import { ClickableTooltip } from "@/components/ui/tooltip";
+import { TimelineDataDto } from "@/types/dataTypes";
+import { AnimatePresence, motion } from "framer-motion";
+import { Expand, Minimize } from "lucide-react";
+import React, { useState } from "react";
+import ReactDOM from "react-dom";
+import ErrorComponent from "@/components/common/errorModel";
 
-interface KeywordsMatchesTimelineProps {
+interface MessageFrequencyChartProps {
+    matchesTimeline: TimelineDataDto[]
     width?: number;
 }
 
-const KeywordsMatchesTimeline: React.FC<KeywordsMatchesTimelineProps> = ({
-    width = 543,
-}) => {
-    const { messageFrequency } = useDashboardData("month");
+const KeywordsMatchesTimeline: React.FC<MessageFrequencyChartProps> = ({ matchesTimeline, width = 543 }) => {
     const [isModalOpen, setIsModalOpen] = useState(false);
 
     const containerVariants = {
@@ -57,7 +56,7 @@ const KeywordsMatchesTimeline: React.FC<KeywordsMatchesTimelineProps> = ({
                         variants={itemVariants}
                         whileHover={{ scale: 1.02 }}
                     >
-                        Message Activity
+                        Matches Timeline
                     </motion.span>
                     <ClickableTooltip content={
                         <motion.p
@@ -106,22 +105,26 @@ const KeywordsMatchesTimeline: React.FC<KeywordsMatchesTimelineProps> = ({
                 </motion.div>
             </motion.div>
             <motion.div 
-                className="chart-parent"
+                className="chart-parent flex justify-between"
                 variants={itemVariants}
             >
-                <AreaLineChart
-                    data={messageFrequency}
-                    width={width} 
-                    height={300}
-                    graphColor="#b1c4f5"
-                />
+                {matchesTimeline?.length >= 3 ? (
+                    <AreaLineChart
+                        data={matchesTimeline}
+                        width={width}
+                        height={300}
+                        graphColor="#b1c4f5"
+                    />
+                ) : (
+                    <ErrorComponent height={300} message="Not enough data points (minimum 3 required)"/>
+                )}
             </motion.div>
 
             <AnimatePresence>
                 {isModalOpen && (
                     <Modal 
                         closeModal={() => setIsModalOpen(false)} 
-                        messageFrequency={messageFrequency} 
+                        messageFrequency={matchesTimeline} 
                         width={width} 
                     />
                 )}
@@ -132,7 +135,7 @@ const KeywordsMatchesTimeline: React.FC<KeywordsMatchesTimelineProps> = ({
 
 interface ModalProps {
     closeModal: () => void;
-    messageFrequency: any;
+    messageFrequency: TimelineDataDto[];
     width: number;
 }
 
@@ -195,12 +198,16 @@ const Modal: React.FC<ModalProps> = ({ closeModal, messageFrequency, width }) =>
                         animate={{ opacity: 1, y: 0 }}
                         transition={{ delay: 0.3 }}
                     >
-                        <AreaLineChart
-                            data={messageFrequency}
-                            width={width * 1.5}
-                            height={500}
-                            graphColor="#b1c4f5"
-                        />
+                        {messageFrequency?.length >= 3 ? (
+                            <AreaLineChart
+                                data={messageFrequency}
+                                width={width * 1.5}
+                                height={500}
+                                graphColor="#b1c4f5"
+                            />
+                        ) : (
+                            <ErrorComponent height={500} message="Not enough data points (minimum 3 required)"/>
+                        )}
                     </motion.div>
                 </motion.div>
             </motion.div>

@@ -1,28 +1,26 @@
-import BreadcrumbsNavigation from "@/components/common/BreadcrumbsNavigation";
-import { BREADCRUMB_PATHS, ROUTES } from "@/routes/routes.constant";
 import PeakListeningHoursChart from "@/components/charts/music/peakHoursChart";
-import { useState } from "react";
-import MusicStatCard from "./components/MusicStatCard";
+import BreadcrumbsNavigation from "@/components/common/BreadcrumbsNavigation";
+import ErrorComponent from "@/components/common/errorModel";
+import { Card } from "@/components/ui/card";
+import { ClickableTooltip } from "@/components/ui/tooltip";
+import { useMusicData } from "@/hooks/analytics/useMusicMetrics";
+import { BREADCRUMB_PATHS, ROUTES } from "@/routes/routes.constant";
 import { motion } from "framer-motion";
-import {
-  generateFakeArtists,
-  generateSessionStats,
-  generateFakeStats,
-  generateFakeGenreData,
-  generateListeningHoursData,
-} from "./utils";
+import ContentLoader from "react-content-loader";
+import BaseCard from "./components/BaseCard";
 import GenrePreferencesCard from "./components/GenrePreferencesCard";
+import MusicStatCard from "./components/MusicStatCard";
 import SessionStatsCard from "./components/SessionStatsCard";
 import TopPlayedArtistsCard from "./components/TopPlayedArtistCard";
-import BaseCard from "./components/BaseCard";
+
+const CardSkeleton = ({ width, height }: { width: string; height: string }) => (
+  <ContentLoader speed={2} width={width} height={height} viewBox={`0 0 ${width} ${height}`}>
+    <rect x="0" y="0" rx="10" ry="10" width="100%" height="100%" />
+  </ContentLoader>
+);
 
 const MusicMetrics = () => {
-  // #region Data Generation
-  const stats = generateFakeStats();
-  const topArtists = generateFakeArtists();
-  const genreData = generateFakeGenreData();
-  const [sessionStats] = useState(generateSessionStats());
-  // #endregion
+  const { overview, genres, topArtists, peakHours, avgSession, hasError, isLoading, error } = useMusicData();
 
   // #region Animation Variants
   const container = {
@@ -48,6 +46,16 @@ const MusicMetrics = () => {
     },
   };
   // #endregion
+
+  if (error) {
+    return <ErrorComponent />;
+  }
+
+  const stats = [
+    { label: "Total Plays", ...overview.totalPlays },
+    { label: "Unique Artists", ...overview.uniqueArtists },
+    { label: "Active Listeners", ...overview.activeListeners },
+  ];
 
   return (
     <motion.div
@@ -75,17 +83,25 @@ const MusicMetrics = () => {
 
         {/* #region Stats Cards */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
-          {stats.map((stat, index) => (
-            <MusicStatCard
-              key={index}
-              index={index}
-              label={stat.label}
-              value={stat.value}
-              change={stat.change}
-              isPositive={stat.isPositive}
-              tooltipContent={`Statistics for ${stat.label.toLowerCase()}`}
-            />
-          ))}
+          {isLoading ? (
+            Array(3).fill(0).map((_, i) => (
+              <Card key={i} className="p-6">
+                <CardSkeleton width="100%" height="100px" />
+              </Card>
+            ))
+          ) : (
+            stats.map((stat, index) => (
+                <MusicStatCard
+                  key={stat.label}
+                  index={index}
+                  label={stat.label}
+                  value={stat.current}
+                  change={stat.previous}
+                  isPositive={stat.isPositive}
+                  tooltipContent={`Statistics for ${stat.label.toLowerCase()}`}
+                />
+            ))
+          )}
         </div>
         {/* #endregion */}
 
@@ -94,8 +110,34 @@ const MusicMetrics = () => {
           className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6"
           variants={container}
         >
-          <TopPlayedArtistsCard artists={topArtists} />
-          <GenrePreferencesCard data={genreData} />
+          {isLoading ? (
+            Array(2).fill(0).map((_, i) => (
+              <Card key={i} className="p-6">
+                <CardSkeleton width="100%" height="200px" />
+              </Card>
+            ))
+          ) : (
+            <>
+              {topArtists?.length > 0 ? (
+                <TopPlayedArtistsCard artists={topArtists} />
+              ) : (
+                <div className="flex items-center justify-center h-[200px] text-gray-500">
+                  No artist data available
+                </div>
+              )}
+              
+              <Card className="flex-1 p-6">
+                <span className="text-gray-500 text-lg font-bold mb-4">Genre Preferences</span>
+                {genres?.length > 0 ? (
+                  <GenrePreferencesCard data={genres} />
+                ) : (
+                  <div className="flex items-center justify-center h-[200px] text-gray-500">
+                    No genre data available
+                  </div>
+                )}
+              </Card>
+            </>
+          )}
         </motion.div>
         {/* #endregion */}
 
@@ -104,12 +146,53 @@ const MusicMetrics = () => {
           className="grid grid-cols-1 md:grid-cols-2 gap-6"
           variants={container}
         >
-          <BaseCard>
-            <motion.div variants={item}>
-              <PeakListeningHoursChart data={generateListeningHoursData()} />
-            </motion.div>
-          </BaseCard>
-          <SessionStatsCard stats={sessionStats} />
+          {isLoading ? (
+            Array(2).fill(0).map((_, i) => (
+              <Card key={i} className="p-6">
+                <CardSkeleton width="100%" height="200px" />
+              </Card>
+            ))
+          ) : (
+            <>
+              <BaseCard>
+                <div className="title">
+                  <span className="text-gray-500 text-lg font-bold mr-5">Peak Listening Hours</span>
+                  <ClickableTooltip content={<p><strong>Peak Listening Hours:</strong> Shows statistics for the most active hours of the day.</p>}>
+                    <span className="bg-gray-300 bg-opacity-25 text-gray-600 px-[7px] rounded-full cursor-help">?</span>
+                  </ClickableTooltip>
+                </div>
+                {hasError(peakHours?.hourlyDistribution) ? (
+                  <ErrorComponent />
+                ) : peakHours?.hourlyDistribution?.length > 0 ? (
+                  <motion.div variants={item}>
+                    <PeakListeningHoursChart data={peakHours.hourlyDistribution} />
+                  </motion.div>
+                ) : (
+                  <div className="flex items-center justify-center h-[200px] text-gray-500">
+                    No peak hours data available
+                  </div>
+                )}
+              </BaseCard>
+              
+              <Card className="flex-1 p-6 flex flex-col">
+                <span className="text-gray-500 text-lg font-bold mb-4">Average Listening Session</span>
+                {hasError(avgSession) ? (
+                  <ErrorComponent />
+                ) : avgSession ? (
+                  <SessionStatsCard stats={{
+                    current: avgSession.current,
+                    previous: avgSession.previous,
+                    change: ((avgSession.current - avgSession.previous) / avgSession.previous) * 100,
+                    isPositive: avgSession.isPositive
+                  }} />
+                ) : (
+                  <div className="flex items-center justify-center h-[200px] text-gray-500">
+                    No session data available
+                  </div>
+                )}
+              </Card>
+            </>
+          )}
         </motion.div>
         {/* #endregion */}
       </div>

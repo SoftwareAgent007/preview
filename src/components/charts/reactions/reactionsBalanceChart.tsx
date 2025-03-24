@@ -1,15 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import * as d3 from "d3";
 import { motion } from "framer-motion";
-
-// Define proper types for the data
-interface ReactionData {
-  date: string;
-  positive: number;
-  neutral: number;
-  negative: number;
-}
-
+import { ReactionData } from "./reaction.interface";
 interface BackToBackHistogramProps {
   data?: ReactionData[];
   width?: number;

@@ -1,60 +1,98 @@
-import { useMemo } from 'react';
-import { useKeywords, useMessageMatches } from '../fetchData';
+import { useQueryBuilder } from './common/useQueryBuilder';
+import { useModifyBuilder } from './common/useModifyBuilder';
+import { KeywordAnalyticsResponseDto } from '@/types/dataTypes';
+import { useQueryClient } from 'react-query';
 
-export const useKeywordsAnalytics = (period: 'day' | 'week' | 'month' | 'year' = 'year') => {
-  const { data: keywords } = useKeywords();
-  const { data: messages } = useMessageMatches();
+interface AddKeywordParams {
+  keyword: string;
+  guildId: string;
+}
 
-  const getPeriodStart = useMemo(() => {
-    const now = new Date();
-    switch (period) {
-      case 'day':
-        return new Date(now.setHours(0, 0, 0, 0));
-      case 'week':
-        return new Date(now.setDate(now.getDate() - 7));
-      case 'month':
-        return new Date(now.setMonth(now.getMonth() - 1));
-      case 'year':
-        return new Date(now.setFullYear(now.getFullYear() - 1));
+interface KeywordActionParams {
+  id: string;
+  guildId: string;
+}
+
+interface AddKeywordResponse {
+  id: string;
+  keyword: string;
+  active: boolean;
+}
+
+export const useKeywordsAnalytics = (
+  page: number = 1,
+  pageSize: number = 50,
+  guildId?: string
+) => {
+  const queryClient = useQueryClient();
+
+  const {
+    data: keywordsAnalytics,
+    isLoading,
+    error,
+    refetch: refetchAnalytics
+  } = useQueryBuilder<KeywordAnalyticsResponseDto>(
+    ['keywordsAnalytics', page, pageSize],
+    (guildId) =>
+      `/keywords/analytics?guildId=${guildId}&page=${page}&limit=${pageSize}`
+  );
+
+  const { data: activeTags, refetch: refetchTags } = useQueryBuilder<string[]>(
+    ['keywordTags', guildId],
+    (guildId) => `/keywords/tags?guildId=${guildId}`
+  );
+
+  const addKeyword = useModifyBuilder<AddKeywordParams, AddKeywordResponse>(
+    () => `/keywords`,
+    {
+      body: (params) => ({
+        active: true,
+        guildId: params.guildId,
+        keyword: params.keyword
+      }),
+      onSuccess: async () => {
+        // Refetch all queries in sequence to ensure data consistency
+        await Promise.all([
+          queryClient.invalidateQueries(['keywordTags']),
+          queryClient.invalidateQueries(['keywordsAnalytics']),
+          queryClient.invalidateQueries(['keywordsAnalytics', 1]), // Refetch first page
+          refetchAnalytics(), // Refetch current analytics data
+          refetchTags() // Refetch tags
+        ]);
+      }
     }
-  }, [period]);
+  );
 
+  const toggleKeywordActive = useModifyBuilder<KeywordActionParams>(
+    (params) => `/keywords/${params.id}/toggle-active`,
+    {
+      method: 'PATCH',
+      onSuccess: () => {
+        queryClient.invalidateQueries(['keywordTags']);
+        queryClient.invalidateQueries(['keywordsAnalytics']);
+      }
+    }
+  );
 
-  const activeKeywords = useMemo(() => {
-    return keywords?.filter(keyword => keyword.active) || [];
-  }, [keywords]);
-
-  const matchesTimeline = useMemo(() => {
-    const timeline: Record<string, number> = {};
-    messages?.forEach(message => {
-      const date = message.matchedAt.toISOString().split('T')[0];
-      timeline[date] = (timeline[date] || 0) + 1;
-    });
-    return Object.entries(timeline).map(([date, count]) => ({ date, count }));
-  }, [messages]);
-
-  const totalActiveKeywords = useMemo(() => {
-    return keywords?.filter(keyword => keyword.active).length || 0;
-  }, [keywords]);
-
-  const totalMatches = useMemo(() => {
-    return messages?.length || 0;
-  }, [messages]);
-
-  const keywordStats = useMemo(() => {
-    if (!keywords) return { total: 0, active: 0 };
-    const periodKeywords = keywords.filter(k => new Date(k.createdAt) >= getPeriodStart);
-    return {
-      total: periodKeywords.length,
-      active: periodKeywords.filter(k => k.active).length
-    };
-  }, [keywords, getPeriodStart]);
-
+  const deleteKeyword = useModifyBuilder<KeywordActionParams>(
+    (params) => `/keywords/${params.id}`,
+    {
+      method: 'DELETE',
+      onSuccess: () => {
+        queryClient.invalidateQueries(['keywordTags']);
+        queryClient.invalidateQueries(['keywordsAnalytics']);
+      }
+    }
+  );
+    
   return {
-    activeKeywords,
-    matchesTimeline,
-    totalActiveKeywords,
-    totalMatches,
-    keywordStats
+    ...keywordsAnalytics,
+    activeTags,
+    isLoading,
+    error,
+    addKeyword,
+    toggleKeywordActive,
+    deleteKeyword,
+    refetchAnalytics
   };
 };

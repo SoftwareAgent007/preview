@@ -1,9 +1,10 @@
 import { motion } from "framer-motion";
-import BaseCard from "./BaseCard";
 import HorizontalBarChartRelatedGenres from "@/components/charts/music/musicActivityChart";
 import { ClickableTooltip } from "@/components/ui/tooltip";
 import { Info } from "lucide-react";
 import { useTheme } from "@/components/theme/ThemeProvider";
+import { useRef, useEffect, useState } from "react";
+import BaseCard from "./BaseCard";
 
 interface GenrePreferencesCardProps {
   data: any[];
@@ -12,7 +13,24 @@ interface GenrePreferencesCardProps {
 const GenrePreferencesCard = ({ data }: GenrePreferencesCardProps) => {
   const { theme } = useTheme();
   const isDarkMode = theme === "dark";
-  
+  const containerRef = useRef<HTMLDivElement>(null);
+  const [width, setWidth] = useState(0);
+
+  useEffect(() => {
+    if (containerRef.current) {
+      setWidth(containerRef.current.offsetWidth);
+    }
+
+    const handleResize = () => {
+      if (containerRef.current) {
+        setWidth(containerRef.current.offsetWidth);
+      }
+    };
+
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
+
   const item = {
     hidden: { opacity: 0, y: 10 },
     show: { 
@@ -36,12 +54,14 @@ const GenrePreferencesCard = ({ data }: GenrePreferencesCardProps) => {
       </motion.div>
       
       <motion.div 
+        ref={containerRef}
         variants={item}
         className="h-[350px] w-full"
       >
         <HorizontalBarChartRelatedGenres
           data={data.slice(0, 7)}
           darkMode={isDarkMode}
+          width={width}
         />
       </motion.div>
     </BaseCard>

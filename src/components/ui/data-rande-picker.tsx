@@ -1,7 +1,8 @@
 import * as React from "react"
-import { addDays, format } from "date-fns"
+import { format } from "date-fns"
 import { Calendar as CalendarIcon } from "lucide-react"
 import { DateRange } from "react-day-picker"
+import { useQueryClient } from "react-query"
 
 import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
@@ -12,17 +13,38 @@ import {
   PopoverTrigger,
 } from "@/components/ui/popover"
 
+interface DatePickerWithRangeProps {
+  value: DateRange
+  onChange?: (date: DateRange) => void
+  className?: string
+  onClose?: () => void
+}
+
 export function DatePickerWithRange({
   className,
-}: React.HTMLAttributes<HTMLDivElement>) {
-  const [date, setDate] = React.useState<DateRange | undefined>({
-    from: new Date(2022, 0, 20),
-    to: addDays(new Date(2022, 0, 20), 20),
-  })
+  value,
+  onChange,
+  onClose,
+}: DatePickerWithRangeProps) {
+  const [date, setDate] = React.useState<DateRange>(value)
+  const queryClient = useQueryClient()
+
+  const handleDateChange = (newDate: DateRange | undefined) => {
+    if (!newDate) return
+    setDate(newDate)
+    onChange?.(newDate)
+  }
+
+  const handleClose = (open: boolean) => {
+    if (!open) {
+      queryClient.invalidateQueries()
+      onClose?.()
+    }
+  }
 
   return (
     <div className={cn("grid gap-2", className)}>
-      <Popover>
+      <Popover onOpenChange={handleClose}>
         <PopoverTrigger asChild>
           <Button
             id="date"
@@ -53,7 +75,7 @@ export function DatePickerWithRange({
             mode="range"
             defaultMonth={date?.from}
             selected={date}
-            onSelect={setDate}
+            onSelect={handleDateChange}
             numberOfMonths={2}
             className="[&_.rdp-day_button[aria-selected]]:bg-primary [&_.rdp-day_button[aria-selected]]:text-primary-foreground bg-white"
           />

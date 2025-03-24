@@ -1,48 +1,54 @@
-import { useEffect, useMemo } from "react";
-import { useGamingAnalyticsResponse } from "../fetchData";
+import { useMemo } from 'react';
+import { useQueryBuilder } from './common/useQueryBuilder';
+import {
+  ActiveGame,
+  GameReport,
+  PopularGame,
+  GameStats
+} from '@/types/analytics/gamingTypes';
 
-export const useGamingAnalyticsData = (period: 'day' | 'week' | 'month' | 'year' = 'year') => {
+export const useGameDetails = (gameName: string) => {
+  const { data: gameStats, isLoading: statsLoading, error: statsError } = useQueryBuilder<GameStats>(
+    ['gameStats', gameName],
+    (guildId, startDate, endDate) => `/games/${gameName}/stats?guildId=${guildId}&startDate=${startDate}&endDate=${endDate}`
+  );
 
-  const { data } = useGamingAnalyticsResponse()
+  const { data: gameReport, isLoading: reportLoading, error: reportError } = useQueryBuilder<GameReport>(
+    ['gameReport', gameName],
+    (guildId, startDate, endDate) => `/games/${gameName}/report?guildId=${guildId}&startDate=${startDate}&endDate=${endDate}`
+  );
 
-  useEffect(() => {
-    console.log('data шт гіу уааусе',data)
-  },[data])
+  const stats = useMemo(() => ({
+    gameStats: gameStats || {} as GameStats,
+    gameReport: gameReport || {} as GameReport,
+  }), [gameStats, gameReport]);
 
-  const getPeriodStart = useMemo(() => {
-    const now = new Date();
-    switch (period) {
-      case 'day':
-        return new Date(now.setHours(0, 0, 0, 0));
-      case 'week':
-        return new Date(now.setDate(now.getDate() - 7));
-      case 'month':
-        return new Date(now.setMonth(now.getMonth() - 1));
-      case 'year':
-        return new Date(now.setFullYear(now.getFullYear() - 1));
-      default:
-        return now; // Fallback to now if period is not recognized
-    }
-  }, [period]);
+  return {
+    ...stats,
+    isLoading: statsLoading || reportLoading,
+    error: statsError || reportError,
+  };
+};
 
-  const filteredData = useMemo(() => {
-    const result = data[0]
-    console.log('data', data)
-    // .find(item => {
-    //   const itemDate = new Date(item.userActivityTimeline[0].date); // Assuming the first date in the timeline represents the activity date
-    //   console.log('itemDate >= getPeriodStart', itemDate, getPeriodStart)
-    //   return itemDate >= getPeriodStart;
-    // });
-    return result ? {
-      activeUsers: result.activeUsers,
-      avgSessionTime: result.avgSessionTime,
-      peakPlayers: result.peakPlayers,
-      totalGameTime: result.totalGameTime,
-      userActivityTimeline: result.userActivityTimeline,
-      activeRolesPlayingNow: result.activeRolesPlayingNow,
-      topGames: result.topGames,
-    } : null; // Return null if no matching data found
-  }, [data, getPeriodStart]);
+export const useGamingStats = () => {
+  const { data: activeGames, isLoading: activeGamesLoading, error: activeGamesError } = useQueryBuilder<ActiveGame[]>(
+    ['activeGames'],
+    (guildId, startDate, endDate) => `/games?guildId=${guildId}&startDate=${startDate}&endDate=${endDate}`
+  );
 
-  return filteredData;
-}
+  const { data: popularGames, isLoading: popularGamesLoading, error: popularGamesError } = useQueryBuilder<PopularGame[]>(
+    ['popularGames'],
+    (guildId, startDate, endDate) => `/games/popular?guildId=${guildId}&startDate=${startDate}&endDate=${endDate}`
+  );
+
+  const stats = useMemo(() => ({
+    activeGames: activeGames || [] as ActiveGame[],
+    popularGames: popularGames || [] as PopularGame[],
+  }), [activeGames, popularGames]);
+
+  return {
+    ...stats,
+    isLoading: activeGamesLoading || popularGamesLoading,
+    error: activeGamesError || popularGamesError,
+  };
+};
