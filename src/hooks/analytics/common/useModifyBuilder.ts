@@ -20,17 +20,19 @@ export function useModifyBuilder<TParams, TResponse = any>(
   const mutationFn = async (params: TParams): Promise<TResponse> => {
     const url = buildUrl(params);
     const body = options?.body ? options.body(params) : params;
-    body.guildId = guildId;
+    
+    // Add guildId to body for non-DELETE requests
+    const requestBody = options?.method !== 'DELETE' ? { ...body, guildId } : body;
     
     switch(options?.method) {
       case 'DELETE':
-        return apiService.deleteData(url);
+        return apiService.deleteData(url, guildId);
       case 'PATCH':
-        return apiService.patchData(url, body);
+        return apiService.patchData(url, requestBody);
       case 'PUT':
-        return apiService.putData(url, body);
+        return apiService.putData(url, requestBody);
       default:
-        return apiService.postData(url, body);
+        return apiService.postData(url, requestBody);
     }
   };
 

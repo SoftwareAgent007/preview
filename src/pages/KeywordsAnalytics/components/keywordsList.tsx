@@ -8,12 +8,9 @@ import { KeywordListItemDto } from "@/types/dataTypes";
 import { X, Loader2, MoreHorizontal } from "lucide-react";
 import { toast } from "sonner";
 import { useKeywordsAnalytics } from "@/hooks/analytics/useKeywordsAnalytics";
-
-interface KeywordsListProps {
-  guildId: string;
-}
-
-const ActiveKeywordsList: React.FC<KeywordsListProps> = ({ guildId }) => {
+import { useDashboardContext } from "@/common/context/queryContext";
+const ActiveKeywordsList = () => {
+  const { guildId } = useDashboardContext();
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [page, setPage] = useState(1);
   const [localKeywords, setLocalKeywords] = useState<KeywordListItemDto[]>([]);

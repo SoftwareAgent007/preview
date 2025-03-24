@@ -1,8 +1,7 @@
-import { useState } from "react";
-import { useKeywordsAnalytics } from "@/hooks/analytics/useKeywordsAnalytics";
-import DataTableComponent from "@/components/common/KeywordsDataTable";
+import KeywordsDataTableComponent from "@/components/common/KeywordsDataTable";
 import ErrorComponent from "@/components/common/errorModel";
-import { Loader2 } from "lucide-react";
+import { useKeywordsAnalytics } from "@/hooks/analytics/useKeywordsAnalytics";
+import { useState } from "react";
 
 const KeywordsTable = () => {
   const [searchTerm, setSearchTerm] = useState("");
@@ -13,6 +12,8 @@ const KeywordsTable = () => {
     keywordsList,
     pagination,
     isLoading,
+    toggleKeywordActive,
+    deleteKeyword,
   } = useKeywordsAnalytics(currentPage, pageSize);
 
   if (!keywordsList?.length && !isLoading) {
@@ -20,7 +21,9 @@ const KeywordsTable = () => {
   }
 
   return (
-    <DataTableComponent 
+    <KeywordsDataTableComponent 
+      onToggleActive={(keyword) => toggleKeywordActive.mutateAsync({id: String(keyword.id)})}
+      onDelete={(keyword) => deleteKeyword.mutateAsync({id: String(keyword.id)})}
       displayedKeywords={keywordsList ?? []} 
       totalKeywords={keywordsList?.length ?? 0}
       searchTerm={searchTerm} 

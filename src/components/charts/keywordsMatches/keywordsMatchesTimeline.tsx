@@ -1,19 +1,57 @@
 import AreaLineChart from "@/components/charts/AreaLineChart";
+import ErrorComponent from "@/components/common/errorModel";
+import {
+    Command,
+    CommandEmpty,
+    CommandGroup,
+    CommandInput,
+    CommandItem,
+    CommandList
+} from "@/components/ui/command";
 import { ClickableTooltip } from "@/components/ui/tooltip";
 import { TimelineDataDto } from "@/types/dataTypes";
 import { AnimatePresence, motion } from "framer-motion";
-import { Expand, Minimize } from "lucide-react";
-import React, { useState } from "react";
+import { Expand, Minimize, Search } from "lucide-react";
+import React, { useCallback, useState } from "react";
 import ReactDOM from "react-dom";
-import ErrorComponent from "@/components/common/errorModel";
 
 interface MessageFrequencyChartProps {
     matchesTimeline: TimelineDataDto[]
     width?: number;
+    onSearch?: (term: string) => void;
+    keywords?: string[];
 }
 
-const KeywordsMatchesTimeline: React.FC<MessageFrequencyChartProps> = ({ matchesTimeline, width = 543 }) => {
+const KeywordsMatchesTimeline: React.FC<MessageFrequencyChartProps> = ({ 
+    matchesTimeline, 
+    width = 543, 
+    onSearch,
+    keywords = [] 
+}) => {
+    const [searchTerm, setSearchTerm] = useState("");
     const [isModalOpen, setIsModalOpen] = useState(false);
+    const [suggestions, setSuggestions] = useState<string[]>([]);
+
+    const handleSearch = useCallback((value: string) => {
+        setSearchTerm(value);
+        onSearch?.(value);
+
+        // Update suggestions based on input
+        if (value) {
+            const matches = keywords.filter(keyword => 
+                keyword.toLowerCase().startsWith(value.toLowerCase())
+            );
+            setSuggestions(matches);
+        } else {
+            setSuggestions([]);
+        }
+    }, [keywords, onSearch]);
+
+    const handleSelect = useCallback((value: string) => {
+        setSearchTerm(value);
+        onSearch?.(value);
+        setSuggestions([]);
+    }, [onSearch]);
 
     const containerVariants = {
         hidden: { opacity: 0, y: 20 },
@@ -49,7 +87,7 @@ const KeywordsMatchesTimeline: React.FC<MessageFrequencyChartProps> = ({ matches
                 variants={itemVariants}
             >
                 <motion.div 
-                    className="title flex items-center gap-3"
+                    className="title flex items-center mr-2 gap-3"
                     variants={itemVariants}
                 >
                     <motion.span
@@ -81,15 +119,32 @@ const KeywordsMatchesTimeline: React.FC<MessageFrequencyChartProps> = ({ matches
                     </ClickableTooltip>
                 </motion.div>
                 <motion.div className="flex items-center gap-4">
-                    <motion.input
-                        type="text"
-                        placeholder="Search keywords..."
-                        value={""}
-                        onChange={(e) => {}}
-                        className="p-1 border border-gray-300 rounded text-sm"
-                        whileFocus={{ scale: 1.02 }}
-                        transition={{ type: "spring", stiffness: 300, damping: 25 }}
-                    />
+                    <Command className="rounded-lg border shadow-md">
+                        <CommandInput
+                            value={searchTerm}
+                            onValueChange={handleSearch}
+                            placeholder="Search keywords..."
+                            className="h-9"
+                        />
+                        {suggestions.length > 0 && (
+                            <CommandList className="max-h-[200px] overflow-y-auto">
+                                <CommandEmpty>No matching keywords found.</CommandEmpty>
+                                <CommandGroup heading="Matching Keywords">
+                                    {suggestions.map((keyword) => (
+                                        <CommandItem
+                                            key={keyword}
+                                            value={keyword}
+                                            onSelect={handleSelect}
+                                            className="cursor-pointer hover:bg-blue-50"
+                                        >
+                                            <Search className="mr-2 h-4 w-4 text-blue-500" />
+                                            <span className="font-medium">{keyword}</span>
+                                        </CommandItem>
+                                    ))}
+                                </CommandGroup>
+                            </CommandList>
+                        )}
+                    </Command>
                     <motion.button
                         whileHover={{ 
                             scale: 1.1,

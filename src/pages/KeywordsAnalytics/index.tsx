@@ -1,9 +1,9 @@
 import { useState, useMemo } from "react";
 import { motion } from "framer-motion";
-import MessageFrequencyChart from "@/components/charts/keywordsMatches/keywordsMatchesTimeline";
+import KeywordsMatchesTimeline from "@/components/charts/keywordsMatches/keywordsMatchesTimeline";
 import BreadcrumbsNavigation from "@/components/common/BreadcrumbsNavigation";
 import { Card } from "@/components/ui/card";
-import { useKeywordsAnalytics } from "@/hooks/analytics/useKeywordsAnalytics";
+import { useKeywordsAnalytics, useKeywordTimeline } from "@/hooks/analytics/useKeywordsAnalytics";
 import { BREADCRUMB_PATHS, ROUTES } from "@/routes/routes.constant";
 import ActiveKeywordsList from "./components/keywordsList";
 import KeywordStatCard from "./components/KeywordStatCard";
@@ -19,7 +19,7 @@ const CardSkeleton = ({ width, height }: { width: string; height: string }) => (
 
 const KeywordsAnalytics = () => {
   // #region Hooks & State
-  const [searchTerm, setSearchTerm] = useState("");
+  const [searchKeywordTerm, setSelectedKeywordTerm] = useState<string>("");
   const [currentPage, setCurrentPage] = useState(1);
   const [pageSize, setPageSize] = useState(10);
 
@@ -33,8 +33,10 @@ const KeywordsAnalytics = () => {
     pagination,
     isLoading,
     error
-  } = useKeywordsAnalytics();
-  
+  } = useKeywordsAnalytics(currentPage, pageSize);
+
+  const { selectedKeywordTimeline } = useKeywordTimeline(searchKeywordTerm);
+
   const hasErrors = useMemo(() => Boolean(error), [error]);
   // #endregion
 
@@ -126,7 +128,11 @@ const KeywordsAnalytics = () => {
             {isLoading ? (
               <CardSkeleton width="100%" height="200px" />
             ) : (
-              <MessageFrequencyChart matchesTimeline={matchesTimeline ?? []} />
+              <KeywordsMatchesTimeline 
+                keywords={keywordsList?.map((keyword) => keyword.keyword)}
+                matchesTimeline={searchKeywordTerm ? (selectedKeywordTimeline ?? []) : (matchesTimeline ?? [])}
+                onSearch={(term) => setSelectedKeywordTerm(term)}
+              />
             )}
           </Card>
 

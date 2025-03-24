@@ -5,6 +5,8 @@ import {
   getPaginationRowModel,
   useReactTable,
   flexRender,
+  getFilteredRowModel,
+  FilterFn,
 } from "@tanstack/react-table";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -23,54 +25,25 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { Trash, Loader2 } from "lucide-react";
+import { Trash2, Loader2, ToggleLeft, ToggleRight } from "lucide-react";
 import { Badge } from "../ui/badge";
 import { KeywordListItemDto } from "@/types/dataTypes";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 
-const columns: ColumnDef<KeywordListItemDto>[] = [
-  {
-    accessorKey: "keyword",
-    header: ({ column }) => (
-      <div className="text-left font-bold">Keyword</div>
-    ),
-    cell: ({ row }) => (
-      <div className="text-left">{row.getValue("keyword")}</div>
-    ),
-  },
-  {
-    accessorKey: "matches.count",
-    header: ({ column }) => (
-      <div className="text-left font-bold">Matches Count</div>
-    ),
-    cell: ({ row }) => (
-      <div className="text-left">{row.original.matches.count}</div>
-    ),
-  },
-  {
-    accessorKey: "active",
-    header: ({ column }) => (
-      <div className="text-left font-bold">Active</div>
-    ),
-    cell: ({ row }) => (
-      <div className="text-left">
-        <Badge className={`text-white ${row.original.active ? 'bg-green-500' : 'bg-red-500'}`}>
-          {row.original.active ? 'Active' : 'Inactive'}
-        </Badge>
-      </div>
-    ),
-  },
-  {
-    id: "actions",
-    header: ({ column }) => (
-      <div className="text-left font-bold">Actions</div>
-    ),
-    cell: ({ row }) => (
-      <Button variant="link" className="text-red-500 p-0">
-        <Trash/>
-      </Button>
-    ),
-  },
-];
+
+const globalFilterFn: FilterFn<KeywordListItemDto> = (row, columnId, filterValue) => {
+  const value = row.getValue(columnId);
+  return value ? String(value).toLowerCase().includes(String(filterValue).toLowerCase()) : false;
+};
 
 const KeywordsDataTableComponent = ({
   displayedKeywords = [],
@@ -83,6 +56,8 @@ const KeywordsDataTableComponent = ({
   onPageSizeChange,
   pageSize,
   isLoading,
+  onToggleActive,
+  onDelete,
 }: {
   displayedKeywords: KeywordListItemDto[];
   searchTerm: string;
@@ -94,22 +69,94 @@ const KeywordsDataTableComponent = ({
   onPageSizeChange: (size: number) => void;
   pageSize: number;
   isLoading: boolean;
+  onToggleActive: (keyword: KeywordListItemDto) => Promise<void>;
+  onDelete: (keyword: KeywordListItemDto) => Promise<void>;
 }) => {
+  const [globalFilter, setGlobalFilter] = React.useState(searchTerm);
+  const [keywordToDelete, setKeywordToDelete] = React.useState<KeywordListItemDto | null>(null);
+
+
+  const columns: ColumnDef<KeywordListItemDto>[] = [
+    {
+      accessorKey: "keyword",
+      header: ({ column }) => (
+        <div className="text-left font-bold">Keyword</div>
+      ),
+      cell: ({ row }) => (
+        <div className="text-left">{row.getValue("keyword")}</div>
+      ),
+    },
+    {
+      accessorKey: "matches.count",
+      header: ({ column }) => (
+        <div className="text-left font-bold">Matches Count</div>
+      ),
+      cell: ({ row }) => (
+        <div className="text-left">{row.original.matches.count}</div>
+      ),
+    },
+    {
+      accessorKey: "active",
+      header: ({ column }) => (
+        <div className="text-left font-bold">Active</div>
+      ),
+      cell: ({ row }) => (
+        <div className="text-left">
+          <Badge className={`text-white ${row.original.active ? 'bg-green-500' : 'bg-red-500'}`}>
+            {row.original.active ? 'Active' : 'Inactive'}
+          </Badge>
+        </div>
+      ),
+    },
+    {
+      id: "actions",
+      header: ({ column }) => (
+        <div className="text-left font-bold">Actions</div>
+      ),
+      cell: ({ row }) => (
+        <div className="flex items-center gap-2">
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => onToggleActive(row.original)}
+            className="text-gray-500 hover:text-blue-500"
+          >
+            {row.original.active ? 
+              <ToggleRight className="w-5 h-5" /> : 
+              <ToggleLeft className="w-5 h-5" />
+            }
+          </Button>
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => setKeywordToDelete(row.original)}
+            className="text-gray-500 hover:text-red-500"
+          >
+            <Trash2 className="w-5 h-5" />
+          </Button>
+        </div>
+      ),
+    },
+  ];
+
+  React.useEffect(() => {
+    setSearchTerm(globalFilter);
+  }, [globalFilter, setSearchTerm]);
+
   const table = useReactTable({
     data: displayedKeywords,
     columns,
     getCoreRowModel: getCoreRowModel(),
     getPaginationRowModel: getPaginationRowModel(),
-    initialState: {
-      pagination: {
-        pageSize: pageSize,
-      },
-    },
+    getFilteredRowModel: getFilteredRowModel(),
+    onGlobalFilterChange: setGlobalFilter,
+    globalFilterFn,
     state: {
       pagination: {
         pageSize: pageSize,
         pageIndex: currentPage - 1,
       },
+      globalFilter,
     },
     onPaginationChange: (updater) => {
       if (typeof updater === 'function') {
@@ -120,7 +167,6 @@ const KeywordsDataTableComponent = ({
     manualPagination: true,
   });
 
-  
   const getPageNumbers = () => {
     const pageNumbers = [];
     if (totalPages <= 5) {
@@ -179,8 +225,8 @@ const KeywordsDataTableComponent = ({
       <Input
         type="text"
         placeholder="Search keywords..."
-        value={searchTerm}
-        onChange={(e) => setSearchTerm(e.target.value)}
+        value={globalFilter ?? ''}
+        onChange={(e) => setGlobalFilter(e.target.value)}
         className="mb-4"
         disabled={isLoading}
       />
@@ -270,6 +316,27 @@ const KeywordsDataTableComponent = ({
           </Button>
         </div>
       </div>
+      
+      <AlertDialog open={!!keywordToDelete} onOpenChange={() => setKeywordToDelete(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Are you sure?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This will permanently delete the keyword "{keywordToDelete?.keyword}". 
+              This action cannot be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={() => keywordToDelete && onDelete(keywordToDelete)}
+              className="bg-red-500 hover:bg-red-600"
+            >
+              Delete
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 };

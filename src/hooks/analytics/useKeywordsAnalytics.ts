@@ -1,6 +1,6 @@
 import { useQueryBuilder } from './common/useQueryBuilder';
 import { useModifyBuilder } from './common/useModifyBuilder';
-import { KeywordAnalyticsResponseDto } from '@/types/dataTypes';
+import { KeywordAnalyticsResponseDto, TimelineDataDto } from '@/types/dataTypes';
 import { useQueryClient } from 'react-query';
 
 interface AddKeywordParams {
@@ -19,10 +19,21 @@ interface AddKeywordResponse {
   active: boolean;
 }
 
+export const useKeywordTimeline = (selectedKeywordId?: string) => {
+  const { data: selectedKeywordTimeline } = useQueryBuilder<TimelineDataDto[]>(
+    ['keywordTimeline', selectedKeywordId],
+    (guildId) => `/keywords/timeline/${selectedKeywordId}?guildId=${guildId}`,
+    { enabled: !!selectedKeywordId }
+  );
+
+  return { selectedKeywordTimeline };
+};
+
 export const useKeywordsAnalytics = (
   page: number = 1,
   pageSize: number = 50,
-  guildId?: string
+  guildId?: string,
+  selectedKeywordId?: string
 ) => {
   const queryClient = useQueryClient();
 
@@ -42,6 +53,8 @@ export const useKeywordsAnalytics = (
     (guildId) => `/keywords/tags?guildId=${guildId}`
   );
 
+  const { selectedKeywordTimeline } = useKeywordTimeline(guildId, selectedKeywordId);
+
   const addKeyword = useModifyBuilder<AddKeywordParams, AddKeywordResponse>(
     () => `/keywords`,
     {
@@ -51,13 +64,12 @@ export const useKeywordsAnalytics = (
         keyword: params.keyword
       }),
       onSuccess: async () => {
-        // Refetch all queries in sequence to ensure data consistency
         await Promise.all([
           queryClient.invalidateQueries(['keywordTags']),
           queryClient.invalidateQueries(['keywordsAnalytics']),
-          queryClient.invalidateQueries(['keywordsAnalytics', 1]), // Refetch first page
-          refetchAnalytics(), // Refetch current analytics data
-          refetchTags() // Refetch tags
+          queryClient.invalidateQueries(['keywordsAnalytics', 1]),
+          refetchAnalytics(),
+          refetchTags()
         ]);
       }
     }
@@ -93,6 +105,7 @@ export const useKeywordsAnalytics = (
     addKeyword,
     toggleKeywordActive,
     deleteKeyword,
-    refetchAnalytics
+    refetchAnalytics,
+    selectedKeywordTimeline
   };
 };
