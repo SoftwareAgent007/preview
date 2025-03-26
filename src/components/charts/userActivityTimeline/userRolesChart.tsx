@@ -6,34 +6,27 @@ import { Expand, Minimize } from "lucide-react";
 import { ClickableTooltip } from "@/components/ui/tooltip";
 import { motion, AnimatePresence } from "framer-motion";
 
-const RolesChart = () => {
+const RolesChart = ({ width, data }: { width?: number, data: { roleName: string, count: number, percentage: number, color: string }[] }) => {
     const chartRef = useRef<HTMLDivElement | null>(null);
     const [chartWidth, setChartWidth] = useState(400);
-    const [chartHeight, setChartHeight] = useState(300); 
+    const [chartHeight, setChartHeight] = useState(300);
     const [isModalOpen, setIsModalOpen] = useState(false);
 
-    const mockData = [
-        { role: "Owner", count: 234, percentage: 10, color: "#FF5733" },
-        { role: "Admin", count: 469, percentage: 20, color: "#33FF57" },
-        { role: "User", count: 1407, percentage: 60, color: "#3357FF" },
-        { role: "Moderator", count: 234, percentage: 10, color: "#FF33A8" },
-    ];
+    const MIN_CHART_SIZE = 580; // Minimum size for chart
 
     const updateChartDimensions = () => {
         if (chartRef.current) {
             const containerWidth = chartRef.current.offsetWidth;
-            const containerHeight = chartRef.current.offsetHeight;
             
-            // Responsive sizing based on container and screen size
-            if (window.innerWidth < 640) { // Mobile
-                setChartWidth(Math.min(containerWidth * 0.9, 300));
-                setChartHeight(Math.min(containerWidth * 0.9, 300));
-            } else if (window.innerWidth < 1024) { // Tablet
-                setChartWidth(Math.min(containerWidth * 0.8, 400));
-                setChartHeight(Math.min(containerWidth * 0.8, 400));
-            } else { // Desktop
-                setChartWidth(Math.min(containerWidth * 0.7, 500));
-                setChartHeight(Math.min(containerWidth * 0.7, 500));
+            // Keep minimum size while adjusting layout
+            if (containerWidth < MIN_CHART_SIZE) {
+                setChartWidth(MIN_CHART_SIZE);
+                setChartHeight(MIN_CHART_SIZE);
+            } else {
+                // For larger screens, chart can grow proportionally
+                const size = Math.min(containerWidth * 0.7, 500);
+                setChartWidth(size);
+                setChartHeight(size);
             }
         }
     };
@@ -68,15 +61,15 @@ const RolesChart = () => {
 
     return (
         <>
-            <Card className="w-full h-full flex flex-col justify-between p-6 hover:scale-[101%] transition-all duration-150" ref={chartRef}>
+            <Card className="w-full min-h-[500px] flex flex-col p-6 hover:scale-[101%] transition-all duration-150" ref={chartRef}>
                 <motion.div
                     variants={containerVariants}
                     initial="hidden"
                     animate="visible"
-                    className="h-full"
+                    className="h-full flex flex-col"
                 >
                     <motion.div 
-                        className="text-gray-500 text-lg font-bold mb-4 flex justify-between items-center"
+                        className="text-gray-500 text-lg font-bold mb-4 flex justify-between items-center flex-wrap gap-2"
                         variants={itemVariants}
                     >
                         <motion.div 
@@ -126,14 +119,14 @@ const RolesChart = () => {
                     </motion.div>
 
                     <motion.div 
-                        className="flex flex-col items-center justify-center h-full relative"
+                        className="flex-grow flex flex-col items-center justify-center relative mt-auto"
                         variants={itemVariants}
                     >
-                        <div className="relative w-full flex items-center justify-center">
+                        <div className="relative flex items-center justify-center">
                             <CircleRoleChart 
-                                width={chartWidth} 
+                                width={width || chartWidth} 
                                 height={chartHeight} 
-                                data={mockData} 
+                                data={data} 
                             />
                         </div>
                     </motion.div>
@@ -144,9 +137,9 @@ const RolesChart = () => {
                 {isModalOpen && (
                     <Modal 
                         closeModal={() => setIsModalOpen(false)} 
-                        data={mockData}
-                        width={chartWidth}
-                        height={chartHeight}
+                        data={data}
+                        width={chartWidth * 1.5}
+                        height={chartHeight * 1.5}
                     />
                 )}
             </AnimatePresence>

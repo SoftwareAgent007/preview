@@ -4,7 +4,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 
 interface DataPoint {
   hour: number;
-  count: number;
+  users: number;
 }
 
 interface HorizontalTopHoursChartProps {
@@ -43,8 +43,8 @@ const HorizontalTopHoursChart: React.FC<HorizontalTopHoursChartProps> = ({
 
     d3.select(svgRef.current).selectAll("*").remove();
 
-    // Sort data by count in descending order and take top 5
-    const top5Data = [...data].sort((a, b) => b.count - a.count).slice(0, 5);
+    // Sort data by users in descending order and take top 5
+    const top5Data = [...data].sort((a, b) => b.users - a.users).slice(0, 5);
 
     // Responsive margins
     const margin = {
@@ -59,7 +59,7 @@ const HorizontalTopHoursChart: React.FC<HorizontalTopHoursChartProps> = ({
 
     // Responsive font sizes
     const fontSize = Math.max(12, Math.min(14, width * 0.025));
-    const countFontSize = Math.max(12, Math.min(14, width * 0.025));
+    const usersFontSize = Math.max(12, Math.min(14, width * 0.025));
 
     const svg = d3.select(svgRef.current)
       .attr("width", width)
@@ -67,10 +67,10 @@ const HorizontalTopHoursChart: React.FC<HorizontalTopHoursChartProps> = ({
       .append("g")
       .attr("transform", `translate(${margin.left},${margin.top})`);
 
-    const maxCount = d3.max(top5Data, d => +d.count) || 0;
+    const maxusers = d3.max(top5Data, d => +d.users) || 0;
 
     const x = d3.scaleLinear()
-      .domain([0, maxCount * 1.1]) // Add 10% padding
+      .domain([0, maxusers * 1.1]) // Add 10% padding
       .range([0, chartWidth]);
 
     const y = d3.scaleBand()
@@ -155,21 +155,21 @@ const HorizontalTopHoursChart: React.FC<HorizontalTopHoursChartProps> = ({
     bars.transition()
       .duration(1000)
       .delay((_, i) => i * 100)
-      .attr("width", d => x(+d.count))
+      .attr("width", d => x(+d.users))
       .on("end", (_, i, nodes) => {
         if (i === nodes.length - 1) {
-          // Add count labels after animation completes
-          svg.selectAll("countLabels")
+          // Add users labels after animation completes
+          svg.selectAll("usersLabels")
             .data(top5Data)
             .join("text")
-              .attr("x", d => x(+d.count) + 8)
+              .attr("x", d => x(+d.users) + 8)
               .attr("y", d => (y(`${d.hour}`) || 0) + y.bandwidth() / 2)
               .attr("dy", ".35em")
               .attr("fill", labelColor)
-              .attr("font-size", `${countFontSize}px`)
+              .attr("font-size", `${usersFontSize}px`)
               .attr("font-weight", "500")
               .attr("opacity", 0)
-              .text(d => `${d.count.toLocaleString()} users`)
+              .text(d => `${d.users.toLocaleString()} users`)
               .transition()
               .duration(500)
               .attr("opacity", 1);
@@ -210,7 +210,7 @@ const HorizontalTopHoursChart: React.FC<HorizontalTopHoursChartProps> = ({
                 backgroundColor: tooltipBgColor,
                 color: tooltipTextColor,
                 border: `1px solid ${borderColor}`,
-                top: `${(height / (data.length > 5 ? 5 : data.length)) * ([...data].sort((a, b) => b.count - a.count).findIndex(d => d.hour === hoveredBar.hour) + 0.5)}px`,
+                top: `${(height / (data.length > 5 ? 5 : data.length)) * ([...data].sort((a, b) => b.users - a.users).findIndex(d => d.hour === hoveredBar.hour) + 0.5)}px`,
                 right: "20px",
                 minWidth: "150px"
               }}
@@ -222,10 +222,10 @@ const HorizontalTopHoursChart: React.FC<HorizontalTopHoursChartProps> = ({
               <div className="flex flex-col gap-1">
                 <div className="text-xs opacity-80">Active Users</div>
                 <div className="font-bold text-lg" style={{ color: barColor }}>
-                  {hoveredBar.count.toLocaleString()}
+                  {hoveredBar.users.toLocaleString()}
                 </div>
                 <div className="text-xs mt-1 opacity-70">
-                  {Math.round((hoveredBar.count / (d3.max([...data].map(d => d.count)) || 1)) * 100)}% of peak activity
+                  {Math.round((hoveredBar.users / (d3.max([...data].map(d => d.users)) || 1)) * 100)}% of peak activity
                 </div>
               </div>
             </motion.div>

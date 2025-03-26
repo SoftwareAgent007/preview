@@ -2,20 +2,28 @@ import * as d3 from "d3";
 import { AnimatePresence, motion } from "framer-motion";
 import { useEffect, useRef, useState } from "react";
 
-export interface RoleData {
-  role?: string;
-  roleName?: string;
+export interface StatusData {
+  status: string;
   count: number;
   percentage: number;
-  color: string;
+  color?: string;
 }
 
+// Generate random hex color
+const getRandomColor = () => {
+  const letters = '0123456789ABCDEF';
+  let color = '#';
+  for (let i = 0; i < 6; i++) {
+    color += letters[Math.floor(Math.random() * 16)];
+  }
+  return color;
+};
 
-const CircleRoleChart = ({ data, width = 500, height = 600, darkMode = false }: { data: RoleData[]; width?: number; height?: number; darkMode?: boolean; }) => {
+const CircleStatusChart = ({ data, width = 500, height = 600, darkMode = false }: { data: StatusData[]; width?: number; height?: number; darkMode?: boolean; }) => {
   const svgRef = useRef<SVGSVGElement>(null);
   const [activeSlice, setActiveSlice] = useState<string | null>(null);
   const [tooltipData, setTooltipData] = useState<{
-    role: string;
+    status: string;
     count: number;
     percentage: number;
     x: number;
@@ -25,18 +33,16 @@ const CircleRoleChart = ({ data, width = 500, height = 600, darkMode = false }: 
   // Theme colors
   const textColor = darkMode ? "#e2e8f0" : "#1e293b";
   const backgroundColor = darkMode ? "#1e293b" : "white";
+  const tooltipTextColor = darkMode ? "#e2e8f0" : "#1e293b";
 
   useEffect(() => {
     if (!svgRef.current) return;
 
-    // Ensure percentage is always a number
+    // Ensure percentage is always a number and add colors
     const processedData = data.map((item) => ({
       ...item,
-      role: item.role || item.roleName, // Handle both role and roleName
-      percentage:
-        typeof item.percentage === "string"
-          ? parseFloat(item.percentage)
-          : item.percentage,
+      percentage: typeof item.percentage === "string" ? parseFloat(item.percentage) : item.percentage,
+      color: item.color || getRandomColor()
     }));
 
     const margin = { top: 20, right: 20, bottom: 60, left: 20 };
@@ -90,9 +96,7 @@ const CircleRoleChart = ({ data, width = 500, height = 600, darkMode = false }: 
 
     // Create gradient fills for each slice
     processedData.forEach((d, i) => {
-      const gradientId = `gradient-${(d.role || '')
-        .replace(/\s+/g, "-")
-        .toLowerCase()}`;
+      const gradientId = `gradient-${d.status.toLowerCase()}`;
 
       const gradient = defs
         .append("linearGradient")
@@ -118,24 +122,24 @@ const CircleRoleChart = ({ data, width = 500, height = 600, darkMode = false }: 
 
     // Create pie layout
     const pie = d3
-      .pie<RoleData>()
+      .pie<StatusData>()
       .value((d) => d.percentage)
       .sort(null)
       .padAngle(0.02);
 
     // Create arc generators
     const arc = d3
-      .arc<d3.PieArcDatum<RoleData>>()
+      .arc<d3.PieArcDatum<StatusData>>()
       .innerRadius(0)
       .outerRadius(radius);
 
     const hoverArc = d3
-      .arc<d3.PieArcDatum<RoleData>>()
+      .arc<d3.PieArcDatum<StatusData>>()
       .innerRadius(0)
       .outerRadius(radius * 1.08);
 
     const labelArc = d3
-      .arc<d3.PieArcDatum<RoleData>>()
+      .arc<d3.PieArcDatum<StatusData>>()
       .innerRadius(radius * 0.6)
       .outerRadius(radius * 0.6);
 
@@ -144,7 +148,7 @@ const CircleRoleChart = ({ data, width = 500, height = 600, darkMode = false }: 
 
     // Create a group for each slice
     const slices = chartGroup
-      .selectAll<SVGGElement, d3.PieArcDatum<RoleData>>(".slice")
+      .selectAll<SVGGElement, d3.PieArcDatum<StatusData>>(".slice")
       .data(pieData)
       .enter()
       .append("g")
@@ -162,21 +166,21 @@ const CircleRoleChart = ({ data, width = 500, height = 600, darkMode = false }: 
       .on("mouseover", function (event, d) {
         const [x, y] = labelArc.centroid(d);
         setTooltipData({
-          role: d.data.role || '',
+          status: d.data.status,
           count: d.data.count,
           percentage: d.data.percentage,
           x: x + width / 2,
           y: y + height / 2 - 30,
         });
 
-        setActiveSlice(d.data.role || '');
+        setActiveSlice(d.data.status);
 
         d3.select(this)
           .transition()
           .duration(300)
           .ease(d3.easeCubicOut)
           .attr("d", function (d) {
-            return hoverArc(d as d3.PieArcDatum<RoleData>);
+            return hoverArc(d as d3.PieArcDatum<StatusData>);
           });
       })
       .on("mouseout", function (event, d) {
@@ -188,13 +192,13 @@ const CircleRoleChart = ({ data, width = 500, height = 600, darkMode = false }: 
           .duration(400)
           .ease(d3.easeCubicInOut)
           .attr("d", function (d) {
-            return arc(d as d3.PieArcDatum<RoleData>);
+            return arc(d as d3.PieArcDatum<StatusData>);
           });
       });
 
     // Add inner labels
     const innerLabels = slices
-      .filter((d) => d.data.percentage >= 15) // Only add labels for slices that are large enough
+      .filter((d) => d.data.percentage >= 15)
       .append("text")
       .attr("transform", (d) => `translate(${labelArc.centroid(d)})`)
       .attr("dy", ".35em")
@@ -204,10 +208,7 @@ const CircleRoleChart = ({ data, width = 500, height = 600, darkMode = false }: 
       .attr("font-weight", "bold")
       .attr("pointer-events", "none")
       .style("text-shadow", "0px 0px 4px rgba(0,0,0,0.6)")
-      .text((d) => {
-        const role = d.data.role || '';
-        return role.charAt(0).toUpperCase() + role.slice(1);
-      });
+      .text((d) => d.data.status.charAt(0).toUpperCase() + d.data.status.slice(1));
 
     // Create legend with wrapping
     const legendHeight = 30;
@@ -219,8 +220,7 @@ const CircleRoleChart = ({ data, width = 500, height = 600, darkMode = false }: 
     // Calculate text widths for legend items
     const tempText = svg.append("text").attr("font-size", "14px");
     const legendItemWidths = processedData.map(d => {
-      const role = d.role || '';
-      tempText.text(role.charAt(0).toUpperCase() + role.slice(1));
+      tempText.text(d.status.charAt(0).toUpperCase() + d.status.slice(1));
       return tempText.node()!.getComputedTextLength() + legendRectSize + legendTextOffset + legendSpacing;
     });
     tempText.remove();
@@ -257,11 +257,11 @@ const CircleRoleChart = ({ data, width = 500, height = 600, darkMode = false }: 
       .attr("transform", (d, i) => `translate(${positions[i].x}, ${positions[i].y})`)
       .style("cursor", "pointer")
       .on("mouseover", function (event, d) {
-        setActiveSlice(d.role || '');
+        setActiveSlice(d.status);
 
         chartGroup
-          .selectAll<SVGPathElement, d3.PieArcDatum<RoleData>>("path")
-          .filter((p) => p.data.role === d.role)
+          .selectAll<SVGPathElement, d3.PieArcDatum<StatusData>>("path")
+          .filter((p) => p.data.status === d.status)
           .transition()
           .duration(300)
           .ease(d3.easeCubicOut)
@@ -271,7 +271,7 @@ const CircleRoleChart = ({ data, width = 500, height = 600, darkMode = false }: 
         setActiveSlice(null);
 
         chartGroup
-          .selectAll<SVGPathElement, d3.PieArcDatum<RoleData>>("path")
+          .selectAll<SVGPathElement, d3.PieArcDatum<StatusData>>("path")
           .transition()
           .duration(400)
           .ease(d3.easeCubicInOut)
@@ -293,10 +293,7 @@ const CircleRoleChart = ({ data, width = 500, height = 600, darkMode = false }: 
       .attr("y", legendRectSize - 2)
       .attr("fill", textColor)
       .attr("font-size", "14px")
-      .text((d) => {
-        const role = d.role || '';
-        return role.charAt(0).toUpperCase() + role.slice(1);
-      });
+      .text((d) => d.status.charAt(0).toUpperCase() + d.status.slice(1));
 
   }, [data, width, height, darkMode, activeSlice]);
 
@@ -329,16 +326,17 @@ const CircleRoleChart = ({ data, width = 500, height = 600, darkMode = false }: 
               top: tooltipData.y,
               transform: "translate(-50%, -50%)",
               border: "1px solid #e2e8f0",
+              color: tooltipTextColor
             }}
           >
-            <div className="font-bold text-lg">{tooltipData.role}</div>
-            <div className="text-sm text-gray-600 dark:text-gray-300">
+            <div className="font-bold text-lg">{tooltipData.status.charAt(0).toUpperCase() + tooltipData.status.slice(1)}</div>
+            <div className="text-sm">
               Count:{" "}
               <span className="font-semibold">
                 {tooltipData.count.toLocaleString()}
               </span>
             </div>
-            <div className="text-sm text-gray-600 dark:text-gray-300">
+            <div className="text-sm">
               Percentage:{" "}
               <span className="font-semibold">{tooltipData.percentage}%</span>
             </div>
@@ -349,4 +347,4 @@ const CircleRoleChart = ({ data, width = 500, height = 600, darkMode = false }: 
   );
 };
 
-export default CircleRoleChart;
+export default CircleStatusChart;

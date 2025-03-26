@@ -1,7 +1,7 @@
 import { motion } from "framer-motion";
 import RolesChart from "@/components/charts/userActivityTimeline/userRolesChart";
 
-const RolesSection = () => {
+const RolesSection = ({ data }: { data: { role: string, count: number, percentage: string, color: string }[] }) => {
   return (
     <motion.div 
       className="flex-1"
@@ -14,7 +14,7 @@ const RolesSection = () => {
         delay: 0.4
       }}
     >
-      <RolesChart />
+      <RolesChart data={data} />
     </motion.div>
   );
 };

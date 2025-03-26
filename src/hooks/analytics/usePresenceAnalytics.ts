@@ -1,75 +1,137 @@
-// usePresenceAnalytics.ts
-
-import { ActivityOverviewResponse,
-  StatusBreakdown,
+import {
+  ActivityOverviewResponse,
+  DeviceUsage,
   HourlyActivityResponse,
   PeakHour,
-  DeviceUsage } from "@/pages/UsersDetailedActivityAnalytics/PresenceAnalytics/interfaces/presence-activirt.interfaces";
-import { useQueryBuilder } from "./common/useQueryBuilder";
+  StatusBreakdown
+} from '@/types/analytics/presenceTypes';
+import { useMemo } from 'react';
+import { useQueryBuilder } from './common/useQueryBuilder';
 
-export function usePresenceActivity() {
-  // 1) Обзор
+interface RoleDistribution {
+  labels: string[];
+  data: number[];
+  colors: string[];
+  totalUsers: number;
+}
+
+interface TimeRange {
+  startDate: string;
+  endDate: string;
+}
+
+const formatHours = (hours: number): string => {
+  if (hours >= 24) {
+    const days = Math.floor(hours / 24);
+    const remainingHours = hours % 24;
+    return `${days}d ${remainingHours}h`;
+  }
+  return `${hours}h`;
+};
+
+const formatDuration = (hours?: number, minutes?: number): string => {
+  if (hours === undefined && minutes === undefined) return 'N/A';
+  if (hours === 0 && minutes === 0) return '0m';
+  if (hours === 0) return `${minutes}m`;
+  if (minutes === 0) return formatHours(hours || 0);
+  return `${formatHours(hours || 0)} ${minutes}m`;
+};
+
+export function usePresenceActivity(period: 'day' | 'week' | 'month' | 'year' = 'week') {
+  // Calculate time range based on period
+  const timeRange = useMemo<TimeRange>(() => {
+    const now = new Date();
+    let startDate: Date;
+    
+    switch(period) {
+      case 'day':
+        startDate = new Date(now.setHours(0, 0, 0, 0));
+        break;
+      case 'week':
+        startDate = new Date(now.setDate(now.getDate() - 7));
+        break;
+      case 'month':
+        startDate = new Date(now.setMonth(now.getMonth() - 1));
+        break;
+      case 'year':
+        startDate = new Date(now.setFullYear(now.getFullYear() - 1));
+        break;
+    }
+
+    return {
+      startDate: startDate.toISOString(),
+      endDate: new Date().toISOString()
+    };
+  }, [period]);
+
+  // Activity Overview
   const {
-    data: overview = {} as ActivityOverviewResponse,
+    data: overview,
     isLoading: overviewLoading,
-    error: overviewError,
+    error: overviewError
   } = useQueryBuilder<ActivityOverviewResponse>(
-    ['activityOverview'],
-    (guildId, startDate, endDate) =>
-      `/presence-activity/overview?guildId=${guildId}&startDate=${startDate}&endDate=${endDate}`
+    ['activityOverview', timeRange],
+    (guildId) => `/presence-activity/overview?guildId=${guildId}&startDate=${timeRange.startDate}&endDate=${timeRange.endDate}`
   );
 
-  // 2) Разбивка статусов
+  // Status Breakdown
   const {
-    data: statusBreakdown = [] as StatusBreakdown[],
+    data: statusBreakdown,
     isLoading: statusLoading,
-    error: statusError,
+    error: statusError
   } = useQueryBuilder<StatusBreakdown[]>(
-    ['statusBreakdown'],
-    (guildId, startDate, endDate) =>
-      `/presence-activity/status-breakdown?guildId=${guildId}&startDate=${startDate}&endDate=${endDate}`
+    ['statusBreakdown', timeRange],
+    (guildId) => `/presence-activity/status-breakdown?guildId=${guildId}&startDate=${timeRange.startDate}&endDate=${timeRange.endDate}`
   );
 
-  // 3) Почасовая активность
+  // Hourly Activity
   const {
-    data: hourlyActivity = {} as HourlyActivityResponse,
+    data: hourlyActivity,
     isLoading: hourlyLoading,
-    error: hourlyError,
+    error: hourlyError
   } = useQueryBuilder<HourlyActivityResponse>(
-    ['hourlyActivity'],
-    (guildId, startDate, endDate) =>
-      `/presence-activity/hourly-activity?guildId=${guildId}&startDate=${startDate}&endDate=${endDate}`
+    ['hourlyActivity', timeRange],
+    (guildId) => `/presence-activity/hourly-activity?guildId=${guildId}&startDate=${timeRange.startDate}&endDate=${timeRange.endDate}`
   );
 
-  // 4) Пиковые часы
+  // Peak Hours
   const {
-    data: peakHours = [] as PeakHour[],
+    data: peakHours,
     isLoading: peakLoading,
-    error: peakError,
+    error: peakError
   } = useQueryBuilder<PeakHour[]>(
-    ['peakHours'],
-    (guildId, startDate, endDate) =>
-      `/presence-activity/peak-hours?guildId=${guildId}&startDate=${startDate}&endDate=${endDate}`
+    ['peakHours', timeRange],
+    (guildId) => `/presence-activity/peak-hours?guildId=${guildId}&startDate=${timeRange.startDate}&endDate=${timeRange.endDate}`
   );
 
-  // 5) Устройства
+  // Device Usage
   const {
-    data: deviceUsage = [] as DeviceUsage[],
+    data: deviceUsage,
     isLoading: deviceLoading,
-    error: deviceError,
+    error: deviceError
   } = useQueryBuilder<DeviceUsage[]>(
-    ['deviceUsage'],
-    (guildId, startDate, endDate) =>
-      `/presence-activity/device-usage?guildId=${guildId}&startDate=${startDate}&endDate=${endDate}`
+    ['deviceUsage', timeRange],
+    (guildId) => `/presence-activity/device-usage?guildId=${guildId}&startDate=${timeRange.startDate}&endDate=${timeRange.endDate}`
+  );
+
+  // Role Distribution
+  const {
+    data: roleDistribution,
+    isLoading: roleLoading,
+    error: roleError
+  } = useQueryBuilder<RoleDistribution>(
+    ['roleDistribution', timeRange],
+    (guildId) => `/presence-activity/role-distribution?guildId=${guildId}&startDate=${timeRange.startDate}&endDate=${timeRange.endDate}`
   );
 
   return {
-    overview,
-    statusBreakdown,
-    hourlyActivity,
-    peakHours,
-    deviceUsage,
-    isLoading: overviewLoading || statusLoading || hourlyLoading || peakLoading || deviceLoading,
-    error: overviewError || statusError || hourlyError || peakError || deviceError,
+    overview: overview || {} as ActivityOverviewResponse,
+    statusBreakdown: statusBreakdown || [] as StatusBreakdown[],
+    hourlyActivity: hourlyActivity || {} as HourlyActivityResponse,
+    peakHours: peakHours || [] as PeakHour[],
+    deviceUsage: deviceUsage || [] as DeviceUsage[],
+    roleDistribution: roleDistribution || {} as RoleDistribution,
+    isLoading: overviewLoading || statusLoading || hourlyLoading || peakLoading || deviceLoading || roleLoading,
+    error: overviewError || statusError || hourlyError || peakError || deviceError || roleError
   };
 }

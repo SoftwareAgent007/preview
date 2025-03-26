@@ -9,6 +9,7 @@ import { X, Loader2, MoreHorizontal } from "lucide-react";
 import { toast } from "sonner";
 import { useKeywordsAnalytics } from "@/hooks/analytics/useKeywordsAnalytics";
 import { useDashboardContext } from "@/common/context/queryContext";
+
 const ActiveKeywordsList = () => {
   const { guildId } = useDashboardContext();
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -109,7 +110,7 @@ const ActiveKeywordsList = () => {
   const handleToggleActive = async (keyword: KeywordListItemDto) => {
     try {
       setLocalKeywords(prev => prev.filter(k => k.id !== keyword.id));
-      await toggleKeywordActive.mutateAsync({ id: keyword.id.toString(), guildId });
+      await toggleKeywordActive.mutateAsync({ keyword: keyword.keyword });
       toast.success('Keyword removed');
     } catch (error) {
       setLocalKeywords(prev => [...prev, keyword]);
@@ -173,7 +174,7 @@ const ActiveKeywordsList = () => {
                     </span>
                     <button 
                       onClick={() => handleToggleActive(keyword)}
-                      className="opacity-0 group-hover:opacity-100 transition-opacity p-1 hover:bg-white rounded text-red-500"
+                      className="opacity-0 group-hover:opacity-100 transition-opacity p-1 rounded text-red-500"
                     >
                       <X className="w-4 h-4" />
                     </button>

@@ -3,6 +3,7 @@ import { Users } from "lucide-react";
 import ListElement from "@/components/ui/list-element";
 import BaseCard from "./BaseCard";
 import ErrorComponent from "@/components/common/errorModel";
+import { ClickableTooltip } from "@/components/ui/tooltip";
 
 interface Artist {
   id: string;
@@ -55,11 +56,14 @@ const TopPlayedArtistsCard = ({ artists }: TopPlayedArtistsCardProps) => {
         animate="show"
       >
         <motion.span
-          className="text-gray-500 text-lg font-bold mb-4"
+          className="text-gray-500 text-lg font-bold mr-5"
           variants={item}
         >
           Top Played Artists
         </motion.span>
+        <ClickableTooltip content={<p><strong>Top Played Artists:</strong> Shows the artists with the most plays in the selected time period.</p>}>
+          <span className="bg-gray-300 bg-opacity-25 text-gray-600 px-[7px] rounded-full cursor-help">?</span>
+        </ClickableTooltip>
         {artists 
           ? artists.map((artist, index) => (
             <motion.div

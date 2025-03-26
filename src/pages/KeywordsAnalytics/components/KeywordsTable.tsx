@@ -1,6 +1,6 @@
 import KeywordsDataTableComponent from "@/components/common/KeywordsDataTable";
 import ErrorComponent from "@/components/common/errorModel";
-import { useKeywordsAnalytics } from "@/hooks/analytics/useKeywordsAnalytics";
+import { useKeywordsAnalytics, useKeywordTimeline } from "@/hooks/analytics/useKeywordsAnalytics";
 import { useState } from "react";
 
 const KeywordsTable = () => {
@@ -14,25 +14,31 @@ const KeywordsTable = () => {
     isLoading,
     toggleKeywordActive,
     deleteKeyword,
-  } = useKeywordsAnalytics(currentPage, pageSize);
+  } = useKeywordsAnalytics(currentPage, pageSize, undefined, searchTerm);
 
-  if (!keywordsList?.length && !isLoading) {
+  const { selectedKeywordTimeline = { keywords: [], totalCount: 0 } } = useKeywordTimeline(
+    searchTerm || undefined
+  );
+  const { keywords: timelineKeywords, totalCount } = selectedKeywordTimeline;
+
+  if (!keywordsList?.length && !isLoading && !searchTerm) {
     return <ErrorComponent />;
   }
 
   return (
-    <KeywordsDataTableComponent 
-      onToggleActive={(keyword) => toggleKeywordActive.mutateAsync({id: String(keyword.id)})}
-      onDelete={(keyword) => deleteKeyword.mutateAsync({id: String(keyword.id)})}
-      displayedKeywords={keywordsList ?? []} 
-      totalKeywords={keywordsList?.length ?? 0}
+    <KeywordsDataTableComponent
+      onToggleActive={({keyword}) => toggleKeywordActive.mutateAsync({keyword})}
+      onDelete={(id) => deleteKeyword.mutateAsync({id})}
+      displayedKeywords={timelineKeywords ?? keywordsList ?? []}
+      defaultKeywords={keywordsList ?? []}
       searchTerm={searchTerm} 
       setSearchTerm={setSearchTerm} 
-      currentPage={pagination?.currentPage || currentPage} 
+      currentPage={pagination?.currentPage ?? currentPage} 
       setCurrentPage={setCurrentPage} 
-      totalPages={pagination?.totalPages || Math.ceil((keywordsList?.length ?? 0) / pageSize)}
+      totalKeywords={totalCount ?? 0}
+      totalPages={pagination?.totalPages ?? 1}
       onPageSizeChange={setPageSize}
-      pageSize={pagination?.itemsPerPage || pageSize}
+      pageSize={pagination?.itemsPerPage ?? pageSize}
       isLoading={isLoading}
     />
   );

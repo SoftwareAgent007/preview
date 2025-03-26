@@ -1,55 +1,259 @@
 import { useMemo } from 'react';
-import { DashboardOverviewResponse, DailyMetric, HourlyMetric } from '@/types/dataTypes';
 import { useQueryBuilder } from './common/useQueryBuilder';
+
+export enum TimeViewType {
+  DAY = 'day',
+  WEEK = 'week', 
+  MONTH = 'month',
+  YEAR = 'year'
+}
+
+interface MessageOverview {
+  totalMessages: number;
+  peakDay: {
+    date: string;
+    count: number;
+  } | null;
+  averageMessagesPerDay: number;
+}
+
+interface MessageTrend {
+  data: {
+    date: string;
+    messageCount: number;
+  }[];
+}
+
+export function useMessageMetrics() {
+  const { data: overview, isLoading: overviewLoading } = useQueryBuilder<MessageOverview>(
+    ['message-match-overview'],
+    (guildId, startDate, endDate) => `/message-match/overview?guildId=${guildId}&startDate=${startDate}&endDate=${endDate}`
+  );
+
+  const { data: totalMessages } = useQueryBuilder<{totalMessages: number}>(
+    ['message-match-total'],
+    (guildId, startDate, endDate) => `/message-match/total?guildId=${guildId}&startDate=${startDate}&endDate=${endDate}`
+  );
+
+  const { data: uniqueAuthors } = useQueryBuilder<{uniqueAuthors: number}>(
+    ['message-match-authors'],
+    (guildId, startDate, endDate) => `/message-match/unique-authors?guildId=${guildId}&startDate=${startDate}&endDate=${endDate}`
+  );
+
+  return {
+    overview,
+    totalMessages: totalMessages?.totalMessages,
+    uniqueAuthors: uniqueAuthors?.uniqueAuthors,
+    isLoading: overviewLoading
+  };
+}
+
+export function useMessageTrend(viewType: TimeViewType, limit?: number) {
+  const { data, isLoading } = useQueryBuilder<MessageTrend>(
+    ['message-match-trend', viewType, limit],
+    (guildId, startDate, endDate) => 
+      `/message-match/trend?guildId=${guildId}&startDate=${startDate}&endDate=${endDate}&viewType=${viewType}${limit ? `&limit=${limit}` : ''}`
+  );
+
+  return {
+    trend: data?.data || [],
+    isLoading
+  };
+}
+
+interface UsersOverview {
+  totalUsers: {
+    count: number;
+    label: string;
+    percentChange: number;
+    newUsersCount: number;
+    departedUsersCount: number;
+    netChange: number;
+  };
+  activeUsers: {
+    today: {
+      count: number;
+      percentChange: number;
+    };
+    pastWeek: {
+      count: number;
+      percentChange: number;  
+    };
+    pastMonth: {
+      count: number;
+      percentChange: number;
+    };
+  };
+}
+
+interface MessagesOverview {
+  totalMessages: {
+    count: number;
+    totalCount?: number;
+    label: string;
+    percentChange: number;
+  };
+  totalReactions: {
+    count: number;
+    percentChange: number;
+  };
+}
+
+interface KeywordsOverview {
+  topKeywords: {
+    keyword: string;
+    matches: number;
+  }[];
+}
+
+interface ActivityOverview {
+  currentActivities: {
+    activeGamers: {
+      count: number;
+      label: string;
+    };
+    spotifyListeners: {
+      count: number;
+      label: string;
+    };
+  };
+  hourlyActivity: {
+    hourlyDistribution: any[];
+    statusDistribution: {
+      online: number;
+      offline: number;
+      idle: number;
+      dnd: number;
+    };
+    peakHour: number;
+    peakHourChange: {
+      hour: number;
+      change: number;
+    };
+  };
+}
+
+interface GamingOverview {
+  totalGameTime: {
+    hours: number;
+    hourChange: string;
+  };
+}
+
+interface ActiveUsersOverview {
+  activeListeners: {
+    count: number;
+    percentChange: number;
+  };
+  activeGamers: {
+    count: number;
+    percentChange: number;
+  };
+}
+
+interface TopContributorsOverview {
+  topUsers: {
+    username: string;
+    messages: number;
+  }[];
+}
+
+export interface ActivityTrendData {
+  data: {
+    date: string;
+    activeUsers: number;
+  }[];
+}
+
+export function useActivityTrend(activityType: 'user' | 'spotify' | 'gaming' | 'device', viewType: 'daily' | 'weekly' | 'monthly' | 'yearly', deviceType?: string) {
+  const { data, isLoading } = useQueryBuilder<ActivityTrendData>(
+    ['presence-activity-trend', activityType, viewType, deviceType],
+    (guildId) => `/presence-activity/active-users-trend?guildId=${guildId}&activityType=${activityType}&viewType=${viewType}${deviceType ? `&deviceType=${deviceType}` : ''}`
+  );
+  return { data, isLoading };
+}
 
 export function useDashboardData() {
   const {
+    data: usersData,
+    isLoading: isUsersLoading,
+    error: usersError,
+  } = useQueryBuilder<UsersOverview>(
+    ['dashboard-users'],
+    (guildId, startDate, endDate) => `/dashboard/users?guildId=${guildId}&startDate=${startDate}&endDate=${endDate}`
+  );
+
+  const {
+    data: messagesData,
+  } = useQueryBuilder<MessagesOverview>(
+    ['dashboard-messages'],
+    (guildId, startDate, endDate) => `/dashboard/messages?guildId=${guildId}&startDate=${startDate}&endDate=${endDate}`
+  );
+
+  const {
+    data: keywordsData,
+  } = useQueryBuilder<KeywordsOverview>(
+    ['dashboard-keywords'],
+    (guildId, startDate, endDate) => `/dashboard/keywords?guildId=${guildId}&startDate=${startDate}&endDate=${endDate}`
+  );
+
+  const {
     data: activityData,
-    isLoading,
-    error,
-  } = useQueryBuilder<DashboardOverviewResponse>(
-    ['activity-overview-dashboard'],
-    (guildId, startDate, endDate) =>
-      `/dashboard/overview?guildId=${guildId}&startDate=${startDate}&endDate=${endDate}`
+  } = useQueryBuilder<ActivityOverview>(
+    ['dashboard-activity'],
+    (guildId, startDate, endDate) => `/dashboard/activity?guildId=${guildId}&startDate=${startDate}&endDate=${endDate}`
   );
 
   const {
-    data: hourlyActivityData,
-  } = useQueryBuilder<any>(
-    ['hourly-activity-dashboard'],
-    (guildId, startDate, endDate) =>
-      `/presence-activity/hourly-activity?guildId=${guildId}&startDate=${startDate}&endDate=${endDate}`
+    data: gamingData,
+  } = useQueryBuilder<GamingOverview>(
+    ['dashboard-gaming'],
+    (guildId, startDate, endDate) => `/dashboard/gaming?guildId=${guildId}&startDate=${startDate}&endDate=${endDate}`
   );
 
   const {
-    data: dailyMessageMetrics,
-  } = useQueryBuilder<DailyMetric[]>(
-    ['daily-message-metrics'],
-    (guildId, startDate, endDate) =>
-      `/message-metrics/daily?guildId=${guildId}&startDate=${startDate}&endDate=${endDate}`
+    data: activeUsersData,
+  } = useQueryBuilder<ActiveUsersOverview>(
+    ['dashboard-active-users'],
+    (guildId, startDate, endDate) => `/dashboard/active-users?guildId=${guildId}&startDate=${startDate}&endDate=${endDate}`
   );
 
   const {
-    data: peakActivityTimeDueDay,
-  } = useQueryBuilder<any>(
-    ['peak-activity-time'],
-    (guildId) => `/dashboard/peak-activity-time?guildId=${guildId}`
+    data: contributorsData,
+  } = useQueryBuilder<TopContributorsOverview>(
+    ['dashboard-contributors'],
+    (guildId, startDate, endDate) => `/dashboard/contributors?guildId=${guildId}&startDate=${startDate}&endDate=${endDate}`
   );
 
-  const activityStats = useMemo(() => {
-    // if (!activityData) return defaultStats;
+  const { data: activeUsersTrend } = useActivityTrend('user', 'daily');
 
-    return {
-      ...activityData,
-    };
-  }, [activityData]);
+  const dashboardData = useMemo(() => ({
+    totalUsers: usersData?.totalUsers,
+    activeUsers: usersData?.activeUsers,
+    totalMessages: messagesData?.totalMessages,
+    totalReactions: messagesData?.totalReactions,
+    currentActivities: activityData?.currentActivities,
+    hourlyActivity: activityData?.hourlyActivity,
+    topKeywords: keywordsData?.topKeywords,
+    topUsers: contributorsData?.topUsers,
+    totalGameTime: gamingData?.totalGameTime,
+    activeListeners: activeUsersData?.activeListeners,
+    activeGamers: activeUsersData?.activeGamers,
+    activeUsersTrend: activeUsersTrend?.data,
+  }), [
+    usersData,
+    messagesData,
+    keywordsData,
+    activityData,
+    gamingData,
+    activeUsersData,
+    contributorsData,
+    activeUsersTrend
+  ]);
 
   return {
-    ...activityStats,
-    hourlyActivityData,
-    dailyMessageMetrics,
-    peakActivityTimeDueDay,
-    isLoading,
-    error,
+    ...dashboardData,
+    isLoading: isUsersLoading,
+    error: usersError,
   };
 }

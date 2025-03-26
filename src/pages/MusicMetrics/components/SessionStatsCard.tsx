@@ -3,7 +3,7 @@ import BaseCard from "./BaseCard";
 import TrendIndicator from "@/components/common/TrendIndicator";
 
 interface SessionStats {
-  current: number;
+  current: string;
   previous: number;
   change: number;
   isPositive: boolean;
@@ -30,7 +30,7 @@ const SessionStatsCard = ({ stats }: SessionStatsCardProps) => {
         animate={{ scale: 1, opacity: 1 }}
         transition={{ delay: 0.3 }}
       >
-        {Math.floor(stats.current / 60)}h {stats.current % 60}m
+        {stats.current}
       </motion.div>
       <motion.span className="text-gray-500 text-sm" variants={item}>
         Per session
@@ -44,9 +44,7 @@ const SessionStatsCard = ({ stats }: SessionStatsCardProps) => {
         variants={item}
       >
         <span className="text-gray-500 text-sm">
-          {`Previous: ${Math.floor(stats.previous / 60)}h ${
-            stats.previous % 60
-          }m`}
+          {`Previous: ${Math.floor(stats.previous / 60)}h ${Math.round(stats.previous % 60)}m`}
         </span>
         <TrendIndicator
           unit="%"

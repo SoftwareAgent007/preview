@@ -30,10 +30,17 @@ export interface StatusDistribution {
   offline: number[];
 }
 
+export interface PeakHourChange {
+  percentageChange: number;
+  previousDayUsers: number;
+  currentDayUsers: number;
+}
+
 export interface HourlyActivityResponse {
   hourlyDistribution: number[];
   statusDistribution: StatusDistribution;
   peakHour: number;
+  peakHourChange: PeakHourChange;
 }
 
 export interface PeakHour {

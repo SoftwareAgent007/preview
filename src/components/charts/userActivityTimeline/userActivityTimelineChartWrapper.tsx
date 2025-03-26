@@ -1,22 +1,57 @@
-import AreaLineChart from "@/components/charts/AreaLineChart";
+import AreaUserActivityLineChart from "@/components/charts/dashboard/AreaUserActivityLineChart";
 import ErrorComponent from "@/components/common/errorModel";
 import { ClickableTooltip } from "@/components/ui/tooltip";
-import { DailyActivity } from "@/types/dataTypes";
 import { AnimatePresence, motion } from "framer-motion";
-import { Expand, Minimize } from "lucide-react";
-import React, { useState } from "react";
+import { Expand, Loader2, Minimize } from "lucide-react";
+import React, { useState, useContext, useEffect } from "react";
 import ReactDOM from "react-dom";
+import { DashboardContext } from '@/common/context/queryContext';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
 interface ActivityTimelineProps {
     width?: number;
-    activityTimeline: DailyActivity[];
+    isLoading?: boolean;
+    activityTimeline: {
+        date: string;
+        activeUsers: number;
+    }[];
+    onViewTypeChange?: (viewType: ViewType) => void;
+    title?: string;
 }
+
+type ViewType = 'daily' | 'weekly' | 'monthly' | 'yearly';
 
 const ActivityTimeline: React.FC<ActivityTimelineProps> = ({
     width = 543,
+    isLoading = false,
     activityTimeline = [],
+    onViewTypeChange,
+    title = "Active users"
 }) => {
     const [isModalOpen, setIsModalOpen] = useState(false);
+    const { selectedPeriod } = useContext(DashboardContext);
+    
+    // Calculate default view type based on date range
+    const getDefaultViewType = (): ViewType => {
+        if (!selectedPeriod?.to || !selectedPeriod?.from) return 'daily';
+        
+        const diffDays = Math.abs(new Date(selectedPeriod.to).getTime() - new Date(selectedPeriod.from).getTime()) / (1000 * 60 * 60 * 24);
+        
+        if (diffDays <= 30) return 'daily';
+        if (diffDays <= 90) return 'weekly'; 
+        if (diffDays <= 365) return 'monthly';
+        return 'yearly';
+    };
+
+    const [viewType, setViewType] = useState<ViewType>(() => {
+        const saved = localStorage.getItem('activity-timeline-view-type');
+        return (saved as ViewType) || getDefaultViewType();
+    });
+
+    useEffect(() => {
+        onViewTypeChange?.(viewType);
+        localStorage.setItem('activity-timeline-view-type', viewType);
+    }, [viewType]);
 
     const containerVariants = {
         hidden: { opacity: 0, y: 20 },
@@ -59,7 +94,7 @@ const ActivityTimeline: React.FC<ActivityTimelineProps> = ({
                         variants={itemVariants}
                         whileHover={{ scale: 1.02 }}
                     >
-                        Active users
+                        {title}
                     </motion.span>
                     <ClickableTooltip content={
                         <motion.p
@@ -82,6 +117,17 @@ const ActivityTimeline: React.FC<ActivityTimelineProps> = ({
                             ?
                         </motion.span>
                     </ClickableTooltip>
+                    <Select value={viewType} onValueChange={(value: ViewType) => setViewType(value)}>
+                        <SelectTrigger className="w-[100px]">
+                            <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                            <SelectItem value="daily">Daily</SelectItem>
+                            <SelectItem value="weekly">Weekly</SelectItem>
+                            <SelectItem value="monthly">Monthly</SelectItem>
+                            <SelectItem value="yearly">Yearly</SelectItem>
+                        </SelectContent>
+                    </Select>
                 </motion.div>
                 <motion.button
                     whileHover={{ 
@@ -100,8 +146,17 @@ const ActivityTimeline: React.FC<ActivityTimelineProps> = ({
                 className="chart-parent flex justify-center items-center h-[300px]"
                 variants={itemVariants}
             >
-                {activityTimeline?.length ? (
-                    <AreaLineChart
+                {isLoading ? (
+                    <motion.div
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        className="flex items-center justify-center"
+                    >
+                        <Loader2 className="w-8 h-8 animate-spin text-blue-500" />
+                    </motion.div>
+                ) : activityTimeline?.length ? (
+                    <AreaUserActivityLineChart
+                        viewType={viewType}
                         data={activityTimeline}
                         width={width} 
                         height={300}
@@ -117,6 +172,9 @@ const ActivityTimeline: React.FC<ActivityTimelineProps> = ({
                         closeModal={() => setIsModalOpen(false)} 
                         activityTimeline={activityTimeline} 
                         width={width} 
+                        viewType={viewType}
+                        isLoading={isLoading}
+                        onViewTypeChange={setViewType}
                     />
                 )}
             </AnimatePresence>
@@ -128,9 +186,12 @@ interface ModalProps {
     closeModal: () => void;
     activityTimeline: any;
     width: number;
+    viewType: ViewType;
+    onViewTypeChange: (value: ViewType) => void;
+    isLoading: boolean;
 }
 
-const Modal: React.FC<ModalProps> = ({ closeModal, activityTimeline, width }) => {
+const Modal: React.FC<ModalProps> = ({ closeModal, activityTimeline, width, viewType, onViewTypeChange, isLoading }) => {
     const handleOutsideClick = (event: React.MouseEvent) => {
         const target = event.target as HTMLElement;
         if (target.closest(".modal-content") === null) {
@@ -166,13 +227,26 @@ const Modal: React.FC<ModalProps> = ({ closeModal, activityTimeline, width }) =>
                         transition={{ delay: 0.2 }}
                         className="flex justify-between items-center mb-6"
                     >
-                        <motion.h2 
-                            className="text-gray-500 text-xl font-bold"
-                            whileHover={{ x: 5 }}
-                            transition={{ type: "spring", stiffness: 300 }}
-                        >
-                            Active Users
-                        </motion.h2>
+                        <div className="flex items-center gap-3">
+                            <motion.h2 
+                                className="text-gray-500 text-xl font-bold"
+                                whileHover={{ x: 5 }}
+                                transition={{ type: "spring", stiffness: 300 }}
+                            >
+                                Active Users
+                            </motion.h2>
+                            <Select value={viewType} onValueChange={onViewTypeChange}>
+                                <SelectTrigger className="w-[100px]">
+                                    <SelectValue />
+                                </SelectTrigger>
+                                <SelectContent>
+                                    <SelectItem value="daily">Daily</SelectItem>
+                                    <SelectItem value="weekly">Weekly</SelectItem>
+                                    <SelectItem value="monthly">Monthly</SelectItem>
+                                    <SelectItem value="yearly">Yearly</SelectItem>
+                                </SelectContent>
+                            </Select>
+                        </div>
                         <motion.button
                             whileHover={{ 
                                 scale: 1.1,
@@ -189,16 +263,27 @@ const Modal: React.FC<ModalProps> = ({ closeModal, activityTimeline, width }) =>
                         initial={{ opacity: 0, y: 20 }}
                         animate={{ opacity: 1, y: 0 }}
                         transition={{ delay: 0.3 }}
+                        className="flex justify-center items-center"
                     >
-                        {activityTimeline?.length ? (
-                            <AreaLineChart
-                                data={activityTimeline}
-                                width={width * 1.5}
-                                height={500}
-                            />
-                        ) : (
-                            <ErrorComponent />
-                        )}
+                        
+                        {isLoading ? (
+                            <motion.div
+                                initial={{ opacity: 0 }}
+                                animate={{ opacity: 1 }}
+                                className="flex items-center justify-center"
+                            >
+                                <Loader2 className="w-8 h-8 animate-spin text-blue-500" />
+                            </motion.div>
+                        ) : activityTimeline?.length ? (
+                                <AreaUserActivityLineChart
+                                    viewType={viewType}
+                                    data={activityTimeline}
+                                    width={width * 1.7}
+                                    height={500}
+                                />
+                            ) : (
+                                <ErrorComponent />
+                            )}
                     </motion.div>
                 </motion.div>
             </motion.div>

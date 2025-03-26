@@ -1,11 +1,14 @@
 import React, { useEffect, useRef, useState } from 'react';
 import * as d3 from 'd3';
 import { motion, AnimatePresence } from 'framer-motion';
-import { HourlyActivity } from '@/types/dataTypes';
 
+interface DataPoint {
+  hour: number;
+  count: number;
+}
 
 interface HorizontalBarChartProps {
-  data: HourlyActivity[];
+  data: number[];
   width?: number;
   height?: number;
   barColor?: string;
@@ -15,7 +18,7 @@ interface HorizontalBarChartProps {
 const HorizontalBarChart: React.FC<HorizontalBarChartProps> = ({ 
   data, 
   width = 460, 
-  height = 400,
+  height = 500,
   barColor = '#3B82F6',
   darkMode = false
 }) => {
@@ -23,6 +26,12 @@ const HorizontalBarChart: React.FC<HorizontalBarChartProps> = ({
   const chartInitializedRef = useRef<boolean>(false);
   const [hoveredBar, setHoveredBar] = useState<DataPoint | null>(null);
   const [animationComplete, setAnimationComplete] = useState(false);
+
+  // Transform array data into DataPoint format
+  const transformedData: DataPoint[] = data.map((count, index) => ({
+    hour: index,
+    count: count
+  }));
 
   // Theme colors
   const textColor = darkMode ? '#e2e8f0' : '#64748b';
@@ -33,7 +42,7 @@ const HorizontalBarChart: React.FC<HorizontalBarChartProps> = ({
   const gridColor = darkMode ? '#475569' : '#e2e8f0';
 
   useEffect(() => {
-    if (!svgRef.current || data.length === 0 || !width || !height) return;
+    if (!svgRef.current || transformedData.length === 0 || !width || !height) return;
     
     // Prevent re-initialization if already rendered
     if (chartInitializedRef.current) return;
@@ -43,14 +52,14 @@ const HorizontalBarChart: React.FC<HorizontalBarChartProps> = ({
 
     // Responsive margins
     const margin = {
-      top: Math.max(20, height * 0.05),
-      right: Math.max(30, width * 0.08),
-      bottom: Math.max(20, height * 0.05),
-      left: Math.max(50, width * 0.12)
+      top: 0,
+      right: Math.max(40, width * 0.01), // Increased right margin
+      bottom: 20,
+      left: Math.max(40, width * 0.1) // Increased left margin
     };
 
-    const chartWidth = width - margin.left - margin.right;
-    const chartHeight = height - margin.top - margin.bottom;
+    const chartWidth = width * 0.9 - margin.left - margin.right; // Made chart thinner
+    const chartHeight = height - margin.top - margin.bottom - 60; // Reduced bottom padding
 
     // Responsive font sizes
     const fontSize = Math.max(12, Math.min(16, width * 0.03));
@@ -70,7 +79,7 @@ const HorizontalBarChart: React.FC<HorizontalBarChartProps> = ({
       .attr("ry", 8)
       .attr("opacity", 0.5);
 
-    const maxCount = d3.max(data, d => +d.count) || 0;
+    const maxCount = d3.max(transformedData, d => d.count) || 0;
 
     const x = d3.scaleLinear()
       .domain([0, maxCount * 1.1]) // Add 10% padding
@@ -78,7 +87,7 @@ const HorizontalBarChart: React.FC<HorizontalBarChartProps> = ({
 
     const y = d3.scaleBand()
       .range([0, chartHeight])
-      .domain(data.map(d => `${d.hour}`))
+      .domain(transformedData.map(d => `${d.hour}`))
       .padding(0.4);
 
     // Add subtle grid lines
@@ -123,7 +132,7 @@ const HorizontalBarChart: React.FC<HorizontalBarChartProps> = ({
 
     // Background bars
     svg.selectAll("backgroundRect")
-      .data(data)
+      .data(transformedData)
       .join("rect")
         .attr("x", 0)
         .attr("y", d => y(`${d.hour}`) || 0)
@@ -155,7 +164,7 @@ const HorizontalBarChart: React.FC<HorizontalBarChartProps> = ({
 
     // Data bars with animation - run only once
     const bars = svg.selectAll("dataRect")
-      .data(data)
+      .data(transformedData)
       .join("rect")
         .attr("class", "data-bar")
         .attr("x", 0)
@@ -185,16 +194,16 @@ const HorizontalBarChart: React.FC<HorizontalBarChartProps> = ({
     bars.transition()
       .duration(1000)
       .delay((_, i) => i * 50)
-      .attr("width", d => x(+d.count))
+      .attr("width", d => x(d.count))
       .on("end", (_, i, nodes) => {
         if (i === nodes.length - 1) {
           setAnimationComplete(true);
           
           // Add count labels after animation completes
           svg.selectAll("countLabels")
-            .data(data)
+            .data(transformedData)
             .join("text")
-              .attr("x", d => x(+d.count) + 5)
+              .attr("x", d => x(d.count) + 5)
               .attr("y", d => (y(`${d.hour}`) || 0) + y.bandwidth() / 2)
               .attr("dy", ".35em")
               .attr("fill", textColor)
@@ -208,7 +217,7 @@ const HorizontalBarChart: React.FC<HorizontalBarChartProps> = ({
         }
       });
 
-  }, [data, width, height, barColor, darkMode]); // Remove animationComplete from dependencies
+  }, [transformedData, width, height, barColor, darkMode]); // Remove animationComplete from dependencies
 
   // Reset initialization flag when key props change
   useEffect(() => {
@@ -240,7 +249,7 @@ const HorizontalBarChart: React.FC<HorizontalBarChartProps> = ({
               backgroundColor: tooltipBgColor,
               color: tooltipTextColor,
               border: `1px solid ${darkMode ? '#475569' : '#e2e8f0'}`,
-              top: `${(height / data.length) * (hoveredBar.hour + 0.5)}px`,
+              top: `${(height / transformedData.length) * (hoveredBar.hour + 0.5)}px`,
               right: "20px",
               minWidth: "120px"
             }}

@@ -2,20 +2,26 @@ import AreaLineChart from "@/components/charts/AreaLineChart";
 import React, { useState } from "react";
 import ReactDOM from "react-dom";
 import { Expand, Minimize } from "lucide-react";
-import { useGamingAnalyticsResponse } from "@/hooks/mockedApiService";
+import { WeeklyTrend } from "@/types/analytics/gamingTypes";
 
 interface UserActivityTimelineProps {
     width?: number;
+    activityTimeline: WeeklyTrend[];
 }
 
 const UserActivityTimeline: React.FC<UserActivityTimelineProps> = ({
     width = 543,
+    activityTimeline = []
 }) => {
-    const { userActivityTimeline } = useGamingAnalyticsResponse();
     const [isModalOpen, setIsModalOpen] = useState(false);
 
     const openModal = () => setIsModalOpen(true);
     const closeModal = () => setIsModalOpen(false);
+
+    const chartData = activityTimeline.map(trend => ({
+        date: trend.weekStartDate,
+        count: trend.totalUsers
+    }));
 
     return (
         <div className="h-full flex flex-col">
@@ -27,17 +33,17 @@ const UserActivityTimeline: React.FC<UserActivityTimelineProps> = ({
             </div>
             <div className="chart-parent flex justify-between">
                 <AreaLineChart
-                    data={userActivityTimeline}
+                    data={chartData}
                     width={width} 
                     height={300}
                 />
             </div>
-            {isModalOpen && <Modal closeModal={closeModal} userActivityTimeline={userActivityTimeline} width={width} />}
+            {isModalOpen && <Modal closeModal={closeModal} chartData={chartData} width={width} />}
         </div>
     );
 };
 
-const Modal: React.FC<{ closeModal: () => void; userActivityTimeline: any; width: number }> = ({ closeModal, userActivityTimeline, width }) => {
+const Modal: React.FC<{ closeModal: () => void; chartData: { date: string; count: number }[]; width: number }> = ({ closeModal, chartData, width }) => {
     return ReactDOM.createPortal(
         <div className="fixed inset-0 bg-black/50 flex justify-center items-center z-50">
             <div className="bg-white p-4 rounded relative">
@@ -52,7 +58,7 @@ const Modal: React.FC<{ closeModal: () => void; userActivityTimeline: any; width
                     User Activity
                 </h2>
                 <AreaLineChart
-                    data={userActivityTimeline}
+                    data={chartData}
                     width={width * 1.2} 
                     height={400} 
                 />

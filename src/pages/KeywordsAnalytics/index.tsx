@@ -1,9 +1,9 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { motion } from "framer-motion";
-import KeywordsMatchesTimeline from "@/components/charts/keywordsMatches/keywordsMatchesTimeline";
+import KeywordsMatchesTimeline from "@/components/charts/keywordsMatches/keywordsMatchesGraph";
 import BreadcrumbsNavigation from "@/components/common/BreadcrumbsNavigation";
 import { Card } from "@/components/ui/card";
-import { useKeywordsAnalytics, useKeywordTimeline } from "@/hooks/analytics/useKeywordsAnalytics";
+import { useKeywordsAnalytics, useKeywordTrend } from "@/hooks/analytics/useKeywordsAnalytics";
 import { BREADCRUMB_PATHS, ROUTES } from "@/routes/routes.constant";
 import ActiveKeywordsList from "./components/keywordsList";
 import KeywordStatCard from "./components/KeywordStatCard";
@@ -22,23 +22,72 @@ const KeywordsAnalytics = () => {
   const [searchKeywordTerm, setSelectedKeywordTerm] = useState<string>("");
   const [currentPage, setCurrentPage] = useState(1);
   const [pageSize, setPageSize] = useState(10);
+  const [viewType, setViewType] = useState<'day' | 'week' | 'month' | 'year'>('day');
+  const [dateRange, setDateRange] = useState<{start: string, end: string}>(() => {
+    const end = new Date();
+    const start = new Date();
+    start.setDate(end.getDate() - 30); // Default to day view
+    return {
+      start: start.toISOString(),
+      end: end.toISOString()
+    };
+  });
+
+  const updateDateRange = (viewType: 'day' | 'week' | 'month' | 'year') => {
+    const start = new Date().setFullYear(new Date().getFullYear() - 1);;
+    const end = new Date();
+    
+    // switch(viewType) {
+    //   case 'day':
+    //     start.setDate(end.getDate() - 30);
+    //     break;
+    //   case 'week':
+    //     start.setDate(end.getDate() - 90);
+    //     break;
+    //   case 'month':
+    //     start.setDate(end.getDate() - 365);
+    //     break;
+    //   case 'year':
+    //     start.setFullYear(end.getFullYear() - 1);
+    //     break;
+    // }
+
+    setDateRange({
+      start: start.toString(),
+      end: end.toString()
+    });
+  };
+
+  useEffect(() => {
+    updateDateRange(viewType);
+    console.log('viewType, dateRange.start, dateRange.end',viewType, dateRange.start, dateRange.end);  
+  }, [viewType]);
 
   const {
     totalKeywords,
     activeKeywords,
     totalMatches,
     keywordsList,
-    matchesTimeline,
     activeKeywordTags,
     pagination,
     isLoading,
     error
   } = useKeywordsAnalytics(currentPage, pageSize);
+  
+  const { matchesTimeline } = useKeywordsAnalytics(currentPage, pageSize);
 
-  const { selectedKeywordTimeline } = useKeywordTimeline(searchKeywordTerm);
+  const { trendData, isTrendLoading } = useKeywordTrend(searchKeywordTerm, viewType, 10);
 
   const hasErrors = useMemo(() => Boolean(error), [error]);
-  // #endregion
+
+  useEffect(() => {
+    if (keywordsList?.length) {
+      const mostPopular = keywordsList.reduce((prev, current) => 
+        (prev.matches?.count ?? 0) > (current.matches?.count ?? 0) ? prev : current
+      );
+      setSelectedKeywordTerm(mostPopular.keyword);
+    }
+  }, [keywordsList]);
 
   // #region Animation Variants
   const container = {
@@ -52,29 +101,25 @@ const KeywordsAnalytics = () => {
   };
   // #endregion
 
-  const isValidValue = (value: number | undefined): boolean => {
-    return value !== undefined && value >= 0;
-  };
-
   // #region Stats Cards Data
   const statsCardsData = [
     {
       index: 0,
       title: "Keywords",
-      value: isValidValue(totalKeywords) ? totalKeywords : undefined,
-      subValue: { label: "active", value: isValidValue(activeKeywords) ? activeKeywords : undefined },
+      value: totalKeywords || 0,
+      subValue: { label: "active", value: activeKeywords || 0 },
       tooltipContent: "Total number of keywords in the system"
     },
     {
       index: 1,
       title: "Active Keywords",
-      value: isValidValue(activeKeywords) ? activeKeywords : undefined,
+      value: activeKeywords || 0,
       tooltipContent: "Currently active keywords"
     },
     {
       index: 2,
       title: "Total Matches",
-      value: isValidValue(totalMatches) ? totalMatches : undefined,
+      value: totalMatches || 0,
       tooltipContent: "Total keyword matches found"
     }
   ];
@@ -109,11 +154,7 @@ const KeywordsAnalytics = () => {
             </>
           ) : (
             statsCardsData.map((card) => (
-              card.value !== undefined ? (
-                <KeywordStatCard key={card.title} {...card} />
-              ) : (
-                <ErrorComponent key={card.title} />
-              )
+              <KeywordStatCard key={card.title} {...card} />
             ))
           )}
         </div>
@@ -129,9 +170,11 @@ const KeywordsAnalytics = () => {
               <CardSkeleton width="100%" height="200px" />
             ) : (
               <KeywordsMatchesTimeline 
-                keywords={keywordsList?.map((keyword) => keyword.keyword)}
-                matchesTimeline={searchKeywordTerm ? (selectedKeywordTimeline ?? []) : (matchesTimeline ?? [])}
-                onSearch={(term) => setSelectedKeywordTerm(term)}
+                onViewTypeChange={setViewType}
+                keywords={keywordsList?.map(keyword => keyword.keyword) || []}
+                matchesTimeline={searchKeywordTerm ? trendData : []}
+                onSearch={setSelectedKeywordTerm}
+                selectedKeyword={searchKeywordTerm}
               />
             )}
           </Card>
@@ -139,8 +182,11 @@ const KeywordsAnalytics = () => {
           <Card className="flex-1 p-6">
             {isLoading ? (
               <CardSkeleton width="100%" height="200px" />
-            ) : activeKeywordTags?.length > 0 ? (
-              <ActiveKeywordsList activeKeywordTags={activeKeywordTags ?? []} keywordsList={keywordsList ?? []} />
+            ) : (activeKeywordTags || []).length > 0 ? (
+              <ActiveKeywordsList 
+                activeKeywordTags={activeKeywordTags || []} 
+                keywordsList={keywordsList || []} 
+              />
             ) : (
               <ErrorComponent />
             )}

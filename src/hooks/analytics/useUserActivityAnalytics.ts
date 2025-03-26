@@ -7,6 +7,7 @@ import { ActivityOverviewResponse,
   PeakHour,
   DeviceUsage } from "@/pages/UsersDetailedActivityAnalytics/PresenceAnalytics/interfaces/presence-activirt.interfaces";
 import { AverageSessionResponse } from "@/types/music.interface";
+import { useQueryBuilder } from "./common/useQueryBuilder";
 
 export interface UserActivityAnalytics {
   activityOverview: ActivityOverviewResponse | null;
@@ -127,5 +128,44 @@ export const useUserActivityAnalytics = (
     leaves,
     isLoading,
     error: error || null,
+  };
+};
+interface ActivityTrendParams {
+  guildId: string;
+  activityType: 'user' | 'spotify' | 'gaming' | 'device';
+  viewType: 'daily' | 'weekly' | 'monthly' | 'yearly';
+  deviceType?: string;
+  limit?: number;
+}
+
+interface TrendDataPoint {data: {
+  date: string;
+  activeUsers: number;
+}}
+
+export const useActivityTrend = ({
+  activityType,
+  viewType,
+  deviceType,
+  limit
+}: Omit<ActivityTrendParams, 'guildId'>) => {
+  const { data, isLoading, error } = useQueryBuilder<{data: TrendDataPoint[]}>(
+    ['activityTrend', activityType, viewType, deviceType, limit],
+    (guildId) => {
+      const params = new URLSearchParams({
+        guildId,
+        activityType,
+        viewType,
+        ...(deviceType && { deviceType }),
+        ...(limit && { limit: limit.toString() })
+      });
+      return `/presence-activity/active-users-trend?${params}`;
+    }
+  );
+
+  return {
+    data,
+    isLoading,
+    error
   };
 };

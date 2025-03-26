@@ -8,6 +8,11 @@ import StatCard from "./components/StatCard";
 import { usePresenceActivity } from "@/hooks/analytics/usePresenceAnalytics";
 import ErrorComponent from "@/components/common/errorModel";
 import ContentLoader from "react-content-loader";
+import { Info } from "lucide-react";
+import { ClickableTooltip } from "@/components/ui/tooltip";
+import HorizontalBarChart from "@/components/charts/hourActivity/HorizontalBarChart";
+import { useDashboardData } from "@/hooks/analytics/useDashboardData";
+import ChartCard from "@/pages/Dashboard/components/ChartCard";
 
 // Skeleton loader for cards
 const CardSkeleton = ({ width, height }: { width: string; height: string }) => (
@@ -17,7 +22,21 @@ const CardSkeleton = ({ width, height }: { width: string; height: string }) => (
 );
 
 const PresenceAnalytics = () => {
-  const { overview, statusBreakdown, hourlyActivity, peakHours, isLoading, error } = usePresenceActivity("guildId", "week");
+  const { 
+    overview, 
+    statusBreakdown,
+    peakHours,
+    deviceUsage,
+    roleDistribution, 
+    isLoading, 
+    error 
+  } = usePresenceActivity("week");
+
+  const {
+    hourlyActivity,
+    isLoading: isHourlyLoading,
+    error: isHourlyError  
+  } = useDashboardData();
 
   const wrapperRef = useRef<HTMLDivElement | null>(null);
   const hasErrors = useMemo(() => Boolean(error), [error]);
@@ -35,34 +54,65 @@ const PresenceAnalytics = () => {
     visible: { opacity: 1, y: 0, transition: { type: "spring", stiffness: 300, damping: 30 } },
   };
 
+  const statsData = [
+    { 
+      title: "Active Users", 
+      subtitle: overview?.activeUsers?.label || "Active users this period",
+      tooltip: "Number of unique users who have been active during the selected time period",
+      formatValue: (val?: number) => val?.toLocaleString() || '0'
+    },
+    { 
+      title: "Avg. Session Time", 
+      subtitle: overview?.avgSessionTime?.label || "Average session duration",
+      tooltip: "Average time users spend active in a single session",
+      formatValue: (minutes?: number) => {
+        if (!minutes) return '0m';
+        const hours = Math.floor(minutes / 60);
+        const remainingMinutes = minutes % 60;
+        if (hours === 0) return `${remainingMinutes}m`;
+        if (remainingMinutes === 0) return `${hours}h`;
+        return `${hours}h ${remainingMinutes}m`;
+      }
+    },
+    { 
+      title: "Peak Users", 
+      subtitle: overview?.peakUsers?.label || "Maximum concurrent users",
+      tooltip: "Highest number of users active at the same time",
+      formatValue: (val?: number) => val?.toLocaleString() || '0'
+    },
+    { 
+      title: "Total Presence Time", 
+      subtitle: overview?.totalPresenceTime?.label || "Total presence duration",
+      tooltip: "Total cumulative time all users have been present",
+      formatValue: (hours?: number) => {
+        if (!hours) return '0h';
+        if (hours >= 24) {
+          const days = Math.floor(hours / 24);
+          const remainingHours = hours % 24;
+          return `${days}d ${remainingHours}h`;
+        }
+        return `${hours}h`;
+      }
+    },
+  ];
+
   // Safely format stats data with proper validation
   const getFormattedStatValue = (stat: any) => {
     if (!overview) return null;
 
     switch (stat.title) {
       case "Active Users":
-        return overview.activeUsers?.count || null;
+        return stat.formatValue(overview.activeUsers?.count);
       case "Avg. Session Time":
-        return overview.avgSessionTime?.hours !== undefined && overview.avgSessionTime?.minutes !== undefined
-          ? `${overview.avgSessionTime.hours}h ${overview.avgSessionTime.minutes}m`
-          : null;
+        return stat.formatValue(overview.avgSessionTime?.minutes);
       case "Peak Users":
-        return overview.peakUsers?.count || null;
+        return stat.formatValue(overview.peakUsers?.count);
       case "Total Presence Time":
-        return overview.totalPresenceTime?.hours !== undefined
-          ? `${overview.totalPresenceTime.hours}h`
-          : null;
+        return stat.formatValue(overview.totalPresenceTime?.hours);
       default:
         return null;
     }
   };
-
-  const statsData = [
-    { title: "Active Users", subtitle: overview?.activeUsers?.label || "Active users this period" },
-    { title: "Avg. Session Time", subtitle: overview?.avgSessionTime?.label || "Average session duration" },
-    { title: "Peak Users", subtitle: overview?.peakUsers?.label || "Maximum concurrent users" },
-    { title: "Total Presence Time", subtitle: overview?.totalPresenceTime?.label || "Total presence duration" },
-  ];
 
   // Display top-level error if request failed
   if (hasErrors && !isLoading) {
@@ -100,18 +150,26 @@ const PresenceAnalytics = () => {
             statsData.map((stat, index) => {
               const value = getFormattedStatValue(stat);
               
-              return value ? (
-                <StatCard 
-                  key={index} 
-                  title={stat.title} 
-                  value={value} 
-                  subtitle={stat.subtitle} 
-                  index={index} 
-                />
-              ) : (
-                <div key={index} className="bg-white rounded-lg shadow p-4">
-                  <ErrorComponent message={`${stat.title} data unavailable`} />
-                </div>
+              return (
+                <>
+                  {value !== null ? (
+                    <StatCard 
+                      title={
+                        <div className="flex items-center gap-2">
+                          {stat.title}
+                          <ClickableTooltip content={stat.tooltip}>
+                            <Info className="w-4 h-4 text-gray-500" />
+                          </ClickableTooltip>
+                        </div>
+                      }
+                      value={value} 
+                      subtitle={stat.subtitle} 
+                      index={index} 
+                      />
+                  ) : (
+                    <ErrorComponent message={`${stat.title} data unavailable`} />
+                  )}
+                </>
               );
             })
           )}
@@ -129,41 +187,42 @@ const PresenceAnalytics = () => {
             )}
           </motion.div>
 
-          <motion.div variants={itemVariants} className="flex w-full h-full">
-            <div className="bg-white rounded-lg shadow p-4 h-full w-full">
-              {isLoading ? (
-                <CardSkeleton width="100%" height="250" />
-              ) : statusBreakdown && Array.isArray(statusBreakdown) && statusBreakdown.length > 0 ? (
-                <ActiveStatusChart data={statusBreakdown} />
-              ) : (
-                <ErrorComponent message="Status breakdown data unavailable" />
-              )}
-            </div>
-          </motion.div>
+          {isLoading ? (
+            <CardSkeleton width="100%" height="250" />
+          ) : statusBreakdown && Array.isArray(statusBreakdown) && statusBreakdown.length > 0 ? (
+            <ActiveStatusChart data={statusBreakdown} />
+          ) : (
+            <ErrorComponent message="Status breakdown data unavailable" />
+          )}
 
-          <motion.div variants={itemVariants} className="flex">
-            <div className="bg-white rounded-lg shadow p-4 h-full w-full">
-              {isLoading ? (
-                <CardSkeleton width="100%" height="250" />
-              ) : peakHours && Array.isArray(peakHours) && peakHours.length > 0 ? (
-                <PeakActivityHours hourlyActivity={peakHours} />
-              ) : (
-                <ErrorComponent message="Peak hours data unavailable" />
-              )}
-            </div>
-          </motion.div>
+          {isLoading ? (
+            <CardSkeleton width="100%" height="250" />
+          ) : peakHours && Array.isArray(peakHours) && peakHours.length > 0 ? (
+            <PeakActivityHours hourlyActivity={peakHours} />
+          ) : (
+            <ErrorComponent message="Peak hours data unavailable" />
+          )}
 
-          <motion.div variants={itemVariants} className="flex">
-            <div className="bg-white rounded-lg shadow p-4 h-full w-full">
-              {isLoading ? (
-                <CardSkeleton width="100%" height="250" />
-              ) : hourlyActivity?.hourlyDistribution && Array.isArray(hourlyActivity.hourlyDistribution) && hourlyActivity.hourlyDistribution.length > 0 ? (
-                <HourlyActivity hourlyActivity={[]} />
+          {isLoading || isHourlyLoading ? (
+            <CardSkeleton width="100%" height="500px" />
+          ) : (
+            <ChartCard
+              title="Hourly Activity"
+              tooltipContent="Displays the number of users at different hours of the day"
+              index={0}
+              className="flex-1"
+            >
+              {isHourlyError ? (
+                <ErrorComponent />
               ) : (
-                <ErrorComponent message="Hourly activity data unavailable" />
+                <HorizontalBarChart
+                  data={hourlyActivity?.hourlyDistribution ?? []}
+                  height={500}
+                  width={600}
+                />
               )}
-            </div>
-          </motion.div>
+            </ChartCard>
+          )}
         </div>
       </div>
     </motion.div>

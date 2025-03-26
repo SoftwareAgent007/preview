@@ -40,6 +40,21 @@ import {
 } from "@/components/ui/alert-dialog";
 
 
+function debounce<T extends (...args: any[]) => void>(func: T, wait: number) {
+  let timeout: NodeJS.Timeout;
+  
+  const debounced = (...args: Parameters<T>) => {
+    clearTimeout(timeout);
+    timeout = setTimeout(() => func(...args), wait);
+  };
+
+  debounced.cancel = () => {
+    clearTimeout(timeout);
+  };
+
+  return debounced;
+}
+
 const globalFilterFn: FilterFn<KeywordListItemDto> = (row, columnId, filterValue) => {
   const value = row.getValue(columnId);
   return value ? String(value).toLowerCase().includes(String(filterValue).toLowerCase()) : false;
@@ -47,6 +62,7 @@ const globalFilterFn: FilterFn<KeywordListItemDto> = (row, columnId, filterValue
 
 const KeywordsDataTableComponent = ({
   displayedKeywords = [],
+  defaultKeywords = [],
   searchTerm,
   setSearchTerm,
   currentPage,
@@ -60,6 +76,7 @@ const KeywordsDataTableComponent = ({
   onDelete,
 }: {
   displayedKeywords: KeywordListItemDto[];
+  defaultKeywords: KeywordListItemDto[];
   searchTerm: string;
   setSearchTerm: (term: string) => void;
   currentPage: number;
@@ -70,11 +87,27 @@ const KeywordsDataTableComponent = ({
   pageSize: number;
   isLoading: boolean;
   onToggleActive: (keyword: KeywordListItemDto) => Promise<void>;
-  onDelete: (keyword: KeywordListItemDto) => Promise<void>;
+  onDelete: (id: number) => Promise<void>;
 }) => {
   const [globalFilter, setGlobalFilter] = React.useState(searchTerm);
   const [keywordToDelete, setKeywordToDelete] = React.useState<KeywordListItemDto | null>(null);
 
+  const debouncedSearch = React.useMemo(
+    () => debounce((term: string) => {
+      setSearchTerm(term);
+    }, 1000), // Changed to 2000ms (2 seconds)
+    [setSearchTerm]
+  );
+
+  React.useEffect(() => {
+    return () => {
+      debouncedSearch.cancel();
+    };
+  }, [debouncedSearch]);
+
+  const tableData = React.useMemo(() => {
+    return globalFilter ? displayedKeywords : defaultKeywords;
+  }, [globalFilter, displayedKeywords, defaultKeywords]);
 
   const columns: ColumnDef<KeywordListItemDto>[] = [
     {
@@ -144,7 +177,7 @@ const KeywordsDataTableComponent = ({
   }, [globalFilter, setSearchTerm]);
 
   const table = useReactTable({
-    data: displayedKeywords,
+    data: tableData,
     columns,
     getCoreRowModel: getCoreRowModel(),
     getPaginationRowModel: getPaginationRowModel(),
@@ -226,7 +259,11 @@ const KeywordsDataTableComponent = ({
         type="text"
         placeholder="Search keywords..."
         value={globalFilter ?? ''}
-        onChange={(e) => setGlobalFilter(e.target.value)}
+        onChange={(e) => {
+          const value = e.target.value;
+          setGlobalFilter(value);
+          debouncedSearch(value);
+        }}
         className="mb-4"
         disabled={isLoading}
       />
@@ -329,7 +366,10 @@ const KeywordsDataTableComponent = ({
           <AlertDialogFooter>
             <AlertDialogCancel>Cancel</AlertDialogCancel>
             <AlertDialogAction
-              onClick={() => keywordToDelete && onDelete(keywordToDelete)}
+              onClick={() => {
+                console.log('Deleting keyword:', keywordToDelete);
+                keywordToDelete && onDelete(keywordToDelete?.id);
+              }}
               className="bg-red-500 hover:bg-red-600"
             >
               Delete

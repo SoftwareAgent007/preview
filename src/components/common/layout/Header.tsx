@@ -30,10 +30,6 @@ const Header = () => {
   const [isUserMenuOpen, setIsUserMenuOpen] = useState(false);
   const { selectedPeriod, guildId, setSelectedPeriod, setGuildId } = useDashboardContext();
 
-  useEffect(() => {
-    console.log('Header selectedPeriod changed:', selectedPeriod);
-  }, [selectedPeriod]);
-  
   const getCurrentTitle = (pathname: string) => {
     if (
       pathname.includes("gaming") ||
@@ -85,7 +81,7 @@ const Header = () => {
                 }}
               />
               
-              <Select value={guildId} onValueChange={(id) => setGuildId && setGuildId(id)}>
+              {/* <Select value={guildId} onValueChange={(id) => setGuildId && setGuildId(id)}>
                 <SelectTrigger className="w-[180px]">
                   <SelectValue placeholder="Select Guild" />
                 </SelectTrigger>
@@ -93,7 +89,7 @@ const Header = () => {
                   <SelectItem value="guild1">Guild 1</SelectItem>
                   <SelectItem value="guild2">Guild 2</SelectItem>
                 </SelectContent>
-              </Select>
+              </Select> */}
             </div>
           </div>
 

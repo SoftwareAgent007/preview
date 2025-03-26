@@ -28,11 +28,11 @@ export function useModifyBuilder<TParams, TResponse = any>(
       case 'DELETE':
         return apiService.deleteData(url, guildId);
       case 'PATCH':
-        return apiService.patchData(url, requestBody);
+        return apiService.patchData(url, requestBody, guildId);
       case 'PUT':
-        return apiService.putData(url, requestBody);
+        return apiService.putData(url, requestBody, guildId);
       default:
-        return apiService.postData(url, requestBody);
+        return apiService.postData(url, requestBody, guildId);
     }
   };
 

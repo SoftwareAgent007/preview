@@ -46,7 +46,7 @@ const GenrePreferencesCard = ({ data }: GenrePreferencesCardProps) => {
         variants={item}
       >
         <h3 className={`text-base font-medium ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>
-          Genre Preferences
+          <span className="text-gray-500 text-lg font-bold mb-4">Genre Preferences</span>
         </h3>
         <ClickableTooltip content="Shows user genre preferences based on listening history">
           <Info className={`w-4 h-4 ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`} />
@@ -61,7 +61,7 @@ const GenrePreferencesCard = ({ data }: GenrePreferencesCardProps) => {
         <HorizontalBarChartRelatedGenres
           data={data.slice(0, 7)}
           darkMode={isDarkMode}
-          width={width}
+          width={width * 0.9}
         />
       </motion.div>
     </BaseCard>

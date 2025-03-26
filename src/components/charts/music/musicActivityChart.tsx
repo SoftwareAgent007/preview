@@ -1,9 +1,7 @@
-import React, { useEffect, useRef, useState } from "react";
+import { GenreData } from "@/pages/MusicMetrics/interfaces/music.interfaces";
 import * as d3 from "d3";
 import { motion } from "framer-motion";
-import { Info } from "lucide-react";
-import { ClickableTooltip } from "@/components/ui/tooltip";
-import { GenreData } from "@/pages/MusicMetrics/interfaces/music.interfaces";
+import React, { useEffect, useRef, useState } from "react";
 
 interface DataPoint extends GenreData {
   artist: string;
@@ -21,12 +19,12 @@ const HorizontalBarChartRelatedGenres: React.FC<HorizontalBarChartRelatedGenresP
   data,
   darkMode = false,
   width = 400,
-  height = 450
+  height = 350
 }) => {
   const svgRef = useRef<SVGSVGElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   const [hoveredGenre, setHoveredGenre] = useState<string | null>(null);
-  const [dimensions, setDimensions] = useState({ width: 0, height: 0 });
+  const [dimensions, setDimensions] = useState({ width, height });
   const barsRef = useRef<d3.Selection<any, DataPoint, any, unknown> | null>(null);
   const backgroundBarsRef = useRef<d3.Selection<any, DataPoint, any, unknown> | null>(null);
   const tooltipRef = useRef<HTMLDivElement | null>(null);
@@ -36,8 +34,8 @@ const HorizontalBarChartRelatedGenres: React.FC<HorizontalBarChartRelatedGenresP
     const updateDimensions = () => {
       if (containerRef.current) {
         setDimensions({
-          width: containerRef.current.clientWidth,
-          height: containerRef.current.clientHeight
+          width: width || containerRef.current.clientWidth,
+          height: height || containerRef.current.clientHeight
         });
       }
     };
@@ -46,7 +44,7 @@ const HorizontalBarChartRelatedGenres: React.FC<HorizontalBarChartRelatedGenresP
     window.addEventListener('resize', updateDimensions);
     
     return () => window.removeEventListener('resize', updateDimensions);
-  }, []);
+  }, [width, height]);
 
   // Create tooltip once
   useEffect(() => {
@@ -103,9 +101,9 @@ const HorizontalBarChartRelatedGenres: React.FC<HorizontalBarChartRelatedGenresP
     // Adjust margins based on data length to prevent overlapping
     const margin = { 
       top: 20, 
-      right: 20, 
+      right: 10, 
       bottom: 30, 
-      left: Math.min(150, actualWidth * 0.25) // Responsive left margin
+      left: Math.min(150, actualWidth * 0.2) // Responsive left margin
     };
     
     const chartWidth = actualWidth - margin.left - margin.right;
@@ -192,7 +190,7 @@ const HorizontalBarChartRelatedGenres: React.FC<HorizontalBarChartRelatedGenresP
     // Add x-axis label
     g.append("text")
       .attr("x", chartWidth / 2)
-      .attr("y", chartHeight + margin.bottom - 5)
+      .attr("y", chartHeight + margin.bottom )
       .attr("text-anchor", "middle")
       .attr("fill", darkMode ? "rgba(255, 255, 255, 0.7)" : "rgba(0, 0, 0, 0.7)")
       .attr("font-size", "12px")
@@ -234,7 +232,6 @@ const HorizontalBarChartRelatedGenres: React.FC<HorizontalBarChartRelatedGenresP
             .style("visibility", "visible")
             .html(`
               <div style="font-weight: bold;">${d.genre}</div>
-              <div>Artist: ${d.artist}</div>
               <div>Count: ${d.count}/${d.total} (${((d.count / d.total) * 100).toFixed(1)}%)</div>
             `);
         }
@@ -280,28 +277,6 @@ const HorizontalBarChartRelatedGenres: React.FC<HorizontalBarChartRelatedGenresP
       .transition()
       .duration(500)
       .delay((d, i) => i * 100)
-      .style("opacity", 1);
-
-    // Add artist labels below genre labels
-    g.selectAll(".artist-label")
-      .data(sortedData)
-      .join("text")
-      .attr("class", "artist-label")
-      .attr("x", -10)
-      .attr("y", d => (y(d.genre) ?? 0) + y.bandwidth() / 2)
-      .attr("dy", "1.5em")
-      .attr("text-anchor", "end")
-      .attr("font-size", "10px")
-      .attr("fill", darkMode ? "rgba(255, 255, 255, 0.6)" : "rgba(0, 0, 0, 0.6)")
-      .text(d => {
-        // Truncate artist name if too long
-        const maxLength = Math.floor(margin.left / 8);
-        return d.artist.length > maxLength ? d.artist.substring(0, maxLength) + "..." : d.artist;
-      })
-      .style("opacity", 0)
-      .transition()
-      .duration(500)
-      .delay((d, i) => i * 100 + 200)
       .style("opacity", 1);
 
     // Add percentage labels at the end of bars

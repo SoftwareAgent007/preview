@@ -18,28 +18,29 @@ export const useMusicData = () => {
   const musicStats = useMemo(() => ({
     overview: {
       totalPlays: {
-        current: musicData?.overview?.totalPlays?.value,
-        previous: musicData?.overview?.totalPlays?.value - (musicData?.overview?.totalPlays?.change || 0),
-        isPositive: (musicData?.overview?.totalPlays?.change || 0) > 0
+        current: musicData?.overview?.totalPlays?.value || 0,
+        previous: 0,
+        isPositive: musicData?.overview?.totalPlays?.change > 0
       },
       uniqueArtists: {
-        current: musicData?.overview?.uniqueArtists?.value,
-        previous: musicData?.overview?.uniqueArtists?.value - (musicData?.overview?.uniqueArtists?.change || 0),
-        isPositive: (musicData?.overview?.uniqueArtists?.change || 0) > 0
+        current: musicData?.overview?.uniqueArtists?.value || 0,
+        previous: 0,
+        isPositive: musicData?.overview?.uniqueArtists?.change > 0
       },
       activeListeners: {
-        current: musicData?.overview?.activeListeners?.value,
-        previous: musicData?.overview?.activeListeners?.value - (musicData?.overview?.activeListeners?.change || 0),
-        isPositive: (musicData?.overview?.activeListeners?.change || 0) > 0
+        current: musicData?.overview?.activeListeners?.value || 0,
+        previous: 0,
+        isPositive: musicData?.overview?.activeListeners?.change > 0
       },
     },
     genres: musicData?.genres || [],
     topArtists: musicData?.topArtists || [],
     peakHours: {
-      hourlyDistribution: musicData?.peakHours || [],
+      hourlyDistribution: musicData?.peakHours.hourlyDistribution || [],
     },
     avgSession: musicData?.avgSession ? {
-      current: musicData.avgSession.averageMinutes,
+      current: musicData.avgSession.formattedDuration,
+      change: musicData.avgSession.change,
       previous: musicData.avgSession.averageMinutes - (musicData.avgSession.change || 0),
       isPositive: musicData.avgSession.change > 0,
       formattedDuration: musicData.avgSession.formattedDuration

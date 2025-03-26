@@ -5,17 +5,19 @@ import { Info } from 'lucide-react';
 import { ClickableTooltip } from "@/components/ui/tooltip";
 
 interface PeakListeningHoursChartProps {
-    data: { hour: number; percentage: number }[];
+    data: number[];
     darkMode?: boolean;
+    height?: number;
 }
 
 const PeakListeningHoursChart: React.FC<PeakListeningHoursChartProps> = ({ 
     data, 
-    darkMode = false 
+    darkMode = false,
+    height = 300
 }) => {
     const svgRef = useRef<SVGSVGElement>(null);
     const containerRef = useRef<HTMLDivElement>(null);
-    const [dimensions, setDimensions] = useState({ width: 0, height: 0 });
+    const [dimensions, setDimensions] = useState({ width: 0, height });
     const [hoveredBar, setHoveredBar] = useState<number | null>(null);
     const tooltipRef = useRef<HTMLDivElement | null>(null);
     const barsRef = useRef<d3.Selection<SVGRectElement, any, SVGGElement, unknown> | null>(null);
@@ -26,7 +28,7 @@ const PeakListeningHoursChart: React.FC<PeakListeningHoursChartProps> = ({
             if (containerRef.current) {
                 setDimensions({
                     width: containerRef.current.clientWidth,
-                    height: containerRef.current.clientHeight
+                    height
                 });
             }
         };
@@ -35,7 +37,7 @@ const PeakListeningHoursChart: React.FC<PeakListeningHoursChartProps> = ({
         window.addEventListener('resize', updateDimensions);
         
         return () => window.removeEventListener('resize', updateDimensions);
-    }, []);
+    }, [height]);
 
     // Create tooltip once
     useEffect(() => {
@@ -83,14 +85,13 @@ const PeakListeningHoursChart: React.FC<PeakListeningHoursChartProps> = ({
         const innerHeight = height - margin.top - margin.bottom;
 
         const currentHour = new Date().getHours();
-        const fullDayData = Array.from({ length: 24 }, (_, i) => {
-            const hour = (currentHour - 23 + i + 24) % 24;
-            return {
-                hour,
-                percentage: data.find(d => d.hour === hour)?.percentage || 0,
-                isCurrentHour: hour === currentHour
-            };
-        });
+        const total = data.reduce((sum, val) => sum + val, 0);
+        const fullDayData = data.map((value, i) => ({
+            hour: i,
+            value,
+            percentage: ((value / total) * 100).toFixed(1),
+            isCurrentHour: i === currentHour
+        }));
 
         const svg = d3.select(svgRef.current);
         svg.selectAll("*").remove();
@@ -153,7 +154,7 @@ const PeakListeningHoursChart: React.FC<PeakListeningHoursChartProps> = ({
             .padding(0.3);
 
         const y = d3.scaleLinear()
-            .domain([0, Math.max(d3.max(fullDayData, d => d.percentage) || 0, 10)])
+            .domain([0, Math.max(...fullDayData.map(d => parseFloat(d.percentage)))])
             .nice()
             .range([innerHeight, 0]);
 
@@ -161,10 +162,7 @@ const PeakListeningHoursChart: React.FC<PeakListeningHoursChartProps> = ({
         const xAxis = g.append("g")
             .attr("transform", `translate(0, ${innerHeight})`)
             .call(d3.axisBottom(x)
-                .tickFormat(d => {
-                    const hour = parseInt(d.toString());
-                    return `${hour}:00`;
-                })
+                .tickFormat(d => `${d}:00`)
             );
             
         xAxis.selectAll("text")
@@ -229,7 +227,8 @@ const PeakListeningHoursChart: React.FC<PeakListeningHoursChartProps> = ({
                         .style("visibility", "visible")
                         .html(`
                             <div style="font-weight: bold;">${d.hour}:00${d.isCurrentHour ? ' (Current Hour)' : ''}</div>
-                            <div>Listening: ${d.percentage}%</div>
+                            <div>Count: ${d.value}</div>
+                            <div>Percentage: ${d.percentage}%</div>
                         `);
                 }
             })
@@ -253,8 +252,8 @@ const PeakListeningHoursChart: React.FC<PeakListeningHoursChartProps> = ({
             .duration(1000)
             .delay((d, i) => i * 50)
             .ease(d3.easeCubicOut)
-            .attr("y", d => y(d.percentage))
-            .attr("height", d => innerHeight - y(d.percentage));
+            .attr("y", d => y(parseFloat(d.percentage)))
+            .attr("height", d => innerHeight - y(parseFloat(d.percentage)));
 
         // Add value labels on top of bars
         g.selectAll(".value-label")
@@ -263,7 +262,7 @@ const PeakListeningHoursChart: React.FC<PeakListeningHoursChartProps> = ({
             .append("text")
             .attr("class", "value-label")
             .attr("x", d => (x(d.hour.toString()) || 0) + x.bandwidth() / 2)
-            .attr("y", d => y(d.percentage) - 5)
+            .attr("y", d => y(parseFloat(d.percentage)) - 5)
             .attr("text-anchor", "middle")
             .attr("font-size", "10px")
             .attr("fill", darkMode ? "rgba(255, 255, 255, 0.7)" : "rgba(0, 0, 0, 0.7)")
@@ -272,14 +271,15 @@ const PeakListeningHoursChart: React.FC<PeakListeningHoursChartProps> = ({
             .transition()
             .duration(1000)
             .delay((d, i) => i * 50 + 500)
-            .attr("opacity", d => d.percentage > 10 ? 1 : 0);
+            .attr("opacity", d => parseFloat(d.percentage) > 10 ? 1 : 0);
 
     }, [data, dimensions, darkMode]);
 
     return (
         <motion.div 
             ref={containerRef}
-            className="w-full h-full flex flex-col"
+            className="w-full flex flex-col"
+            style={{ height }}
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             transition={{ duration: 0.5 }}

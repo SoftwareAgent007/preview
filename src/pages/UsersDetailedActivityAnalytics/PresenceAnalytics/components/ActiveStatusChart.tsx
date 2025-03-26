@@ -1,20 +1,13 @@
 import { motion } from "framer-motion";
 import { Card } from "@/components/ui/card";
 import { ClickableTooltip } from "@/components/ui/tooltip";
-import CircleRoleChart from "@/components/charts/circleChartOfRoles";
+import CircleStatusChart from "@/components/charts/circleChartOfStatuses";
 import { useEffect, useRef, useState } from "react";
 import { StatusBreakdown } from "../interfaces/presence-activirt.interfaces";
 
 interface ActiveStatusChartProps {
   data: StatusBreakdown[];
 }
-
-const statusColors = [
-  { label: "Online", color: "#33FF57" },
-  { label: "Offline", color: "#FF5733" },
-  { label: "Idle", color: "#FF33A8" },
-  { label: "DND", color: "#3357FF" }
-];
 
 
 const ActiveStatusChart = ({ data }: ActiveStatusChartProps) => {
@@ -103,7 +96,7 @@ const ActiveStatusChart = ({ data }: ActiveStatusChartProps) => {
             transition={{ delay: 0.2 }}
             className="w-full flex-1 flex"
           >
-            <CircleRoleChart 
+            <CircleStatusChart 
               data={data} 
               width={chartDimensions.width} 
               height={chartDimensions.height}

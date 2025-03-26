@@ -1,16 +1,16 @@
-import { useEffect, useRef, useState } from "react";
-import { motion } from "framer-motion";
-import AreaLineChart from "@/components/charts/AreaLineChart";
-import UserActivityTimeline from "@/components/charts/userActivityTimeline/userActivityTimelineChart";
+import UserActivityTimeline from "@/components/charts/userActivityTimeline/userActivityTimelineChartWrapper";
+import RolesChart from "@/components/charts/userActivityTimeline/userRolesChart";
 import ErrorComponent from "@/components/common/errorModel";
 import { Card } from "@/components/ui/card";
-import { ClickableTooltip } from "@/components/ui/tooltip";
-import { useGameDetails, useGamingStats } from "@/hooks/analytics/useGamingAnalytics";
+import { useActivityTrend } from "@/hooks/analytics/useDashboardData";
+import { useGameDetails, useGamingStats, useRolesDistribution } from "@/hooks/analytics/useGamingAnalytics";
+import { usePeakHours } from "@/hooks/analytics/useGamingPeakHours";
+import { motion } from "framer-motion";
+import { useEffect, useRef, useState } from "react";
 import ContentLoader from "react-content-loader";
 import StatCard from "./components/StatCard";
-import ActiveRolesChart from "./components/ActiveRolesChart";
-import { ActiveGamesList } from "./components/activeGamesList";
 import TopGamesList from "./components/topGamesList";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
 const CardSkeleton = ({ width, height }: { width: string; height: string }) => (
   <ContentLoader speed={2} width={width} height={height} viewBox={`0 0 ${width} ${height}`}>
@@ -18,9 +18,25 @@ const CardSkeleton = ({ width, height }: { width: string; height: string }) => (
   </ContentLoader>
 );
 
-const GamingAnalytics = ({ guildId = "1w2dd" }) => {
-  const { activeGames, popularGames, isLoading } = useGamingStats();
-  const { gameStats } = useGameDetails("CS2");
+const GamingAnalytics = () => {
+  const { activeGames, popularGames, isLoading: statsLoading } = useGamingStats();
+  const [selectedGame, setSelectedGame] = useState<string>("");
+  const { gameStats, isLoading: gameDetailsLoading } = useGameDetails(selectedGame);
+  const { peakHours: gamePeakHours, isLoading: peakHoursLoading } = usePeakHours();
+  const { rolesDistribution, isLoading: rolesLoading, error: rolesError } = useRolesDistribution();
+  const wrapperRef = useRef<HTMLDivElement | null>(null);
+  const [viewType, setViewType] = useState<'daily' | 'weekly' | 'monthly' | 'yearly'>('daily');
+  const [graphWidth, setGraphWidth] = useState(0);
+  const { data: activityTrend, isLoading: trendLoading } = useActivityTrend('gaming', viewType);
+
+  useEffect(() => {
+    if (popularGames?.length > 0) {
+      const mostPopular = popularGames.reduce((prev, current) => 
+        (current.totalHours > prev.totalHours) ? current : prev
+      );
+      setSelectedGame(mostPopular.gameName);
+    }
+  }, [popularGames]);
 
   const {
     totalPlayers = 0,
@@ -29,11 +45,24 @@ const GamingAnalytics = ({ guildId = "1w2dd" }) => {
     totalHours = 0,
     returnRate = 0,
     weeklyTrends = [],
-    peakHours = []
+    peakHours = gamePeakHours || [],
+    playtimeDistribution = [],
+    topGamers = [],
+    timeOfDayBreakdown = []
   } = gameStats || {};
 
-  const wrapperRef = useRef<HTMLDivElement | null>(null);
-  const [graphWidth, setGraphWidth] = useState(0);
+  useEffect(() => {
+    console.log('totalPlayers:', totalPlayers);
+    console.log('avgSessionMinutes:', avgSessionMinutes); 
+    console.log('peakPartySize:', peakPartySize);
+    console.log('totalHours:', totalHours);
+    console.log('returnRate:', returnRate);
+    console.log('weeklyTrends:', weeklyTrends);
+    console.log('peakHours:', peakHours);
+    console.log('playtimeDistribution:', playtimeDistribution);
+    console.log('topGamers:', topGamers);
+    console.log('timeOfDayBreakdown:', timeOfDayBreakdown);
+  }, [totalPlayers, avgSessionMinutes, peakPartySize, totalHours, returnRate, weeklyTrends, peakHours, playtimeDistribution, topGamers, timeOfDayBreakdown]);
 
   // Effects
   useEffect(() => {
@@ -45,6 +74,7 @@ const GamingAnalytics = ({ guildId = "1w2dd" }) => {
 
     window.addEventListener("resize", updateGraphWidth);
     updateGraphWidth();
+    
     return () => window.removeEventListener("resize", updateGraphWidth);
   }, [wrapperRef.current]);
 
@@ -73,7 +103,7 @@ const GamingAnalytics = ({ guildId = "1w2dd" }) => {
     }
   };
 
-  // Updated Stats Data with all available fields
+  // Updated Stats Data with all available fields including returnRate
   const statsData = [
     { title: "Active Users", value: totalPlayers, subtitle: "Currently active users" },
     { title: "Avg. Session Time", value: avgSessionMinutes, subtitle: "Average session duration", unit: "min" },
@@ -90,9 +120,36 @@ const GamingAnalytics = ({ guildId = "1w2dd" }) => {
       animate="visible"
     >
       <div className="mx-auto" style={{ maxWidth: `${import.meta.env.VITE_MAX_WIDTH || 1200}px` }}>
+        {/* Game Selector */}
+        
+        <Card className="p-4 mb-6">
+          {statsLoading ? (
+            <CardSkeleton width="100%" height="40" />
+          ) : (
+            <Select value={selectedGame} onValueChange={setSelectedGame}>
+            <motion.span
+            className="text-gray-500 text-lg font-medium mb-4 flex justify-between items-center"
+                variants={itemVariants}
+              >
+              Selected Game  
+            </motion.span>
+              <SelectTrigger>
+                <SelectValue placeholder="Select a game" />
+              </SelectTrigger>
+              <SelectContent>
+                {popularGames?.map((game) => (
+                  <SelectItem key={game.gameName} value={game.gameName}>
+                    {game.gameName}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          )}
+        </Card>
+
         {/* Stats Cards */}
         <motion.div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6 mb-6">
-          {isLoading ? (
+          {gameDetailsLoading ? (
             <>
               {[...Array(4)].map((_, i) => (
                 <Card key={i} className="flex-1 p-6 h-30">
@@ -115,78 +172,46 @@ const GamingAnalytics = ({ guildId = "1w2dd" }) => {
             className="grid gap-6"
             variants={itemVariants}
           >
-            {isLoading ? (
-              <>
-                <Card className="p-6"><CardSkeleton width="100%" height="500" /></Card>
-                <Card className="p-6 h-[400px]"><CardSkeleton width="100%" height="350" /></Card>
-              </>
+            {/* Top Games List */}
+            {statsLoading ? (
+              <Card className="p-6">
+                <CardSkeleton width="100%" height="500" />
+              </Card>
             ) : (
-              <>
-                <TopGamesList topGames={popularGames} />                  
-                <motion.div variants={itemVariants}>
-                  <Card className="p-6 h-[400px]">
-                    {weeklyTrends?.length > 0 ? (
-                      <AreaLineChart data={weeklyTrends.map(trend => ({
-                        date: trend.weekStartDate,
-                        count: trend.totalUsers
-                      }))} width={graphWidth} height={300} graphColor="#b1c4f5" />
-                    ) : (
-                      <UserActivityTimeline width={graphWidth} activityTimeline={[]} />
-                    )}
-                  </Card>
-                </motion.div>
-              </>
+              <TopGamesList topGames={popularGames} />
             )}
+
+            {/* Activity Timeline */}
+            <motion.div variants={itemVariants}>
+              <Card className="p-6 h-[400px]">
+                {trendLoading ? (
+                  <CardSkeleton width="100%" height="350" />
+                ) : (activityTrend?.data || []).length > 0 ? (
+                  <UserActivityTimeline 
+                    title="User Activity Timeline"
+                    activityTimeline={activityTrend?.data || []} 
+                    width={graphWidth}
+                    isLoading={trendLoading}
+                    onViewTypeChange={setViewType}
+                  />
+                ) : (
+                  <ErrorComponent height={300} />
+                )}
+              </Card>
+            </motion.div>
           </motion.div>
 
-          {/* Active Games Section */}
-          <motion.div 
-            className="grid gap-6"
-            variants={itemVariants}
-          >
-            {isLoading ? (
-              <Card className="p-6"><CardSkeleton width="100%" height="550" /></Card>
+          {/* Roles Chart */}
+          <motion.div variants={itemVariants}>
+            {rolesLoading ? (
+              <Card className="p-6">
+                <CardSkeleton width="100%" height="500" />
+              </Card>
             ) : (
-              <>
-                <Card className="p-6 h-full">
-                  <div className="title text-gray-500 text-lg font-bold mb-4">
-                    <span className="mr-5">Active Games</span>
-                    <ClickableTooltip content={<p><strong>Active Games: </strong> Current active games being played.</p>}>
-                      <span className="bg-gray-300 bg-opacity-25 text-gray-600 px-[7px] rounded-full cursor-help">?</span>
-                    </ClickableTooltip>
-                  </div>
-                  {activeGames?.length > 0 ? (
-                    <ActiveGamesList topGames={activeGames} />
-                  ) : (
-                    <ErrorComponent height={530} />
-                  )}
-                </Card>
-
-                <Card className="p-6">
-                  <div className="title text-gray-500 text-lg font-bold mb-4">
-                    <span className="mr-5">Peak Hours Distribution</span>
-                    <ClickableTooltip content={<p><strong>Peak Hours: </strong> Player activity by hour of day.</p>}>
-                      <span className="bg-gray-300 bg-opacity-25 text-gray-600 px-[7px] rounded-full cursor-help">?</span>
-                    </ClickableTooltip>
-                  </div>
-                  {peakHours?.length > 0 ? (
-                    <AreaLineChart 
-                      data={peakHours.map(peak => ({
-                        date: new Date(2024, 0, 1, peak.hour).toISOString(),
-                        count: peak.playerCount
-                      }))}
-                      width={graphWidth}
-                      height={300}
-                      graphColor="#82ca9d"
-                    />
-                  ) : (
-                    <ErrorComponent height={300} />
-                  )}
-                </Card>
-              </>
+              <RolesChart width={500} data={rolesDistribution} />
             )}
           </motion.div>
-        </div>
+        </div> 
       </div>
     </motion.div>
   );

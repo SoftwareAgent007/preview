@@ -157,7 +157,7 @@ export interface KeywordAnalyticsResponseDto {
 }
 
 export interface KeywordListItemDto {
-  id: bigint;
+  id: number;
   keyword: string;
   matches: { count: number };
   createdAt: Date;
@@ -229,6 +229,9 @@ export interface GameStats {
   returnRate: number;
   peakHours: PeakHour[];
   weeklyTrends: WeeklyTrend[];
+  playtimeDistribution: PlaytimeDistribution[];
+  topGamers: TopGamer[];
+  timeOfDayBreakdown: TimeOfDayBreakdown[];
 }
 
 export interface GameReport {
@@ -259,7 +262,7 @@ export interface WeeklyTrend {
 }
 
 export interface TimeOfDayBreakdown {
-  timeBlock: string; // e.g., "Morning (6AM-12PM)"
+  timeBlock: string;
   userCount: number;
   percentOfTotal: number;
 }
@@ -374,3 +377,14 @@ export type ChartData = {
 export type DataSet = {
   [key: string]: ChartData;
 };
+
+export interface KeywordTrendDataPoint {
+  date: string;
+  matchCount: number;
+  keyword: string;
+  keywordId: number;
+}
+
+export interface KeywordTrendResponse {
+  data: KeywordTrendDataPoint[];
+}

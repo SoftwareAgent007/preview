@@ -1,11 +1,11 @@
 import HorizontalBarChart from "@/components/charts/hourActivity/HorizontalBarChart";
 import MessageFrequencyChart from "@/components/charts/userActivityTimeline/messageFrequencyChart";
-import UserActivityTimeline from "@/components/charts/userActivityTimeline/userActivityTimelineChart";
+import UserActivityTimeline from "@/components/charts/userActivityTimeline/userActivityTimelineChartWrapper";
 import BreadcrumbsNavigation from "@/components/common/BreadcrumbsNavigation";
 import ErrorComponent from "@/components/common/errorModel";
 import { Button } from "@/components/ui/button";
 import ListElement from "@/components/ui/list-element";
-import { useDashboardData } from "@/hooks/analytics/useDashboardData";
+import { TimeViewType, useActivityTrend, useDashboardData, useMessageMetrics, useMessageTrend } from "@/hooks/analytics/useDashboardData";
 import { BREADCRUMB_PATHS, ROUTES } from "@/routes/routes.constant";
 import { LayoutGroup, motion } from "framer-motion";
 import { Download, Users } from "lucide-react";
@@ -23,36 +23,36 @@ const CardSkeleton = ({ width, height }: { width: string; height: string }) => (
 const Dashboard = () => {
   const {
     totalUsers,
-    activeUsers, 
+    activeUsers,
     totalMessages,
     totalReactions,
     currentActivities,
-    peakActivityTimeDueDay,
+    hourlyActivity,
     topKeywords,
     topUsers,
-    usersDailyActivity,
-    dailyMessageMetrics,
     totalGameTime,
-    hourlyActivity,
     activeListeners,
-    keywordsCount,
     isLoading,
     error
   } = useDashboardData();
 
+  const [userActivityViewType, setUserActivityViewType] = useState<'daily' | 'weekly' | 'monthly' | 'yearly'>('daily');
+  const [messageViewType, setMessageViewType] = useState<'daily' | 'weekly' | 'monthly' | 'yearly'>('daily');
+  const { data: activeUsersTrend, isLoading: isActiveUsersTrendLoading } = useActivityTrend('user', userActivityViewType);
+  const { trend: dailyMessageMetrics, isLoading: isMessageTrendLoading } = useMessageTrend(messageViewType === 'daily' ? TimeViewType.DAY : messageViewType === 'weekly' ? TimeViewType.WEEK : messageViewType === 'monthly' ? TimeViewType.MONTH : TimeViewType.YEAR);
+
   const [graphWidth, setGraphWidth] = useState(0);
   const wrapperRef = useRef<HTMLDivElement | null>(null);
-
-  const keywordStats = useMemo(() => ({
-    total: keywordsCount?.count ?? 0,
-    active: keywordsCount?.count ?? 0,
-  }), [keywordsCount]);
 
   const updateGraphWidth = () => {
     if (wrapperRef.current) {
       setGraphWidth(wrapperRef.current.offsetWidth / 2.3);
     }
   };
+
+  useEffect(() => {
+    console.log('messageViewType', messageViewType);
+  }, [messageViewType]);
 
   useEffect(() => {
     window.addEventListener("resize", updateGraphWidth);
@@ -66,59 +66,62 @@ const Dashboard = () => {
   }, [isLoading, wrapperRef.current]);
 
   const hasError = (value: unknown): boolean => !isLoading && (!value && value !== 0);
-
   const statsCards = useMemo(() => [
     {
       title: "Total Users",
       value: totalUsers?.count ?? 0,
       description: totalUsers?.label ?? '',
-      trend: totalUsers?.trend?.percentChange ?? 0,
-      isTrendPositive: totalUsers?.trend?.isPositive ?? false,
+      trend: totalUsers?.percentChange ?? 0,
+      isTrendPositive: (totalUsers?.percentChange ?? 0) > 0,
       tooltipContent: "Total number of users registered during this period",
+      index: 0
     },
     {
-      title: "Active Users",
-      value: activeUsers?.count ?? 0,
-      description: activeUsers?.label ?? '',
-      trend: activeUsers?.trend?.percentChange ?? 0,
-      isTrendPositive: activeUsers?.trend?.isPositive ?? false,
+      title: "Active Users", 
+      value: activeUsers?.today?.count ?? 0,
+      description: "Active Today",
+      trend: activeUsers?.today?.percentChange ?? 0,
+      isTrendPositive: (activeUsers?.today?.percentChange ?? 0) > 0,
       tooltipContent: "Users who are currently active in the platform",
+      index: 1
     },
     {
       title: "Total Messages",
       value: totalMessages?.count ?? 0,
       description: totalMessages?.label ?? '',
-      trend: totalMessages?.trend?.percentChange ?? 0,
-      isTrendPositive: totalMessages?.trend?.isPositive ?? false,
+      trend: totalMessages?.percentChange ?? 0,
+      isTrendPositive: (totalMessages?.percentChange ?? 0) > 0,
       tooltipContent: "Total number of messages sent during this period",
+      index: 2
     },
     {
       title: "Total Reactions",
       value: totalReactions?.count ?? 0,
-      description: totalReactions?.label ?? '',
-      trend: totalReactions?.trend?.percentChange ?? 0,
-      isTrendPositive: totalReactions?.trend?.isPositive ?? false,
+      description: `${totalReactions?.count ?? 0} reactions`,
+      trend: totalReactions?.percentChange ?? 0,
+      isTrendPositive: (totalReactions?.percentChange ?? 0) > 0,
       tooltipContent: "Total number of reactions made during this period",
+      index: 3
     },
   ], [totalUsers, activeUsers, totalMessages, totalReactions]);
 
   const bottomStatsCards = useMemo(() => [
     {
       title: "Peak Activity Time",
-      value: peakActivityTimeDueDay?.time ?? '00:00',
-      description: `${peakActivityTimeDueDay?.users ?? 0} active users`,
-      trend: peakActivityTimeDueDay?.percentChange ?? 0,
-      isTrendPositive: (peakActivityTimeDueDay?.percentChange ?? 0) > 0,
+      value: `${(hourlyActivity?.peakHour ?? 0) > 12 ? (hourlyActivity?.peakHour ?? 0) - 12 : (hourlyActivity?.peakHour ?? 0)}${(hourlyActivity?.peakHour ?? 0) >= 12 ? 'PM' : 'AM'}`,
+      description: `${hourlyActivity?.hourlyDistribution?.[hourlyActivity?.peakHour ?? 0]?.count ?? 0} active users`,
+      trend: hourlyActivity?.peakHourChange?.change ?? 0,
+      isTrendPositive: (hourlyActivity?.peakHourChange?.change ?? 0) > 0,
       trendUnit: "%",
       tooltipContent: "Time with the highest user activity",
       index: 1,
     },
     {
       title: "Total Game Time",
-      value: totalGameTime?.hours ?? 0,
-      description: "hours played",
+      value: `${(totalGameTime?.hours ?? 0) / 100}h`,
+      description: "hours played", 
       trend: parseInt(totalGameTime?.hourChange ?? "0"),
-      isTrendPositive: (totalGameTime?.hourChange ?? "").startsWith('+'),
+      isTrendPositive: totalGameTime?.hourChange?.startsWith('+') ?? false,
       trendUnit: "h",
       tooltipContent: "Total time spent playing games",
       index: 2,
@@ -135,15 +138,15 @@ const Dashboard = () => {
     },
     {
       title: "Keywords",
-      value: keywordStats.total,
-      description: `${keywordStats.active} active`,
-      trend: keywordsCount?.percentChange ?? 0,
-      isTrendPositive: (keywordsCount?.percentChange ?? 0) > 0,
+      value: topKeywords?.length ?? 0,
+      description: `${topKeywords?.length ?? 0} active`,
+      trend: 0,
+      isTrendPositive: true,
       trendUnit: "%",
       tooltipContent: "Active keywords mentioned in the guild within the timerange",
       index: 4,
     },
-  ], [peakActivityTimeDueDay, totalGameTime, activeListeners, keywordStats, keywordsCount]);
+  ], [hourlyActivity, totalGameTime, activeListeners, topKeywords]);
 
   return (
     <LayoutGroup> 
@@ -173,7 +176,7 @@ const Dashboard = () => {
           <div className="flex flex-col md:flex-row justify-between w-full gap-6 mb-6 h-fit">
             {isLoading ? (
               Array(4).fill(0).map((_, i) => (
-                <ChartCard key={i} className="flex-1">
+                <ChartCard key={i} className="flex-1" index={i}>
                   <CardSkeleton width="100%" height="120px" />
                 </ChartCard>
               ))
@@ -194,14 +197,24 @@ const Dashboard = () => {
               {isLoading ? (
                 <CardSkeleton width="100%" height="300px" />
               ) : (
-                <UserActivityTimeline activityTimeline={usersDailyActivity ?? []} width={graphWidth} />
+                <UserActivityTimeline 
+                  activityTimeline={activeUsersTrend?.data ?? []} 
+                  width={graphWidth}
+                  isLoading={isActiveUsersTrendLoading}
+                  onViewTypeChange={setUserActivityViewType}
+                />
               )}
             </ChartCard>
             <ChartCard index={1} className="flex-1">
               {isLoading ? (
                 <CardSkeleton width="100%" height="300px" />
               ) : (
-                <MessageFrequencyChart messageFrequency={dailyMessageMetrics ?? []} width={graphWidth} />
+                <MessageFrequencyChart 
+                  messageFrequency={dailyMessageMetrics ?? []} 
+                  width={graphWidth} 
+                  isLoading={isMessageTrendLoading}
+                  onViewTypeChange={setMessageViewType}
+                />
               )}
             </ChartCard>
           </div>
@@ -310,11 +323,11 @@ const Dashboard = () => {
             >
               {isLoading ? (
                 <CardSkeleton width="100%" height="500px" />
-              ) : hasError(hourlyActivity?.length) ? (
+              ) : hasError(hourlyActivity) ? (
                 <ErrorComponent />
               ) : (
                 <HorizontalBarChart
-                  data={hourlyActivity ?? []}
+                  data={hourlyActivity?.hourlyDistribution ?? []}
                   height={500}
                   width={600}
                 />
@@ -323,7 +336,7 @@ const Dashboard = () => {
             <div className="flex-1 grid grid-cols-2 gap-6 h-fit">
               {isLoading ? (
                 Array(4).fill(0).map((_, i) => (
-                  <ChartCard key={i} className="flex-1">
+                  <ChartCard key={i} className="flex-1" index={i}>
                     <CardSkeleton width="100%" height="120px" />
                   </ChartCard>
                 ))

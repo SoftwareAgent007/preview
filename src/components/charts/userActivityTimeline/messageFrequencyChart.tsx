@@ -1,22 +1,64 @@
-import React, { useState } from "react";
-import ReactDOM from "react-dom";
-import { motion, AnimatePresence } from "framer-motion";
-import { Expand, Minimize } from "lucide-react";
 import AreaLineChart from "@/components/charts/AreaLineChart";
-import { ClickableTooltip } from "@/components/ui/tooltip";
 import ErrorComponent from "@/components/common/errorModel";
-import { DailyMetric, TimelineDataDto } from "@/types/dataTypes";
+import { ClickableTooltip } from "@/components/ui/tooltip";
+import { TimelineDataDto } from "@/types/dataTypes";
+import { AnimatePresence, motion } from "framer-motion";
+import { Expand, Loader2, Minimize } from "lucide-react";
+import React, { useState, useEffect } from "react";
+import ReactDOM from "react-dom";
+import AreaMessageActivityLineChart from "../dashboard/AreaMessageActivityLineChart";
+import {
+    Select,
+    SelectContent,
+    SelectItem,
+    SelectTrigger,
+    SelectValue,
+} from "@/components/ui/select";
+
+interface MessageMetric {
+  date: string;
+  matchCount: number;
+}
 
 interface MessageFrequencyChartProps {
-    messageFrequency?: DailyMetric[];
+    messageFrequency?: MessageMetric[];
     width?: number;
+    onViewTypeChange?: (viewType: ViewType) => void;
+    isLoading?: boolean;
 }
+
+type ViewType = 'daily' | 'weekly' | 'monthly' | 'yearly';
 
 const MessageFrequencyChart: React.FC<MessageFrequencyChartProps> = ({
     messageFrequency = [],
     width = 543,
+    onViewTypeChange,
+    isLoading = false,
 }) => {
     const [isModalOpen, setIsModalOpen] = useState(false);
+
+    const getDefaultViewType = (): ViewType => {
+        if (!messageFrequency.length) return 'daily';
+        
+        const firstDate = new Date(messageFrequency[0].date);
+        const lastDate = new Date(messageFrequency[messageFrequency.length - 1].date);
+        const diffDays = Math.abs(lastDate.getTime() - firstDate.getTime()) / (1000 * 60 * 60 * 24);
+        
+        if (diffDays <= 30) return 'daily';
+        if (diffDays <= 90) return 'weekly';
+        if (diffDays <= 365) return 'monthly';
+        return 'yearly';
+    };
+
+    const [viewType, setViewType] = useState<ViewType>(() => {
+        const saved = localStorage.getItem('message-frequency-view-type');
+        return (saved as ViewType) || getDefaultViewType();
+    });
+
+    useEffect(() => {
+        onViewTypeChange?.(viewType);
+        localStorage.setItem('message-frequency-view-type', viewType);
+    }, [viewType]);
 
     const containerVariants = {
         hidden: { opacity: 0, y: 20 },
@@ -41,10 +83,11 @@ const MessageFrequencyChart: React.FC<MessageFrequencyChartProps> = ({
     };
 
     const transformedData: TimelineDataDto[] = messageFrequency.map(metric => ({
-        date: metric.date.toISOString(),
-        count: metric.messageCount
+        date: metric.date,
+        count: metric.matchCount
     }));
 
+    
     return (
         <motion.div 
             className="flex flex-col"
@@ -87,6 +130,17 @@ const MessageFrequencyChart: React.FC<MessageFrequencyChartProps> = ({
                             ?
                         </motion.span>
                     </ClickableTooltip>
+                    <Select value={viewType} onValueChange={(value: ViewType) => setViewType(value)}>
+                        <SelectTrigger className="w-[100px]">
+                            <SelectValue placeholder="Select view" />
+                        </SelectTrigger>
+                        <SelectContent>
+                            <SelectItem value="daily">Daily</SelectItem>
+                            <SelectItem value="weekly">Weekly</SelectItem>
+                            <SelectItem value="monthly">Monthly</SelectItem>
+                            <SelectItem value="yearly">Yearly</SelectItem>
+                        </SelectContent>
+                    </Select>
                 </motion.div>
                 <motion.button
                     whileHover={{ 
@@ -102,18 +156,26 @@ const MessageFrequencyChart: React.FC<MessageFrequencyChartProps> = ({
                 </motion.button>
             </motion.div>
             <motion.div 
-                className="chart-parent flex justify-between"
+                className="chart-parent flex justify-center items-center h-[300px]"
                 variants={itemVariants}
             >
-                {messageFrequency?.length ? (
-                    <AreaLineChart
+                {isLoading ? (
+                    <motion.div
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        className="flex items-center justify-center"
+                    >
+                        <Loader2 className="w-8 h-8 animate-spin text-blue-500" />
+                    </motion.div>
+                ) : messageFrequency?.length ? (
+                    <AreaMessageActivityLineChart
                         data={transformedData}
                         width={width} 
                         height={300}
                         graphColor="#b1c4f5"
                     />
                 ) : (
-                    <ErrorComponent height={300}/>
+                    <ErrorComponent />
                 )}
             </motion.div>
 
@@ -122,7 +184,10 @@ const MessageFrequencyChart: React.FC<MessageFrequencyChartProps> = ({
                     <Modal 
                         closeModal={() => setIsModalOpen(false)} 
                         messageFrequency={transformedData} 
-                        width={width} 
+                        width={width}
+                        viewType={viewType}
+                        onViewTypeChange={setViewType}
+                        isLoading={isLoading}
                     />
                 )}
             </AnimatePresence>
@@ -134,9 +199,12 @@ interface ModalProps {
     closeModal: () => void;
     messageFrequency: TimelineDataDto[];
     width: number;
+    viewType: ViewType;
+    onViewTypeChange: (value: ViewType) => void;
+    isLoading: boolean;
 }
 
-const Modal: React.FC<ModalProps> = ({ closeModal, messageFrequency, width }) => {
+const Modal: React.FC<ModalProps> = ({ closeModal, messageFrequency, width, viewType, onViewTypeChange, isLoading }) => {
     const handleOutsideClick = (event: React.MouseEvent) => {
         if (event.target === event.currentTarget) {
             closeModal();
@@ -171,13 +239,26 @@ const Modal: React.FC<ModalProps> = ({ closeModal, messageFrequency, width }) =>
                         transition={{ delay: 0.2 }}
                         className="flex justify-between items-center mb-6"
                     >
-                        <motion.h2 
-                            className="text-gray-500 text-xl font-bold"
-                            whileHover={{ x: 5 }}
-                            transition={{ type: "spring", stiffness: 300 }}
-                        >
-                            Keywords Activity
-                        </motion.h2>
+                        <div className="flex items-center gap-3">
+                            <motion.h2 
+                                className="text-gray-500 text-xl font-bold"
+                                whileHover={{ x: 5 }}
+                                transition={{ type: "spring", stiffness: 300 }}
+                            >
+                                Message Frequency
+                            </motion.h2>
+                            <Select value={viewType} onValueChange={onViewTypeChange}>
+                                <SelectTrigger className="w-[100px]">
+                                    <SelectValue placeholder="Select view" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                    <SelectItem value="daily">Daily</SelectItem>
+                                    <SelectItem value="weekly">Weekly</SelectItem>
+                                    <SelectItem value="monthly">Monthly</SelectItem>
+                                    <SelectItem value="yearly">Yearly</SelectItem>
+                                </SelectContent>
+                            </Select>
+                        </div>
                         <motion.button
                             whileHover={{ 
                                 scale: 1.1,
@@ -194,8 +275,17 @@ const Modal: React.FC<ModalProps> = ({ closeModal, messageFrequency, width }) =>
                         initial={{ opacity: 0, y: 20 }}
                         animate={{ opacity: 1, y: 0 }}
                         transition={{ delay: 0.3 }}
+                        className="flex justify-center items-center"
                     >
-                        {messageFrequency ? (
+                        {isLoading ? (
+                            <motion.div
+                                initial={{ opacity: 0 }}
+                                animate={{ opacity: 1 }}
+                                className="flex items-center justify-center"
+                            >
+                                <Loader2 className="w-8 h-8 animate-spin text-blue-500" />
+                            </motion.div>
+                        ) : messageFrequency?.length ? (
                             <AreaLineChart
                                 data={messageFrequency}
                                 width={width * 1.5}

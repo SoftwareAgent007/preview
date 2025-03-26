@@ -52,9 +52,9 @@ const MusicMetrics = () => {
   }
 
   const stats = [
-    { label: "Total Plays", ...overview.totalPlays },
-    { label: "Unique Artists", ...overview.uniqueArtists },
-    { label: "Active Listeners", ...overview.activeListeners },
+    { label: "Total Plays", value: overview.totalPlays.current, change: overview.totalPlays.previous, isPositive: overview.totalPlays.isPositive },
+    { label: "Unique Artists", value: overview.uniqueArtists.current, change: overview.uniqueArtists.previous, isPositive: overview.uniqueArtists.isPositive },
+    { label: "Active Listeners", value: overview.activeListeners.current, change: overview.activeListeners.previous, isPositive: overview.activeListeners.isPositive },
   ];
 
   return (
@@ -95,8 +95,8 @@ const MusicMetrics = () => {
                   key={stat.label}
                   index={index}
                   label={stat.label}
-                  value={stat.current}
-                  change={stat.previous}
+                  value={stat.value}
+                  change={stat.change}
                   isPositive={stat.isPositive}
                   tooltipContent={`Statistics for ${stat.label.toLowerCase()}`}
                 />
@@ -126,16 +126,15 @@ const MusicMetrics = () => {
                 </div>
               )}
               
-              <Card className="flex-1 p-6">
-                <span className="text-gray-500 text-lg font-bold mb-4">Genre Preferences</span>
-                {genres?.length > 0 ? (
-                  <GenrePreferencesCard data={genres} />
-                ) : (
+              {genres?.length > 0 ? (
+                <GenrePreferencesCard data={genres} />
+              ) : (
+                <Card className="flex-1 p-6">
                   <div className="flex items-center justify-center h-[200px] text-gray-500">
                     No genre data available
                   </div>
-                )}
-              </Card>
+                </Card>
+              )}
             </>
           )}
         </motion.div>
@@ -161,11 +160,11 @@ const MusicMetrics = () => {
                     <span className="bg-gray-300 bg-opacity-25 text-gray-600 px-[7px] rounded-full cursor-help">?</span>
                   </ClickableTooltip>
                 </div>
-                {hasError(peakHours?.hourlyDistribution) ? (
+                {!peakHours?.hourlyDistribution.length ? (
                   <ErrorComponent />
                 ) : peakHours?.hourlyDistribution?.length > 0 ? (
                   <motion.div variants={item}>
-                    <PeakListeningHoursChart data={peakHours.hourlyDistribution} />
+                    <PeakListeningHoursChart height={500} data={peakHours.hourlyDistribution} />
                   </motion.div>
                 ) : (
                   <div className="flex items-center justify-center h-[200px] text-gray-500">
@@ -176,13 +175,13 @@ const MusicMetrics = () => {
               
               <Card className="flex-1 p-6 flex flex-col">
                 <span className="text-gray-500 text-lg font-bold mb-4">Average Listening Session</span>
-                {hasError(avgSession) ? (
+                {!avgSession?.current ? (
                   <ErrorComponent />
                 ) : avgSession ? (
                   <SessionStatsCard stats={{
                     current: avgSession.current,
                     previous: avgSession.previous,
-                    change: ((avgSession.current - avgSession.previous) / avgSession.previous) * 100,
+                    change: avgSession.change,
                     isPositive: avgSession.isPositive
                   }} />
                 ) : (

@@ -18,6 +18,8 @@ export interface DataSet {
   [key: string]: DataSetItem;
 }
 
+type ViewType = 'daily' | 'weekly' | 'monthly' | 'yearly';
+
 const MultiLayerAreaChart = ({
   datasets,
   width,
@@ -28,6 +30,7 @@ const MultiLayerAreaChart = ({
   animate = true,
   useFullNumbers = true,
   dateFormat = "%m/%d",
+  viewType = 'daily',
 }: {
   datasets: DataSet;
   width: number;
@@ -38,6 +41,7 @@ const MultiLayerAreaChart = ({
   animate?: boolean;
   useFullNumbers?: boolean;
   dateFormat?: string;
+  viewType?: ViewType;
 }) => {
   const svgRef = useRef<SVGSVGElement>(null);
   const [tooltipData, setTooltipData] = useState<{
@@ -86,7 +90,46 @@ const MultiLayerAreaChart = ({
       return;
     }
 
-    const xDomain = d3.extent(allDates) as [Date, Date]; // Type assertion since we've filtered invalid dates
+    const xDomain = d3.extent(allDates) as [Date, Date];
+
+    // Get date format based on view type
+    const getDateFormatForViewType = (viewType: ViewType): string => {
+      switch (viewType) {
+        case 'daily':
+          return "%m/%d";
+        case 'weekly':
+          return "%m/%d";
+        case 'monthly':
+          return "%b %Y";
+        case 'yearly':
+          return "%Y";
+        default:
+          return dateFormat;
+      }
+    };
+
+    // Get tick interval based on view type
+    const getTickIntervalForViewType = (viewType: ViewType, start: Date, end: Date) => {
+      const diffDays = Math.ceil((end.getTime() - start.getTime()) / (1000 * 60 * 60 * 24));
+      
+      switch (viewType) {
+        case 'daily':
+          return diffDays <= 7 ? d3.timeDay.every(1) :
+                 diffDays <= 14 ? d3.timeDay.every(2) :
+                 d3.timeDay.every(Math.ceil(diffDays / 7));
+        case 'weekly':
+          return d3.timeWeek.every(1);
+        case 'monthly':
+          return diffDays <= 365 ? d3.timeMonth.every(1) : d3.timeMonth.every(3);
+        case 'yearly':
+          return d3.timeYear.every(1);
+        default:
+          return d3.timeDay.every(1);
+      }
+    };
+
+    const formatDate = d3.timeFormat(getDateFormatForViewType(viewType));
+    const tickInterval = getTickIntervalForViewType(viewType, xDomain[0], xDomain[1]);
 
     const allCounts = Object.values(datasets).flatMap((dataset) =>
       dataset.data.map((d) => d.count)
@@ -253,16 +296,20 @@ const MultiLayerAreaChart = ({
       });
     }
 
-    // Format the date ticks properly
-    const formatDate = d3.timeFormat(dateFormat);
-
     // Get all unique dates from datasets for x-axis ticks
     const allUniqueDataPoints = new Map<string, Date>();
     Object.values(datasets).forEach(({ data }) => {
       data.forEach((point) => {
-        const dateStr = new Date(point.date).toISOString();
-        if (!allUniqueDataPoints.has(dateStr)) {
-          allUniqueDataPoints.set(dateStr, new Date(point.date));
+        if (!point || !point.date) return;
+        try {
+          const date = new Date(point.date);
+          if (isNaN(date.getTime())) return;
+          const dateStr = date.toISOString();
+          if (!allUniqueDataPoints.has(dateStr)) {
+            allUniqueDataPoints.set(dateStr, date);
+          }
+        } catch (e) {
+          console.warn('Invalid date encountered:', point.date);
         }
       });
     });
@@ -272,17 +319,11 @@ const MultiLayerAreaChart = ({
     );
     
     // X axis with improved formatting and alignment
-    // Use the unique dates for ticks to ensure perfect alignment
     const xAxis = svg.append("g")
       .attr("transform", `translate(0,${chartHeight})`)
       .call(
         d3.axisBottom(x)
-          .tickValues(uniqueDates.length <= 10 
-            ? uniqueDates 
-            : uniqueDates.length > 0 
-              ? d3.timeMonth.every(1)?.range(uniqueDates[0], uniqueDates[uniqueDates.length-1]) || uniqueDates
-              : []
-          )
+          .ticks(tickInterval)
           .tickSize(0)
           .tickPadding(10)
           .tickFormat(d => formatDate(d as Date))
@@ -530,7 +571,7 @@ const MultiLayerAreaChart = ({
           .text(key);
       });
     }
-  }, [datasets, width, height, darkMode, showTooltip, showLegend, animate, useFullNumbers, dateFormat]);
+  }, [datasets, width, height, darkMode, showTooltip, showLegend, animate, useFullNumbers, dateFormat, viewType]);
 
   return (
     <div className="relative">
@@ -584,7 +625,7 @@ const MultiLayerAreaChart = ({
                     className="font-semibold text-sm"
                     style={{ color: item.color }}
                   >
-                    {item.value.toLocaleString()}
+                    {item?.value?.toLocaleString()}
                   </span>
                 </div>
               ))}

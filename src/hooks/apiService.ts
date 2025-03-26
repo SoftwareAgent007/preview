@@ -2,10 +2,10 @@ import { DateRange } from "react-day-picker";
 
 type ApiService<T> = {
   getData: (endpoint: string) => Promise<T>;
-  postData: (endpoint: string, body: any) => Promise<T>;
+  postData: (endpoint: string, body: any, guildId: string) => Promise<T>;
   deleteData: (endpoint: string, guildId: string) => Promise<T>;
-  patchData: (endpoint: string, body: any) => Promise<T>;
-  putData: (endpoint: string, body: any) => Promise<T>;
+  patchData: (endpoint: string, body: any, guildId: string) => Promise<T>;
+  putData: (endpoint: string, body: any, guildId: string) => Promise<T>;
 };
 
 export const DEFAULT_START_DATE = new Date('2024-01-01').toISOString();
@@ -56,10 +56,11 @@ const createApiService = <T>(baseUrl: string): ApiService<T> => {
     return responseInterceptor(response);
   };
 
-  const postData = async (endpoint: string, body: any): Promise<T> => {
+  const postData = async (endpoint: string, body: any, guildId: string): Promise<T> => {
+    console.log( 'endpoint body guildId',endpoint,body,guildId)
     if (!baseUrl) throw new Error("API URL is missing!");
-    console.log("postData", body);
-    const { url, options } = requestInterceptor(`${baseUrl}${endpoint}`, {
+    if (!guildId) throw new Error("guildId is required!");
+    const { url, options } = requestInterceptor(`${baseUrl}${endpoint}?guildId=${guildId}`, {
       method: 'POST',
       body
     });
@@ -68,15 +69,21 @@ const createApiService = <T>(baseUrl: string): ApiService<T> => {
   };
 
   const deleteData = async (endpoint: string, guildId: string): Promise<T> => {
+    console.log( 'endpoint guildId',endpoint,guildId)
+
     if (!baseUrl) throw new Error("API URL is missing!");
+    if (!guildId) throw new Error("guildId is required!");
     const { url, options } = requestInterceptor(`${baseUrl}${endpoint}?guildId=${guildId}`, { method: 'DELETE' });
     const response = await fetch(url, options);
     return responseInterceptor(response);
   };
 
-  const patchData = async (endpoint: string, body: any): Promise<T> => {
+  const patchData = async (endpoint: string, body: any, guildId: string ): Promise<T> => {
+    console.log( 'endpoint body guildId',endpoint,body,guildId)
+
     if (!baseUrl) throw new Error("API URL is missing!");
-    const { url, options } = requestInterceptor(`${baseUrl}${endpoint}`, {
+    if (!guildId) throw new Error("guildId is required!");
+    const { url, options } = requestInterceptor(`${baseUrl}${endpoint}?guildId=${guildId}`, {
       method: 'PATCH',
       body
     });
@@ -84,9 +91,10 @@ const createApiService = <T>(baseUrl: string): ApiService<T> => {
     return responseInterceptor(response);
   };
 
-  const putData = async (endpoint: string, body: any): Promise<T> => {
+  const putData = async (endpoint: string, body: any, guildId: string): Promise<T> => {
     if (!baseUrl) throw new Error("API URL is missing!");
-    const { url, options } = requestInterceptor(`${baseUrl}${endpoint}`, {
+    if (!guildId) throw new Error("guildId is required!");
+    const { url, options } = requestInterceptor(`${baseUrl}${endpoint}?guildId=${guildId}`, {
       method: 'PUT',
       body
     });

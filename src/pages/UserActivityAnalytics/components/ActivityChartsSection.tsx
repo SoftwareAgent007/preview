@@ -1,13 +1,11 @@
-import { motion } from "framer-motion";
 import ActivityCharts from "@/components/charts/userActivityTimeline/expandedUserActivityCharts";
-import { DataSet } from "@/components/common/types/userAnalytic.types";
+import { motion } from "framer-motion";
 
 interface ActivityChartsSectionProps {
-  data: DataSet;
   className?: string;
 }
 
-const ActivityChartsSection = ({ data, className = "" }: ActivityChartsSectionProps) => {
+const ActivityChartsSection = ({ className = "" }: ActivityChartsSectionProps) => {
   return (
     <motion.div 
       className={`flex flex-col items-center gap-6 ${className}`}
@@ -20,7 +18,7 @@ const ActivityChartsSection = ({ data, className = "" }: ActivityChartsSectionPr
         delay: 0.3
       }}
     >
-      <ActivityCharts data={data} className="mb-6"/>
+      <ActivityCharts className="mb-6"/>
     </motion.div>
   );
 };

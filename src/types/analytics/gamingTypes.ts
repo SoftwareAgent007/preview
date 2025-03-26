@@ -18,6 +18,9 @@ export interface GameStats {
   returnRate: number;
   peakHours: PeakHour[];
   weeklyTrends: WeeklyTrend[];
+  playtimeDistribution: PlaytimeDistribution[];
+  topGamers: TopGamer[];
+  timeOfDayBreakdown: TimeOfDayBreakdown[];
 }
 
 export interface ActiveGame {
@@ -58,4 +61,17 @@ export interface GameReport {
   topGamers: TopGamer[];
   weeklyTrends: WeeklyTrend[];
   timeOfDayBreakdown: TimeOfDayBreakdown[];
+}
+interface PaginationWrapper {
+  total: number;
+  currentPage: number;
+  perPage: number;
+  totalPages: number;
+  totalApproved?: number;
+  totalRejected?: number;
+}
+
+export interface PaginatedWrapper<T> {
+  data: T;
+  pagination: PaginationWrapper;
 }

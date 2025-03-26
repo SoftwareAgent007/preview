@@ -69,7 +69,7 @@ export interface MusicDashboardResponse {
   overview: MusicOverviewResponse;
   genres: GenrePreference[];
   topArtists: TopArtist[];
-  peakHours: PeakHoursResponse;
+  peakHours: { hourlyDistribution: number[];}
   avgSession: AverageSessionResponse;
   popularTracks: PopularTrack[];
 }

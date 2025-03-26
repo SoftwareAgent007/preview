@@ -38,7 +38,7 @@ export const BREADCRUMB_PATHS: Record<string, BreadcrumbItem[]> = {
     { label: "User Activity Analytics", path: ROUTES.USER_ACTIVITY },
     {
       label: "Users Detailed Activity Analytics",
-      path: ROUTES.USER_ACTIVITY_DETAILED,
+      path: ROUTES.USER_ACTIVITY,
     },
     { label: "Status" },
   ],
@@ -47,7 +47,7 @@ export const BREADCRUMB_PATHS: Record<string, BreadcrumbItem[]> = {
     { label: "User Activity Analytics", path: ROUTES.USER_ACTIVITY },
     {
       label: "Users Detailed Activity Analytics",
-      path: ROUTES.USER_ACTIVITY_DETAILED,
+      path: ROUTES.USER_ACTIVITY,
     },
     { label: "Gaming" },
   ],
@@ -56,7 +56,7 @@ export const BREADCRUMB_PATHS: Record<string, BreadcrumbItem[]> = {
     { label: "User Activity Analytics", path: ROUTES.USER_ACTIVITY },
     {
       label: "Users Detailed Activity Analytics",
-      path: ROUTES.USER_ACTIVITY_DETAILED,
+      path: ROUTES.USER_ACTIVITY,
     },
     { label: "Presence" },
   ],

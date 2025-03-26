@@ -4,7 +4,6 @@ import { apiService } from "../apiService";
 import { PeakHour } from "@/types/dataTypes";
 
 export const usePeakHours = (
-  guildId: string,
   period: "day" | "week" | "month" | "year" = "year",
   limit: number = 5
 ) => {
@@ -24,7 +23,6 @@ export const usePeakHours = (
   }, [period]);
 
   const requestParams = {
-    guildId,
     startDate: getPeriodStart,
     endDate: new Date().toISOString(),
     limit,
@@ -35,10 +33,10 @@ export const usePeakHours = (
     isLoading,
     error,
   } = useQuery<PeakHour[]>(
-    ["peakHours", guildId, period, limit],
-    () =>
+    ["peakHours", period, limit],
+    (guildId) =>
       apiService.getData(
-        `/presence-activity/peak-hours?guildId=${323644524268093441}&startDate=${requestParams.startDate}&endDate=${requestParams.endDate}&limit=${limit}`
+        `/presence-activity/peak-hours?guildId=${guildId}&startDate=${requestParams.startDate}&endDate=${requestParams.endDate}&limit=${limit}`
       ),
     {
       staleTime: 1000 * 60 * 30,
