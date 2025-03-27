@@ -16,7 +16,7 @@ const KeywordsTable = () => {
     deleteKeyword,
   } = useKeywordsAnalytics(currentPage, pageSize, undefined, searchTerm);
 
-  const { selectedKeywordTimeline = { keywords: [], totalCount: 0 } } = useKeywordTimeline(
+  const { selectedKeywordTimeline = { keywords: [], totalCount: 0 }, isLoading: isTimelineLoading } = useKeywordTimeline(
     searchTerm || undefined
   );
   const { keywords: timelineKeywords, totalCount } = selectedKeywordTimeline;
@@ -26,21 +26,23 @@ const KeywordsTable = () => {
   }
 
   return (
-    <KeywordsDataTableComponent
-      onToggleActive={({keyword}) => toggleKeywordActive.mutateAsync({keyword})}
-      onDelete={(id) => deleteKeyword.mutateAsync({id})}
-      displayedKeywords={timelineKeywords ?? keywordsList ?? []}
-      defaultKeywords={keywordsList ?? []}
-      searchTerm={searchTerm} 
-      setSearchTerm={setSearchTerm} 
-      currentPage={pagination?.currentPage ?? currentPage} 
-      setCurrentPage={setCurrentPage} 
-      totalKeywords={totalCount ?? 0}
-      totalPages={pagination?.totalPages ?? 1}
-      onPageSizeChange={setPageSize}
-      pageSize={pagination?.itemsPerPage ?? pageSize}
-      isLoading={isLoading}
-    />
+    <>
+      <KeywordsDataTableComponent
+        onToggleActive={({keyword}) => toggleKeywordActive.mutateAsync({keyword})}
+        onDelete={(id) => deleteKeyword.mutateAsync({id})}
+        displayedKeywords={timelineKeywords ?? keywordsList ?? []}
+        defaultKeywords={keywordsList ?? []}
+        searchTerm={searchTerm} 
+        setSearchTerm={setSearchTerm} 
+        currentPage={pagination?.currentPage ?? currentPage} 
+        setCurrentPage={setCurrentPage} 
+        totalKeywords={totalCount ?? 0}
+        totalPages={pagination?.totalPages ?? 1}
+        onPageSizeChange={setPageSize}
+        pageSize={pagination?.itemsPerPage ?? pageSize}
+        isLoading={isLoading || isTimelineLoading}
+      />
+    </>
   );
 };
 

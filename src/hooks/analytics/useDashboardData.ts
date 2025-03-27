@@ -20,7 +20,7 @@ interface MessageOverview {
 interface MessageTrend {
   data: {
     date: string;
-    messageCount: number;
+    matchCount: number;
   }[];
 }
 
@@ -172,6 +172,25 @@ export function useActivityTrend(activityType: 'user' | 'spotify' | 'gaming' | '
   );
   return { data, isLoading };
 }
+export function useActivityData(date: Date) {
+  const startDate = new Date(date);
+  startDate.setHours(0, 0, 0, 0);
+  
+  const endDate = new Date(date);
+  endDate.setHours(23, 59, 59, 999);
+
+  const { data, isLoading, error } = useQueryBuilder<ActivityOverview>(
+    ['dashboard-activity', date],
+    (guildId) => `/dashboard/activity?guildId=${guildId}&startDate=${startDate.toISOString()}&endDate=${endDate.toISOString()}`
+  );
+
+  return {
+    hourlyActivity: data?.hourlyActivity,
+    currentActivities: data?.currentActivities,
+    isLoading,
+    error
+  };
+}
 
 export function useDashboardData() {
   const {
@@ -195,13 +214,6 @@ export function useDashboardData() {
   } = useQueryBuilder<KeywordsOverview>(
     ['dashboard-keywords'],
     (guildId, startDate, endDate) => `/dashboard/keywords?guildId=${guildId}&startDate=${startDate}&endDate=${endDate}`
-  );
-
-  const {
-    data: activityData,
-  } = useQueryBuilder<ActivityOverview>(
-    ['dashboard-activity'],
-    (guildId, startDate, endDate) => `/dashboard/activity?guildId=${guildId}&startDate=${startDate}&endDate=${endDate}`
   );
 
   const {
@@ -232,8 +244,6 @@ export function useDashboardData() {
     activeUsers: usersData?.activeUsers,
     totalMessages: messagesData?.totalMessages,
     totalReactions: messagesData?.totalReactions,
-    currentActivities: activityData?.currentActivities,
-    hourlyActivity: activityData?.hourlyActivity,
     topKeywords: keywordsData?.topKeywords,
     topUsers: contributorsData?.topUsers,
     totalGameTime: gamingData?.totalGameTime,
@@ -244,7 +254,6 @@ export function useDashboardData() {
     usersData,
     messagesData,
     keywordsData,
-    activityData,
     gamingData,
     activeUsersData,
     contributorsData,

@@ -19,9 +19,9 @@ const CardSkeleton = ({ width, height }: { width: string; height: string }) => (
 );
 
 const GamingAnalytics = () => {
-  const { activeGames, popularGames, isLoading: statsLoading } = useGamingStats();
+  const { popularGames, isLoading: statsLoading } = useGamingStats();
   const [selectedGame, setSelectedGame] = useState<string>("");
-  const { gameStats, isLoading: gameDetailsLoading } = useGameDetails(selectedGame);
+  const { gameReport, isLoading: gameDetailsLoading } = useGameDetails(selectedGame);
   const { peakHours: gamePeakHours, isLoading: peakHoursLoading } = usePeakHours();
   const { rolesDistribution, isLoading: rolesLoading, error: rolesError } = useRolesDistribution();
   const wrapperRef = useRef<HTMLDivElement | null>(null);
@@ -39,17 +39,19 @@ const GamingAnalytics = () => {
   }, [popularGames]);
 
   const {
-    totalPlayers = 0,
-    avgSessionMinutes = 0,
-    peakPartySize = 0,
-    totalHours = 0,
-    returnRate = 0,
+    basicStats: {
+      totalPlayers = 0,
+      avgSessionMinutes = 0,
+      peakPartySize = 0,
+      totalHours = 0,
+      returnRate = 0,
+      peakHours = gamePeakHours || []
+    } = {},
     weeklyTrends = [],
-    peakHours = gamePeakHours || [],
     playtimeDistribution = [],
     topGamers = [],
     timeOfDayBreakdown = []
-  } = gameStats || {};
+  } = gameReport || {};
 
   useEffect(() => {
     console.log('totalPlayers:', totalPlayers);
@@ -105,10 +107,45 @@ const GamingAnalytics = () => {
 
   // Updated Stats Data with all available fields including returnRate
   const statsData = [
-    { title: "Active Users", value: totalPlayers, subtitle: "Currently active users" },
-    { title: "Avg. Session Time", value: avgSessionMinutes, subtitle: "Average session duration", unit: "min" },
-    { title: "Peak Players", value: peakPartySize, subtitle: "Highest concurrent players" },
-    { title: "Total Game Time", value: totalHours, subtitle: "Total hours played", unit: "hrs" },
+    // { 
+    //   title: "Active Users", 
+    //   value: totalPlayers.toLocaleString(), 
+    //   subtitle: "Currently Online",
+    //   tooltip: "Number of unique players who played this game in the selected time period"
+    // },
+    { 
+      title: "Peak Party Size", 
+      value: peakPartySize.toLocaleString(), 
+      subtitle: "In a single party",
+      tooltip: "Maximum number of players in a single party"
+    },
+    { 
+      title: "Total Players", 
+      value: totalPlayers.toLocaleString(), 
+      subtitle: "Lifetime Unique Players", 
+      unit: "players",
+      tooltip: "Total number of unique players who have played this game"
+    },
+    { 
+      title: "Return Rate", 
+      value: returnRate.toLocaleString(), 
+      subtitle: "Daily Return Percentage", 
+      unit: "%",
+      tooltip: "How many players from the previous day returned to play the same game"
+    },
+    { 
+      title: "Avg. Session Time", 
+      value: Math.floor(avgSessionMinutes / 60) > 0 ? `${Math.floor(avgSessionMinutes / 60)}h ${avgSessionMinutes % 60}m` : `${avgSessionMinutes % 60}m`, 
+      subtitle: "Average Session Duration", 
+      tooltip: "Average time players spend in a single gaming session" 
+    },
+    { 
+      title: "Total Game Time", 
+      value: totalHours.toLocaleString(), 
+      subtitle: "Cumulative Hours Played", 
+      unit: "hrs",
+      tooltip: "Total cumulative hours spent playing this game"
+    },
   ];
 
   return (
@@ -148,19 +185,19 @@ const GamingAnalytics = () => {
         </Card>
 
         {/* Stats Cards */}
-        <motion.div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6 mb-6">
+        <motion.div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-5 gap-4 md:gap-6 mb-6">
           {gameDetailsLoading ? (
             <>
-              {[...Array(4)].map((_, i) => (
-                <Card key={i} className="flex-1 p-6 h-30">
+              {[...Array(5)].map((_, i) => (
+                <Card key={i} className="flex-1 p-6 h-[160px]">
                   <CardSkeleton width="100%" height="120" />
                 </Card>
               ))}
             </>
           ) : (
             <>
-              {statsData.map((stat, index) => (
-                <StatCard key={index} {...stat} index={index} />
+              {statsData.slice(0, 5).map((stat, index) => (
+                <StatCard height="140px" {...stat} index={index} />
               ))}
             </>
           )}

@@ -17,15 +17,6 @@ const DashboardLayout = ({ children }: DashboardLayoutProps) => {
 
   return (
     <div className="flex h-screen overflow-hidden">
-      {/* Menu Toggle Button - Always Visible */}
-      <Button
-        variant="ghost"
-        size="icon"
-        className="fixed top-4 left-4 z-30"
-        onClick={() => setIsSidebarOpen(!isSidebarOpen)}
-      >
-        <Menu className="h-6 w-6" />
-      </Button>
 
       {/* Sidebar with Animation */}
       <AnimatePresence mode="wait">
@@ -86,7 +77,7 @@ const DashboardLayout = ({ children }: DashboardLayoutProps) => {
           '--sidebar-margin': isSidebarOpen ? `${SIDEBAR_WIDTH}px` : '0px'
         } as React.CSSProperties}
       >
-        <Header />
+        <Header isSidebarOpen={isSidebarOpen} setIsSidebarOpen={setIsSidebarOpen} />
         <motion.main 
           className="flex-1 overflow-y-auto bg-gray-50 p-6"
           layout

@@ -3,6 +3,7 @@ import { Button } from "@/components/ui/button";
 import Spinner from '@/components/common/LoadingSpinner';
 import { motion, AnimatePresence } from "framer-motion";
 import ReactDOM from "react-dom";
+import { useKeywordTimeline } from '@/hooks/analytics/useKeywordsAnalytics';
 
 const existingKeywords = ['react', 'typescript', 'javascript'];
 
@@ -16,6 +17,8 @@ const KeywordModal: React.FC<{
   const [debounceTimeout, setDebounceTimeout] = useState<NodeJS.Timeout | null>(null);
   const [isValidKeyword, setIsValidKeyword] = useState(false);
   const [availableMessage, setAvailableMessage] = useState('');
+  const [searchKeyword, setSearchKeyword] = useState('');
+  const { selectedKeywordTimeline, isLoading: isTimelineLoading } = useKeywordTimeline(searchKeyword);
 
   const handleOutsideClick = (e: React.MouseEvent) => {
     if (e.target === e.currentTarget) {
@@ -24,7 +27,10 @@ const KeywordModal: React.FC<{
   };
 
   const checkKeywordExists = (value: string): boolean => {
-    return existingKeywords.includes(value.toLowerCase());
+    const normalizedValue = value.toLowerCase();
+    return selectedKeywordTimeline?.keywords.some(keyword => 
+      keyword.keyword.toLowerCase() === normalizedValue
+    ) ?? false;
   };
 
   const validateKeyword = (value: string): boolean => {
@@ -43,7 +49,10 @@ const KeywordModal: React.FC<{
     }
 
     if (checkKeywordExists(value)) {
-      setError('This keyword already exists');
+      const existingKeyword = selectedKeywordTimeline?.keywords.find(
+        k => k.keyword.toLowerCase() === value.toLowerCase()
+      );
+      setError(`Keyword already exists as "${existingKeyword?.keyword}"`);
       setIsValidKeyword(false);
       setAvailableMessage('');
       return false;
@@ -58,25 +67,32 @@ const KeywordModal: React.FC<{
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const value = e.target.value;
     setKeyword(value);
+    setLoading(true);
     
     if (debounceTimeout) {
       clearTimeout(debounceTimeout);
     }
 
-    setLoading(true);
     const timeout = setTimeout(() => {
       if (value) {
-        validateKeyword(value);
+        setSearchKeyword(value.toLowerCase());
       } else {
         setError('');
         setIsValidKeyword(false);
         setAvailableMessage('');
+        setSearchKeyword('');
       }
       setLoading(false);
     }, 500);
 
     setDebounceTimeout(timeout);
   };
+
+  React.useEffect(() => {
+    if (!isTimelineLoading && searchKeyword) {
+      validateKeyword(searchKeyword);
+    }
+  }, [isTimelineLoading, searchKeyword]);
 
   const handleSubmit = () => {
     if (validateKeyword(keyword)) {
@@ -153,7 +169,7 @@ const KeywordModal: React.FC<{
                   {availableMessage}
                 </motion.p>
               ) : (
-                isValidKeyword && loading ? (
+                (loading || isTimelineLoading) ? (
                   <motion.div
                     key="loading"
                     initial={{ opacity: 0 }}
@@ -192,7 +208,7 @@ const KeywordModal: React.FC<{
               <Button 
                 variant="default"
                 onClick={handleSubmit}
-                disabled={!!error || !keyword}
+                disabled={!!error || !keyword || loading || isTimelineLoading}
               >
                 Add
               </Button>

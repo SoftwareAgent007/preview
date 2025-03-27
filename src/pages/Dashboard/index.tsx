@@ -5,7 +5,7 @@ import BreadcrumbsNavigation from "@/components/common/BreadcrumbsNavigation";
 import ErrorComponent from "@/components/common/errorModel";
 import { Button } from "@/components/ui/button";
 import ListElement from "@/components/ui/list-element";
-import { TimeViewType, useActivityTrend, useDashboardData, useMessageMetrics, useMessageTrend } from "@/hooks/analytics/useDashboardData";
+import { TimeViewType, useActivityData, useActivityTrend, useDashboardData, useMessageMetrics, useMessageTrend } from "@/hooks/analytics/useDashboardData";
 import { BREADCRUMB_PATHS, ROUTES } from "@/routes/routes.constant";
 import { LayoutGroup, motion } from "framer-motion";
 import { Download, Users } from "lucide-react";
@@ -26,8 +26,6 @@ const Dashboard = () => {
     activeUsers,
     totalMessages,
     totalReactions,
-    currentActivities,
-    hourlyActivity,
     topKeywords,
     topUsers,
     totalGameTime,
@@ -42,7 +40,21 @@ const Dashboard = () => {
   const { trend: dailyMessageMetrics, isLoading: isMessageTrendLoading } = useMessageTrend(messageViewType === 'daily' ? TimeViewType.DAY : messageViewType === 'weekly' ? TimeViewType.WEEK : messageViewType === 'monthly' ? TimeViewType.MONTH : TimeViewType.YEAR);
 
   const [graphWidth, setGraphWidth] = useState(0);
+  const [activityDate, setActivityDate] = useState(new Date());
+  const [activityHourlyDate, setActivityHourlyDate] = useState(new Date());
   const wrapperRef = useRef<HTMLDivElement | null>(null);
+
+  const {
+    currentActivities,
+    isLoading: isCurrentActivitiesLoading,
+    error: isCurrentActivitiesError,
+  } = useActivityData(activityDate);
+
+  const {
+    hourlyActivity,
+    isLoading: isHourlyLoading,
+    error: isHourlyError,
+  } = useActivityData(activityHourlyDate);
 
   const updateGraphWidth = () => {
     if (wrapperRef.current) {
@@ -97,7 +109,7 @@ const Dashboard = () => {
     {
       title: "Total Reactions",
       value: totalReactions?.count ?? 0,
-      description: `${totalReactions?.count ?? 0} reactions`,
+      description: `${totalReactions?.count ?? 0} Reactions`,
       trend: totalReactions?.percentChange ?? 0,
       isTrendPositive: (totalReactions?.percentChange ?? 0) > 0,
       tooltipContent: "Total number of reactions made during this period",
@@ -109,7 +121,7 @@ const Dashboard = () => {
     {
       title: "Peak Activity Time",
       value: `${(hourlyActivity?.peakHour ?? 0) > 12 ? (hourlyActivity?.peakHour ?? 0) - 12 : (hourlyActivity?.peakHour ?? 0)}${(hourlyActivity?.peakHour ?? 0) >= 12 ? 'PM' : 'AM'}`,
-      description: `${hourlyActivity?.hourlyDistribution?.[hourlyActivity?.peakHour ?? 0]?.count ?? 0} active users`,
+      description: `${hourlyActivity?.hourlyDistribution?.[hourlyActivity?.peakHour ?? 0]?.count ?? 0} Active Users`,
       trend: hourlyActivity?.peakHourChange?.change ?? 0,
       isTrendPositive: (hourlyActivity?.peakHourChange?.change ?? 0) > 0,
       trendUnit: "%",
@@ -118,8 +130,8 @@ const Dashboard = () => {
     },
     {
       title: "Total Game Time",
-      value: `${(totalGameTime?.hours ?? 0) / 100}h`,
-      description: "hours played", 
+      value: `${((totalGameTime?.hours ?? 0) / 100).toLocaleString()}h`,
+      description: "Hours Played", 
       trend: parseInt(totalGameTime?.hourChange ?? "0"),
       isTrendPositive: totalGameTime?.hourChange?.startsWith('+') ?? false,
       trendUnit: "h",
@@ -128,8 +140,8 @@ const Dashboard = () => {
     },
     {
       title: "Active Listeners",
-      value: activeListeners?.count ?? 0,
-      description: "currently listening",
+      value: (activeListeners?.count ?? 0).toLocaleString(),
+      description: "Currently Listening",
       trend: activeListeners?.percentChange ?? 0,
       isTrendPositive: (activeListeners?.percentChange ?? 0) > 0,
       trendUnit: "%",
@@ -138,8 +150,8 @@ const Dashboard = () => {
     },
     {
       title: "Keywords",
-      value: topKeywords?.length ?? 0,
-      description: `${topKeywords?.length ?? 0} active`,
+      value: (topKeywords?.length ?? 0).toLocaleString(),
+      description: `${(topKeywords?.length ?? 0).toLocaleString()} Active`,
       trend: 0,
       isTrendPositive: true,
       trendUnit: "%",
@@ -227,16 +239,16 @@ const Dashboard = () => {
               index={0}
               className="w-full md:w-[35%]"
             >
-              {isLoading ? (
+              {isCurrentActivitiesLoading ? (
                 <CardSkeleton width="100%" height="200px" />
-              ) : hasError(currentActivities) ? (
+              ) : isCurrentActivitiesError ? (
                 <ErrorComponent />
               ) : (
                 <>
                   <ListElement
                     logo={<Users className="w-8 h-8 text-gray-600" />}
                     title="Active Gamers"
-                    description={`${currentActivities?.activeGamers?.count ?? 0} ${currentActivities?.activeGamers?.label ?? 'users'}`}
+                    description={`${currentActivities?.activeGamers?.count ?? 0} ${currentActivities?.activeGamers?.label ?? 'Users'}`}
                   />
                   <ListElement
                     logo={
@@ -247,7 +259,7 @@ const Dashboard = () => {
                       />
                     }
                     title="Spotify Listeners"
-                    description={`${currentActivities?.spotifyListeners?.count ?? 0} ${currentActivities?.spotifyListeners?.label ?? 'users'}`}
+                    description={`${currentActivities?.spotifyListeners?.count ?? 0} ${currentActivities?.spotifyListeners?.label ?? 'Users'}`}
                   />
                 </>
               )}
@@ -276,7 +288,7 @@ const Dashboard = () => {
                     key={index}
                     logo={<span className="text-gray-600 text-3xl">#</span>}
                     title={keyword.keyword}
-                    description={`${keyword.matches} matches`}
+                    description={`${keyword.matches} Matches`}
                   />
                 ))
               )}
@@ -306,7 +318,7 @@ const Dashboard = () => {
                     key={index}
                     logo={<Users className="w-8 h-8 text-gray-600" />}
                     title={user.username}
-                    description={`${user.messages} messages`}
+                    description={`${user.messages} Messages`}
                   />
                 ))
               )}
@@ -321,17 +333,14 @@ const Dashboard = () => {
               index={0}
               className="flex-1"
             >
-              {isLoading ? (
-                <CardSkeleton width="100%" height="500px" />
-              ) : hasError(hourlyActivity) ? (
-                <ErrorComponent />
-              ) : (
-                <HorizontalBarChart
-                  data={hourlyActivity?.hourlyDistribution ?? []}
-                  height={500}
-                  width={600}
-                />
-              )}
+              <HorizontalBarChart
+                data={hourlyActivity?.hourlyDistribution ?? []}
+                height={500}
+                width={600}
+                isLoading={isHourlyLoading}
+                isError={!!isHourlyError}
+                onDateChange={setActivityHourlyDate}
+              />
             </ChartCard>
             <div className="flex-1 grid grid-cols-2 gap-6 h-fit">
               {isLoading ? (

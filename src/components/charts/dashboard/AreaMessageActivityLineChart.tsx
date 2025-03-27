@@ -31,7 +31,7 @@ const AreaMessageActivityLineChart: React.FC<AreaMessageActivityLineChartProps> 
   animate = true,
   darkMode = false
 }) => {
-  
+
   const svgRef = useRef<SVGSVGElement>(null);
   const tooltipRef = useRef<HTMLDivElement>(null);
   const [hoveredData, setHoveredData] = useState<DataPoint | null>(null);
@@ -379,9 +379,9 @@ const AreaMessageActivityLineChart: React.FC<AreaMessageActivityLineChartProps> 
               className="w-3 h-3 rounded-full" 
               style={{ backgroundColor: graphColor }}
             ></div>
-            {/* <span className="font-semibold" style={{ color: graphColor }}>
-              {hoveredData.activeUsers.toLocaleString()}
-            </span> */}
+            <span className="font-semibold" style={{ color: graphColor }}>
+              {hoveredData.count.toLocaleString()}
+            </span>
           </div>
         </motion.div>
       )}

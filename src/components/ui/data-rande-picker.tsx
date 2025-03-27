@@ -18,6 +18,7 @@ interface DatePickerWithRangeProps {
   onChange?: (date: DateRange) => void
   className?: string
   onClose?: () => void
+  disabledDays?: any
 }
 
 export function DatePickerWithRange({
@@ -25,6 +26,7 @@ export function DatePickerWithRange({
   value,
   onChange,
   onClose,
+  disabledDays,
 }: DatePickerWithRangeProps) {
   const [date, setDate] = React.useState<DateRange>(value)
   const queryClient = useQueryClient()
@@ -77,6 +79,7 @@ export function DatePickerWithRange({
             selected={date}
             onSelect={handleDateChange}
             numberOfMonths={2}
+            disabled={disabledDays}
             className="[&_.rdp-day_button[aria-selected]]:bg-primary [&_.rdp-day_button[aria-selected]]:text-primary-foreground bg-white"
           />
         </PopoverContent>

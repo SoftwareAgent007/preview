@@ -38,7 +38,6 @@ interface ActivityChartsSectionProps {
   data: {
     hourlyActivity: ChartData;
     statusBreakdown: ChartData;
-    activeGames: ChartData;
     popularGames: ChartData;
   };
   className?: string;
@@ -54,7 +53,7 @@ interface ActivityStatCardProps {
   title: string;
   value: string | number;
   isPositive: boolean;
-  trend?: number;
+  tooltip: string;
 }
 
 interface Role {
@@ -67,8 +66,9 @@ interface Role {
 interface RolesSectionProps {
   roles: Role[];
 }
-
 const DeviceUsageTable = ({ data }: { data: { deviceType: string; percentage: number }[] }) => {
+  const sortedData = [...data].sort((a, b) => b.percentage - a.percentage);
+
   return (
     <Card className="p-4">
       <Table>
@@ -80,10 +80,24 @@ const DeviceUsageTable = ({ data }: { data: { deviceType: string; percentage: nu
           </TableRow>
         </TableHeader>
         <TableBody>
-          {data?.map((device, index) => (
-            <TableRow key={index}>
-              <TableCell>{device.deviceType}</TableCell>
+          {sortedData?.map((device, index) => (
+            <TableRow key={index} className="relative">
+              <TableCell>{device.deviceType.charAt(0).toUpperCase() + device.deviceType.slice(1)}</TableCell>
               <TableCell className="text-right">{device.percentage}%</TableCell>
+              <motion.div
+                className="absolute bottom-0 left-0 h-1 bg-blue-500 rounded-full"
+                initial={{ width: 0 }}
+                animate={{ width: `${device.percentage}%` }}
+                transition={{ duration: 0.5 }}
+              />
+              <motion.div
+                className="absolute left-0 -top-8 bg-black text-white px-2 py-1 rounded opacity-0 pointer-events-none"
+                initial={{ opacity: 0 }}
+                whileHover={{ opacity: 1 }}
+                transition={{ duration: 0.2 }}
+              >
+                {device.deviceType}: {device.percentage}% of total usage
+              </motion.div>
             </TableRow>
           ))}
         </TableBody>
@@ -101,7 +115,7 @@ const CardSkeleton = ({ width, height }: { width: string; height: string }) => (
 
 const UserActivityAnalytics = () => {
   // Gaming analytics data
-  const { activeGames, popularGames, isLoading: gamingLoading, error: gamingError } = useGamingStats({ page: 1, limit: 10 });
+  const { popularGames, isLoading: gamingLoading, error: gamingError } = useGamingStats({ page: 1, limit: 10 });
   
   // Presence activity data
   const { 
@@ -114,15 +128,21 @@ const UserActivityAnalytics = () => {
     error: presenceError 
   } = usePresenceActivity();
 
-  // Dashboard data
-  const { isLoading: dashboardLoading, error: dashboardError } = useDashboardData();
 
   // Loading and error states
-  const isLoading = gamingLoading || presenceLoading || dashboardLoading;
-  const error = gamingError || presenceError || dashboardError;
+  const isLoading = gamingLoading || presenceLoading;
+  const error = gamingError || presenceError;
 
   // Data validation
   const hasValidData = overview && Object.keys(overview).length > 0;
+  
+  const formatDuration = (hours?: number, minutes?: number): string => {
+    if (hours === undefined && minutes === undefined) return 'N/A';
+    if (hours === 0 && minutes === 0) return '0m';
+    if (hours === 0) return `${minutes}m`;
+    if (minutes === 0) return `${hours}h`;
+    return `${hours}h ${minutes}m`;
+  };
 
   // Animation variants
   const container = {
@@ -138,35 +158,38 @@ const UserActivityAnalytics = () => {
   // Stats data
   const statsData = hasValidData ? [
     {
-      title: "Peak Activity Time",
+      title: "Peak Activity Time", 
       value: hourlyActivity?.peakHour
         ? `${String(hourlyActivity.peakHour).padStart(2, '0')}:00`
         : peakHours?.length > 0
           ? `${String(peakHours.reduce((max, curr) => 
               curr.users > max.users ? curr : max
             ).hour).padStart(2, '0')}:00`
-          : "No data",
-      trend: 0,
+          : "No Data",
+      tooltip: "The hour of the day when user activity reaches its highest point",
     },
     {
       title: "Online Users",
-      value: overview?.activeUsers?.count || "No data",
+      value: (overview?.activeUsers?.count ?? 0).toLocaleString(),
       isPositive: true,
-      trend: 0,
+      tooltip: "Total number of users currently online and active on the server",
     },
     {
       title: "Avg Session Time",
       value: overview?.totalPresenceTime?.hours 
-        ? `${(overview.totalPresenceTime.hours / 100 / overview?.activeUsers?.count).toFixed(2)}h ${overview.totalPresenceTime.minutes || 0}m`
-        : "No data",
+        ? formatDuration(
+            Math.floor(overview.totalPresenceTime.hours / overview.activeUsers.count),
+            Math.floor((overview.totalPresenceTime.hours / overview.activeUsers.count % 1) * 60)
+          )
+        : "No Data",
       isPositive: true,
-      trend: 0,
+      tooltip: "Average time users spend connected in a single session",
     },
     {
-      title: "Active Games (now)",
-      value: activeGames?.length || "No data",
+      title: "Active Games (Now)",
+      value: (popularGames?.length ?? 0).toLocaleString(),
       isPositive: true,
-      trend: 0,
+      tooltip: "Number of different games currently being played by server members",
     }
   ] : [];
 
@@ -213,9 +236,9 @@ const UserActivityAnalytics = () => {
       label: "Offline",
     },
     activeGames: {
-      data: activeGames?.map(game => ({
+      data: popularGames?.map(game => ({
         date: game.gameName,
-        count: game.playerCount,
+        count: game.uniquePlayers,
       })) || [],
       color: "#8B5CF6",
       label: "Active Games",
@@ -291,29 +314,45 @@ const UserActivityAnalytics = () => {
 
         <div className="flex flex-col lg:flex-row gap-6 mb-10">
           {/* Stats Grid */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 md:gap-6 flex-1">
-            {isLoading ? (
-              [...Array(6)].map((_, i) => (
-                <Card key={i} className="flex-1 p-6">
-                  <CardSkeleton width="100%" height="100px" />
+          <div className="grid grid-cols-1 gap-4 md:gap-6 flex-1">          
+            <div className="flex flex-col gap-3 w-full left-col">
+              {isLoading ? (
+                [...Array(4)].map((_, i) => (
+                  <Card key={i} className="w-full p-6">
+                    <CardSkeleton width="100%" height="60px" />
+                  </Card>
+                ))
+              ) : hasValidData ? (
+                <>
+                  {statsData.map((stat, index) => (
+                    <ActivityStatCard
+                      key={index}
+                      {...stat}
+                      index={index}
+                    />
+                  ))}
+                </>
+              ) : (
+                <ErrorComponent 
+                  title="Stats Data Error" 
+                  message={(error as ErrorType)?.message || "Failed to load statistics"}
+                />
+              )}
+            </div>
+
+            <div className="w-full col-span-1 pr-2">
+              {presenceLoading ? (
+                <Card className="p-4">
+                  <CardSkeleton width="100%" height="200px" />
                 </Card>
-              ))
-            ) : hasValidData ? (
-              <>
-                {statsData.map((stat, index) => (
-                  <ActivityStatCard
-                    key={index}
-                    {...stat}
-                    index={index}
-                  />
-                ))}
-              </>
-            ) : (
-              <ErrorComponent 
-                title="Stats Data Error" 
-                message={(error as ErrorType)?.message || "Failed to load statistics"}
-              />
-            )}
+              ) : deviceUsage?.length > 0 ? (
+                <DeviceUsageTable data={deviceUsage} />
+              ) : (
+                <Card className="p-4">
+                  <p className="text-center text-gray-500">No device usage data available</p>
+                </Card>
+              )}
+            </div>
           </div>
 
           <div className="flex-1">
@@ -331,21 +370,6 @@ const UserActivityAnalytics = () => {
             )}
           </div>
         </div>
-        
-        <div className="col-span-1 w-1/2 pr-2">
-            {presenceLoading ? (
-              <Card className="p-4">
-                <CardSkeleton width="100%" height="200px" />
-              </Card>
-            ) : deviceUsage?.length > 0 ? (
-              <DeviceUsageTable data={deviceUsage} />
-            ) : (
-              <Card className="p-4">
-                <p className="text-center text-gray-500">No device usage data available</p>
-              </Card>
-            )}
-          </div>
-
       </div>
     </motion.div>
   );

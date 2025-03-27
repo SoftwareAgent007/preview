@@ -64,24 +64,7 @@ const KeywordsMatchesTimeline: React.FC<MessageFrequencyChartProps> = ({
     const [isModalOpen, setIsModalOpen] = useState(false);
     const { selectedPeriod } = useContext(DashboardContext);
 
-    // Calculate default view type based on date range
-    const getDefaultViewType = (): ViewType => {
-        if (!selectedPeriod?.to || !selectedPeriod?.from) return "day";
-
-        const diffDays =
-            Math.abs(
-                new Date(selectedPeriod.to).getTime() -
-                    new Date(selectedPeriod.from).getTime()
-            ) /
-            (1000 * 60 * 60 * 24);
-
-        if (diffDays <= 30) return "day";
-        if (diffDays <= 90) return "week";
-        if (diffDays <= 365) return "month";
-        return "year";
-    };
-
-    const [viewType, setViewType] = useState<ViewType>(getDefaultViewType());
+    const [viewType, setViewType] = useState<ViewType>("day");
 
     const { trendData, isTrendLoading } = useKeywordTrend(
         selectedKeyword,

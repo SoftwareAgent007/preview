@@ -19,41 +19,76 @@ interface PaginatedResponse<T> {
   page: number;
   limit: number;
 }
+interface PeakHour {
+  hour: number;
+  playerCount: number;
+}
+
+interface BasicStats {
+  totalPlayers: number;
+  totalHours: number;
+  avgSessionMinutes: number;
+  peakPartySize: number;
+  returnRate: number;
+  peakHours: PeakHour[];
+}
+
+interface PlaytimeDistribution {
+  rangeLabel: string;
+  userCount: number;
+  percentage: number;
+}
+
+interface TopGamer {
+  userId: string;
+  hoursPlayed: number;
+  sessionCount: number;
+}
+
+interface WeeklyTrend {
+  weekStartDate: string;
+  totalUsers: number;
+  totalHours: number;
+  avgSessionMinutes: number;
+}
+
+interface TimeOfDayBreakdown {
+  timeBlock: string;
+  userCount: number;
+  percentOfTotal: number;
+}
+
+interface PeakConcurrentUsers {
+  date: string;
+  hour: number;
+  userCount: number;
+}
+
+interface GameStatsResponse {
+  basicStats: BasicStats;
+  playtimeDistribution: PlaytimeDistribution[];
+  topGamers: TopGamer[];
+  weeklyTrends: WeeklyTrend[];
+  timeOfDayBreakdown: TimeOfDayBreakdown[];
+  peakConcurrentUsers: PeakConcurrentUsers;
+}
 
 export const useGameDetails = (gameName: string) => {
-  const { data: gameStats, isLoading: statsLoading, error: statsError } = useQueryBuilder<GameStats>(
-    ['gameStats', gameName],
-    (guildId, startDate, endDate) => 
-      `/games/${encodeURIComponent(gameName)}/stats?guildId=${guildId}&startDate=${startDate}&endDate=${endDate}`
-  );
-
-  const { data: gameReport, isLoading: reportLoading, error: reportError } = useQueryBuilder<GameReport>(
+  const { data: gameReport, isLoading: reportLoading, error: reportError } = useQueryBuilder<GameStatsResponse>(
     ['gameReport', gameName],
     (guildId, startDate, endDate) => 
       `/games/${encodeURIComponent(gameName)}/report?guildId=${guildId}&startDate=${startDate}&endDate=${endDate}`
   );
 
-  const stats = useMemo(() => ({
-    gameStats: gameStats || {} as GameStats,
-    gameReport: gameReport || {} as GameReport,
-  }), [gameStats, gameReport]);
-
   return {
-    ...stats,
-    isLoading: statsLoading || reportLoading,
-    error: statsError || reportError,
+    gameReport,
+    isLoading: reportLoading,
+    error: reportError,
   };
 };
 
 export const useGamingStats = (paginationParams?: PaginatedParams) => {
   const { page = 1, limit = 10 } = paginationParams || {};
-
-
-  const { data: activeGames, isLoading: activeGamesLoading, error: activeGamesError } = useQueryBuilder<PaginatedResponse<ActiveGame[]>>(
-    ['activeGames', page, limit], 
-    (guildId, startDate, endDate) =>
-      `/games?guildId=${guildId}&startDate=${startDate}&endDate=${endDate}&page=${page}&limit=${limit}`
-  );
 
   const { data: popularGames, isLoading: popularGamesLoading, error: popularGamesError } = useQueryBuilder<PaginatedResponse<PopularGame[]>>(
     ['popularGames', page, limit],
@@ -62,26 +97,20 @@ export const useGamingStats = (paginationParams?: PaginatedParams) => {
   );
 
   const stats = useMemo(() => ({
-    activeGames: activeGames?.data || [] as ActiveGame[],
     popularGames: popularGames?.data || [] as PopularGame[],
     pagination: {
-      activeGames: {
-        total: activeGames?.total || 0,
-        page: activeGames?.page || page,
-        limit: activeGames?.limit || limit,
-      },
       popularGames: {
         total: popularGames?.total || 0,
         page: popularGames?.page || page,
         limit: popularGames?.limit || limit,
       }
     }
-  }), [activeGames, popularGames, page, limit]);
+  }), [popularGames, page, limit]);
 
   return {
     ...stats,
-    isLoading: activeGamesLoading || popularGamesLoading,
-    error: activeGamesError || popularGamesError,
+    isLoading: popularGamesLoading,
+    error: popularGamesError,
   };
 };
 

@@ -1,18 +1,18 @@
 import PresenceWeekActivityChart from "@/components/charts/userActivityTimeline/presenceActivityChart/userPresenceWeekActivityChart";
 import { motion } from "framer-motion";
-import { useRef, useMemo } from "react";
+import { useRef, useMemo, useState } from "react";
 import ActiveStatusChart from "./components/ActiveStatusChart";
-import HourlyActivity from "./components/HourlyActivity";
 import PeakActivityHours from "./components/PeakActivityHours";
 import StatCard from "./components/StatCard";
 import { usePresenceActivity } from "@/hooks/analytics/usePresenceAnalytics";
 import ErrorComponent from "@/components/common/errorModel";
 import ContentLoader from "react-content-loader";
-import { Info } from "lucide-react";
+import { Info, Loader2 } from "lucide-react";
 import { ClickableTooltip } from "@/components/ui/tooltip";
 import HorizontalBarChart from "@/components/charts/hourActivity/HorizontalBarChart";
-import { useDashboardData } from "@/hooks/analytics/useDashboardData";
+import { useActivityData, useDashboardData } from "@/hooks/analytics/useDashboardData";
 import ChartCard from "@/pages/Dashboard/components/ChartCard";
+import { Card } from "@/components/ui/card";
 
 // Skeleton loader for cards
 const CardSkeleton = ({ width, height }: { width: string; height: string }) => (
@@ -32,14 +32,16 @@ const PresenceAnalytics = () => {
     error 
   } = usePresenceActivity("week");
 
+  const wrapperRef = useRef<HTMLDivElement | null>(null);
+  const hasErrors = useMemo(() => Boolean(error), [error]);
+  const [activityHourlyDate, setActivityHourlyDate] = useState(new Date());
+
   const {
     hourlyActivity,
     isLoading: isHourlyLoading,
     error: isHourlyError  
-  } = useDashboardData();
+  } = useActivityData(activityHourlyDate);
 
-  const wrapperRef = useRef<HTMLDivElement | null>(null);
-  const hasErrors = useMemo(() => Boolean(error), [error]);
 
   const containerVariants = {
     hidden: { opacity: 0 },
@@ -71,7 +73,7 @@ const PresenceAnalytics = () => {
         const remainingMinutes = minutes % 60;
         if (hours === 0) return `${remainingMinutes}m`;
         if (remainingMinutes === 0) return `${hours}h`;
-        return `${hours}h ${remainingMinutes}m`;
+        return hours === 0 ? `${remainingMinutes}m` : `${hours}h ${remainingMinutes}m`;
       }
     },
     { 
@@ -89,9 +91,9 @@ const PresenceAnalytics = () => {
         if (hours >= 24) {
           const days = Math.floor(hours / 24);
           const remainingHours = hours % 24;
-          return `${days}d ${remainingHours}h`;
+          return `${days.toLocaleString()}d ${remainingHours.toLocaleString()}h`;
         }
-        return `${hours}h`;
+        return `${hours.toLocaleString()}h`;
       }
     },
   ];
@@ -157,8 +159,25 @@ const PresenceAnalytics = () => {
                       title={
                         <div className="flex items-center gap-2">
                           {stat.title}
-                          <ClickableTooltip content={stat.tooltip}>
-                            <Info className="w-4 h-4 text-gray-500" />
+                          <ClickableTooltip content={
+                            <motion.p
+                              initial={{ opacity: 0, y: 5 }}
+                              animate={{ opacity: 1, y: 0 }}
+                              transition={{ duration: 0.2 }}
+                            >
+                              {stat.tooltip}
+                            </motion.p>
+                          }>
+                            <motion.span
+                              className="bg-gray-300 bg-opacity-25 text-gray-600 px-[7px] rounded-full cursor-help"
+                              whileHover={{
+                                scale: 1.1,
+                                backgroundColor: "rgba(209, 213, 219, 0.4)",
+                              }}
+                              whileTap={{ scale: 0.95 }}
+                            >
+                              ?
+                            </motion.span>
                           </ClickableTooltip>
                         </div>
                       }
@@ -180,7 +199,13 @@ const PresenceAnalytics = () => {
           <motion.div variants={itemVariants}>
             {isLoading ? (
               <CardSkeleton width="100%" height="250" />
-            ) : hourlyActivity.statusDistribution ? (
+            ) : isHourlyLoading ? (
+              <Card className="p-6">
+                <div className="flex items-center justify-center h-[470px]">
+                  <Loader2 className="w-8 h-8 animate-spin text-blue-500" />
+                </div>
+              </Card>
+            ) : hourlyActivity?.statusDistribution ? (
               <PresenceWeekActivityChart data={hourlyActivity.statusDistribution} />
             ) : (
               <ErrorComponent message="Weekly activity data unavailable" />
@@ -203,24 +228,23 @@ const PresenceAnalytics = () => {
             <ErrorComponent message="Peak hours data unavailable" />
           )}
 
-          {isLoading || isHourlyLoading ? (
+          {isLoading ? (
             <CardSkeleton width="100%" height="500px" />
           ) : (
             <ChartCard
               title="Hourly Activity"
               tooltipContent="Displays the number of users at different hours of the day"
               index={0}
-              className="flex-1"
+              className="flex-1]"
             >
-              {isHourlyError ? (
-                <ErrorComponent />
-              ) : (
-                <HorizontalBarChart
-                  data={hourlyActivity?.hourlyDistribution ?? []}
-                  height={500}
-                  width={600}
-                />
-              )}
+              <HorizontalBarChart
+                data={hourlyActivity?.hourlyDistribution ?? []}
+                height={500}
+                width={600}
+                isLoading={isHourlyLoading}
+                isError={!!isHourlyError}
+                onDateChange={setActivityHourlyDate}
+              />
             </ChartCard>
           )}
         </div>

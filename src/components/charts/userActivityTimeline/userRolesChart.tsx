@@ -12,19 +12,22 @@ const RolesChart = ({ width, data }: { width?: number, data: { roleName: string,
     const [chartHeight, setChartHeight] = useState(300);
     const [isModalOpen, setIsModalOpen] = useState(false);
 
-    const MIN_CHART_SIZE = 580; // Minimum size for chart
+    const MIN_CHART_SIZE = 400; // Reduced from 580
+    const MAX_CHART_SIZE = 500;
 
     const updateChartDimensions = () => {
         if (chartRef.current) {
             const containerWidth = chartRef.current.offsetWidth;
+            const screenWidth = window.innerWidth;
             
-            // Keep minimum size while adjusting layout
-            if (containerWidth < MIN_CHART_SIZE) {
-                setChartWidth(MIN_CHART_SIZE);
-                setChartHeight(MIN_CHART_SIZE);
+            if (screenWidth < 1300) {
+                // For smaller screens, use a more compact size
+                const size = Math.max(MIN_CHART_SIZE, Math.min(containerWidth * 0.5, MAX_CHART_SIZE));
+                setChartWidth(size);
+                setChartHeight(size);
             } else {
-                // For larger screens, chart can grow proportionally
-                const size = Math.min(containerWidth * 0.7, 500);
+                // For larger screens, maintain original proportions
+                const size = Math.min(containerWidth * 0.7, MAX_CHART_SIZE);
                 setChartWidth(size);
                 setChartHeight(size);
             }

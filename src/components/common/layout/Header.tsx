@@ -15,20 +15,25 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { LogOut, Search, SwitchCamera } from "lucide-react";
+import { LogOut, Search, SwitchCamera, Menu } from "lucide-react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { DatePickerWithRange } from "../../ui/data-rande-picker";
 import { BREADCRUMB_PATHS, ROUTES } from "@/routes/routes.constant";
 import { useAuth } from "@/contexts/AuthContext";
 import { useDashboardContext } from "@/common/context/queryContext";
 import { DEFAULT_DATE_RANGE } from "@/hooks/apiService";
+import { useQueryClient } from "react-query";
 
-const Header = () => {
+const Header = ({ isSidebarOpen, setIsSidebarOpen }: { 
+  isSidebarOpen: boolean;
+  setIsSidebarOpen: (open: boolean) => void;
+}) => {
   const location = useLocation();
   const navigate = useNavigate();
   const { logout } = useAuth();
   const [isUserMenuOpen, setIsUserMenuOpen] = useState(false);
   const { selectedPeriod, guildId, setSelectedPeriod, setGuildId } = useDashboardContext();
+  const queryClient = useQueryClient();
 
   const getCurrentTitle = (pathname: string) => {
     if (
@@ -50,6 +55,11 @@ const Header = () => {
     navigate(ROUTES.LOGIN);
   };
 
+  const handleDatePickerClose = () => {
+    queryClient.invalidateQueries();
+    console.log('DatePicker closed');
+  };
+
   return (
     <motion.header
       className="w-full border-b backdrop-blur bg-white"
@@ -61,6 +71,13 @@ const Header = () => {
         <div className="flex h-16 items-center px-4 justify-between">
           {/* Left Section */}
           <div className="flex items-center space-x-6">
+            <Button
+              size="icon"
+              variant="ghost"
+              onClick={() => setIsSidebarOpen(!isSidebarOpen)}
+            >
+              <Menu className="h-6 w-6" />
+            </Button>
             <h2
               className={`font-bold transition-all ${
                 currentTitle.length > 29 ? "text-xl" : "text-2xl"
@@ -71,14 +88,13 @@ const Header = () => {
 
             <div className="hidden xl:flex items-center space-x-4">
               <DatePickerWithRange 
-                value={selectedPeriod}
-                onClose={() => {
-                  console.log('DatePicker closed');
-                }}
+                value={selectedPeriod || DEFAULT_DATE_RANGE}
+                onClose={handleDatePickerClose}
                 onChange={(period) => {
                   console.log('DatePicker period changed:', period);
                   setSelectedPeriod && period && setSelectedPeriod(period);
                 }}
+                disabledDays={{ after: new Date() }}
               />
               
               {/* <Select value={guildId} onValueChange={(id) => setGuildId && setGuildId(id)}>
@@ -134,14 +150,13 @@ const Header = () => {
         <div className="xl:hidden p-4 space-y-4">
           <div className="flex space-x-4">
             <DatePickerWithRange 
-              value={selectedPeriod}
-              onClose={() => {
-                console.log('DatePicker closed');
-              }}
+              value={selectedPeriod || DEFAULT_DATE_RANGE}
+              onClose={handleDatePickerClose}
               onChange={(period) => {
                 console.log('DatePicker period changed desk:', period);
                 setSelectedPeriod && period && setSelectedPeriod(period);
               }}
+              disabledDays={{ after: new Date() }}
             />
             <Select value={guildId} onValueChange={(id) => setGuildId && setGuildId(id)}>
               <SelectTrigger>

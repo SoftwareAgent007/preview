@@ -173,17 +173,17 @@ const MusicMetrics = () => {
                 )}
               </BaseCard>
               
-              <Card className="flex-1 p-6 flex flex-col">
+              <Card className="flex-1 p-6 h-[300px] ">
                 <span className="text-gray-500 text-lg font-bold mb-4">Average Listening Session</span>
                 {!avgSession?.current ? (
                   <ErrorComponent />
                 ) : avgSession ? (
-                  <SessionStatsCard stats={{
-                    current: avgSession.current,
-                    previous: avgSession.previous,
-                    change: avgSession.change,
-                    isPositive: avgSession.isPositive
-                  }} />
+                    <SessionStatsCard stats={{
+                      current: avgSession.current,
+                      previous: avgSession.previous,
+                      change: avgSession.change,
+                      isPositive: avgSession.isPositive
+                    }} />
                 ) : (
                   <div className="flex items-center justify-center h-[200px] text-gray-500">
                     No session data available

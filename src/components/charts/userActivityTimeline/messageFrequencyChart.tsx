@@ -82,12 +82,13 @@ const MessageFrequencyChart: React.FC<MessageFrequencyChartProps> = ({
         }
     };
 
-    const transformedData: TimelineDataDto[] = messageFrequency.map(metric => ({
-        date: metric.date,
-        count: metric.matchCount
-    }));
+    const transformData = (messageFrequency: MessageMetric[]): TimelineDataDto[] => {
+        return messageFrequency.map(metric => ({
+            date: metric.date,
+            count: metric.matchCount
+        }));
+    };
 
-    
     return (
         <motion.div 
             className="flex flex-col"
@@ -169,7 +170,7 @@ const MessageFrequencyChart: React.FC<MessageFrequencyChartProps> = ({
                     </motion.div>
                 ) : messageFrequency?.length ? (
                     <AreaMessageActivityLineChart
-                        data={transformedData}
+                        data={transformData(messageFrequency)}
                         width={width} 
                         height={300}
                         graphColor="#b1c4f5"
@@ -183,7 +184,7 @@ const MessageFrequencyChart: React.FC<MessageFrequencyChartProps> = ({
                 {isModalOpen && (
                     <Modal 
                         closeModal={() => setIsModalOpen(false)} 
-                        messageFrequency={transformedData} 
+                        messageFrequency={transformData(messageFrequency)} 
                         width={width}
                         viewType={viewType}
                         onViewTypeChange={setViewType}
@@ -286,7 +287,7 @@ const Modal: React.FC<ModalProps> = ({ closeModal, messageFrequency, width, view
                                 <Loader2 className="w-8 h-8 animate-spin text-blue-500" />
                             </motion.div>
                         ) : messageFrequency?.length ? (
-                            <AreaLineChart
+                            <AreaMessageActivityLineChart
                                 data={messageFrequency}
                                 width={width * 1.5}
                                 height={500}

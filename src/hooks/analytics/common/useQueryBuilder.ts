@@ -23,18 +23,22 @@ export function useQueryBuilder<TData>(
   
   const guildId = defaultContext.guildId;
 
+  const fullQueryKey = [
+    ...queryKey, 
+    selectedPeriod?.from?.toISOString(),
+    selectedPeriod?.to?.toISOString()
+  ];
+
   const queryFn = async (): Promise<TData> => {
     const url = buildUrl(
       guildId,
-      // (selectedPeriod?.from instanceof Date ? selectedPeriod.from.toISOString() : '2024-02-06T21:55:45.854Z'),
-      ('2024-02-06T21:55:45.854Z'),
-      // (selectedPeriod?.to instanceof Date ? selectedPeriod.to.toISOString() : '2026-02-06T21:55:45.854Z')
-      ('2026-02-06T21:55:45.854Z')
+      selectedPeriod?.from?.toISOString() || '',
+      selectedPeriod?.to?.toISOString() || ''
     );
     return apiService.getData(url);
   };
 
-  return useQuery<TData, Error>(queryKey, queryFn, {
+  return useQuery<TData, Error>(fullQueryKey, queryFn, {
     staleTime: 1000 * 60 * 30,
     cacheTime: 1000 * 60 * 30,
     refetchOnWindowFocus: false,

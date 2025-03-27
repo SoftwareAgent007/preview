@@ -107,7 +107,7 @@ const KeywordsAnalytics = () => {
       index: 0,
       title: "Keywords",
       value: totalKeywords || 0,
-      subValue: { label: "active", value: activeKeywords || 0 },
+      subValue: { label: "Active", value: activeKeywords || 0 },
       tooltipContent: "Total number of keywords in the system"
     },
     {

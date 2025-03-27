@@ -29,6 +29,10 @@ const HorizontalBarChartRelatedGenres: React.FC<HorizontalBarChartRelatedGenresP
   const backgroundBarsRef = useRef<d3.Selection<any, DataPoint, any, unknown> | null>(null);
   const tooltipRef = useRef<HTMLDivElement | null>(null);
 
+  const capitalizeGenre = (genre: string) => {
+    return genre.split(' ').map(word => word.charAt(0).toUpperCase() + word.slice(1)).join(' ');
+  };
+
   // Update dimensions on resize
   useEffect(() => {
     const updateDimensions = () => {
@@ -190,10 +194,11 @@ const HorizontalBarChartRelatedGenres: React.FC<HorizontalBarChartRelatedGenresP
     // Add x-axis label
     g.append("text")
       .attr("x", chartWidth / 2)
-      .attr("y", chartHeight + margin.bottom )
+      .attr("y", chartHeight + margin.bottom + 10)
       .attr("text-anchor", "middle")
-      .attr("fill", darkMode ? "rgba(255, 255, 255, 0.7)" : "rgba(0, 0, 0, 0.7)")
-      .attr("font-size", "12px")
+      .attr("fill", darkMode ? "rgba(255, 255, 255, 0.5)" : "rgba(0, 0, 0, 0.5)")
+      .attr("font-size", "14px")
+      .attr("font-weight", "500")
       .text("Listening Count");
 
     // Add background bars
@@ -231,8 +236,8 @@ const HorizontalBarChartRelatedGenres: React.FC<HorizontalBarChartRelatedGenresP
           d3.select(tooltipRef.current)
             .style("visibility", "visible")
             .html(`
-              <div style="font-weight: bold;">${d.genre}</div>
-              <div>Count: ${d.count}/${d.total} (${((d.count / d.total) * 100).toFixed(1)}%)</div>
+              <div style="font-weight: bold;">${capitalizeGenre(d.genre)}</div>
+              <div>Count: ${d.playCount.toLocaleString()} (${d.percentage}%)</div>
             `);
         }
       })
@@ -269,10 +274,49 @@ const HorizontalBarChartRelatedGenres: React.FC<HorizontalBarChartRelatedGenresP
       .attr("y", d => (y(d.genre) ?? 0) + y.bandwidth() / 2)
       .attr("dy", "0.35em")
       .attr("text-anchor", "end")
-      .attr("font-size", "12px")
+      .attr("font-size", "14px")
       .attr("font-weight", "500")
       .attr("fill", darkMode ? "#fff" : "#4a4a4a")
-      .text(d => d.genre)
+      .each(function(d) {
+        const genre = capitalizeGenre(d.genre);
+        console.log('Processing genre:', genre);
+        
+        const words = genre.split(' ');
+        console.log('Split words:', words);
+        
+        let lines: string[] = [];
+        words.forEach(word => {
+          console.log('Processing word:', word);
+          if (word.length > 13) {
+            console.log('Word too long, splitting:', word);
+            lines.push(word.slice(0, 12) + '-');
+            lines.push(word.slice(12));
+          } else {
+            const lastLine = lines.length > 0 ? lines[lines.length - 1] : '';
+            console.log('Last line:', lastLine);
+            if (lastLine && lastLine.length + word.length + 1 <= 13) {
+              lines[lines.length - 1] = `${lastLine} ${word}`;
+              console.log('Added to last line:', lines[lines.length - 1]);
+            } else {
+              lines.push(word);
+              console.log('Started new line:', word);
+            }
+          }
+        });
+        console.log('Final lines:', lines);
+
+        const text = d3.select(this);
+        lines.forEach((line, i) => {
+          const displayLine = line.length > 13 ? line.slice(0, 10) + '...' : line;
+          console.log(`Line ${i}:`, displayLine);
+          text.append('tspan')
+            .attr('x', -10)
+            .attr('dy', i === 0 ? 0 : '1.2em')
+            .text(displayLine)
+            .append('title')
+            .text(genre);
+        });
+      })
       .style("opacity", 0)
       .transition()
       .duration(500)
@@ -291,7 +335,7 @@ const HorizontalBarChartRelatedGenres: React.FC<HorizontalBarChartRelatedGenresP
       .attr("font-size", "12px")
       .attr("font-weight", "bold")
       .attr("fill", darkMode ? "#fff" : "#4a4a4a")
-      .text(d => `${((d.count / d.total) * 100).toFixed(1)}%`)
+      .text(d => `${d.percentage}%`)
       .style("opacity", 0)
       .transition()
       .duration(500)

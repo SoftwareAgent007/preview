@@ -21,7 +21,7 @@ interface AddKeywordResponse {
 }
 
 export const useKeywordTimeline = (selectedKeyword?: string, startDate?: string, endDate?: string) => {
-  const { data: selectedKeywordTimeline } = useQueryBuilder<{keywords: KeywordListItemDto[], totalCount: number}>(
+  const { data: selectedKeywordTimeline, isLoading } = useQueryBuilder<{keywords: KeywordListItemDto[], totalCount: number}>(
     ['keywordTimeline', selectedKeyword],
     (guildId) => {
       const url = `/keywords/timeline?search=${selectedKeyword}&guildId=${guildId}&take=10&skip=0`;
@@ -30,7 +30,7 @@ export const useKeywordTimeline = (selectedKeyword?: string, startDate?: string,
     { enabled: !!selectedKeyword }
   );
 
-  return { selectedKeywordTimeline };
+  return { selectedKeywordTimeline, isLoading };
 };
 
 export const useKeywordsAnalytics = (

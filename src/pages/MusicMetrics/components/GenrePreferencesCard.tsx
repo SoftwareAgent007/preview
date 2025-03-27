@@ -6,8 +6,14 @@ import { useTheme } from "@/components/theme/ThemeProvider";
 import { useRef, useEffect, useState } from "react";
 import BaseCard from "./BaseCard";
 
+interface GenreData {
+  genre: string;
+  percentage: number;
+  playCount: number;
+}
+
 interface GenrePreferencesCardProps {
-  data: any[];
+  data: GenreData[];
 }
 
 const GenrePreferencesCard = ({ data }: GenrePreferencesCardProps) => {
@@ -39,6 +45,15 @@ const GenrePreferencesCard = ({ data }: GenrePreferencesCardProps) => {
     }
   };
 
+  const filteredData = data.filter(item => 
+    item.genre && 
+    item.genre !== "Unknown" && 
+    item.genre !== "unknown" &&
+    item.genre !== "" &&
+    item.genre !== "undefined" &&
+    item.genre !== null
+  );
+
   return (
     <BaseCard>
       <motion.div
@@ -49,7 +64,7 @@ const GenrePreferencesCard = ({ data }: GenrePreferencesCardProps) => {
           <span className="text-gray-500 text-lg font-bold mb-4">Genre Preferences</span>
         </h3>
         <ClickableTooltip content="Shows user genre preferences based on listening history">
-          <Info className={`w-4 h-4 ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`} />
+          <span className={`${isDarkMode ? 'bg-gray-800 hover:bg-gray-700' : 'bg-gray-100 hover:bg-gray-200'} text-gray-600 px-[7px] rounded-full cursor-help transition-colors`}>?</span>
         </ClickableTooltip>
       </motion.div>
       
@@ -59,7 +74,7 @@ const GenrePreferencesCard = ({ data }: GenrePreferencesCardProps) => {
         className="h-[350px] w-full"
       >
         <HorizontalBarChartRelatedGenres
-          data={data.slice(0, 7)}
+          data={filteredData.slice(0, 7)}
           darkMode={isDarkMode}
           width={width * 0.9}
         />

@@ -14,12 +14,12 @@ interface StatusCounts {
 }
 
 interface DataPoint {
-  day: number;
+  hour: number;
   statusCounts: StatusCounts;
 }
 
 interface LineDataPoint {
-  day: number;
+  hour: number;
   value: number;
 }
 
@@ -91,7 +91,7 @@ const PresenceWeekActivityChart: React.FC<PresenceWeekActivityChartProps> = ({
   const svgRef = useRef<SVGSVGElement | null>(null);
   const chartRef = useRef<HTMLDivElement | null>(null);
   const [selectedStatus, setSelectedStatus] = useState<string>("all");
-  const [hoveredPoint, setHoveredPoint] = useState<{day: number, status: string, value: number} | null>(null);
+  const [hoveredPoint, setHoveredPoint] = useState<{hour: number, status: string, value: number} | null>(null);
 
   const [chartWidth, setChartWidth] = useState(800);
   const [chartHeight, setChartHeight] = useState(500);
@@ -125,20 +125,20 @@ const PresenceWeekActivityChart: React.FC<PresenceWeekActivityChartProps> = ({
       .append("g")
       .attr("transform", `translate(${margin.left},${margin.top})`);
 
-    // Get the maximum length of any status array to determine the number of days
-    const maxDays = Math.max(
+    // Get the maximum length of any status array to determine the number of hours
+    const maxHours = Math.max(
       data.online.length,
       data.idle.length,
       data.dnd.length,
       data.offline.length
     );
 
-    // Create an array of day numbers (1 to maxDays)
-    const days = Array.from({ length: maxDays }, (_, i) => i + 1);
+    // Create an array of hour numbers (1 to maxHours)
+    const hours = Array.from({ length: maxHours }, (_, i) => i + 1);
 
     // Create the x scale
     const x = d3.scaleBand()
-      .domain(days.map(d => d.toString()))
+      .domain(hours.map(d => d.toString()))
       .range([0, width])
       .padding(0.2);
 
@@ -181,8 +181,8 @@ const PresenceWeekActivityChart: React.FC<PresenceWeekActivityChartProps> = ({
       .attr("transform", `translate(0,${height})`)
       .attr("class", "axis")
       .call(d3.axisBottom(x).tickFormat(d => {
-        const dayNum = parseInt(d.toString());
-        return (chartWidth < 768 && dayNum % 2 !== 0) ? "" : `Day ${dayNum}`;
+        const hourNum = parseInt(d.toString());
+        return (chartWidth < 768 && hourNum % 2 !== 0) ? "" : `${hourNum}`;
       }))
       .attr("color", darkMode ? "rgba(255,255,255,0.7)" : "rgba(0,0,0,0.7)");
 
@@ -239,10 +239,10 @@ const PresenceWeekActivityChart: React.FC<PresenceWeekActivityChartProps> = ({
     // Handle mouse events
     svg.on("mousemove", (event) => {
       const [xPos] = d3.pointer(event, g.node());
-      const dayIndex = Math.floor(xPos / (width / days.length));
-      const day = days[dayIndex];
+      const hourIndex = Math.floor(xPos / (width / hours.length));
+      const hour = hours[hourIndex];
       
-      if (dayIndex < 0 || dayIndex >= days.length) return;
+      if (hourIndex < 0 || hourIndex >= hours.length) return;
 
       let statusKey = selectedStatus;
       let statusValue = 0;
@@ -253,39 +253,39 @@ const PresenceWeekActivityChart: React.FC<PresenceWeekActivityChartProps> = ({
 
       switch (statusKey) {
         case "online":
-          statusValue = data.online[day - 1] || 0;
+          statusValue = data.online[hour - 1] || 0;
           break;
         case "idle":
-          statusValue = data.idle[day - 1] || 0;
+          statusValue = data.idle[hour - 1] || 0;
           break;
         case "dnd":
-          statusValue = data.dnd[day - 1] || 0;
+          statusValue = data.dnd[hour - 1] || 0;
           break;
         case "offline":
-          statusValue = data.offline[day - 1] || 0;
+          statusValue = data.offline[hour - 1] || 0;
           break;
       }
 
       // Position vertical line
       verticalLine
-        .attr("x1", x(day.toString())! + x.bandwidth() / 2)
-        .attr("x2", x(day.toString())! + x.bandwidth() / 2)
+        .attr("x1", x(hour.toString())! + x.bandwidth() / 2)
+        .attr("x2", x(hour.toString())! + x.bandwidth() / 2)
         .style("display", "block");
       
       // Update tooltip
       tooltip.style("display", "block")
-        .attr("transform", `translate(${x(day.toString())! + x.bandwidth() / 2 - 60},${y(statusValue) - 60})`);
+        .attr("transform", `translate(${x(hour.toString())! + x.bandwidth() / 2 - 60},${y(statusValue) - 60})`);
       
       tooltip.select("text:nth-child(2)")
-        .text(`Day ${day}`);
+        .text(`Hour ${hour}`);
       
       tooltip.select("text:nth-child(3)")
-        .text(`${statusKey}: ${statusValue}`)
+        .text(`${statusKey}: ${statusValue.toLocaleString()}`)
         .attr("fill", statusColors[statusKey] || (darkMode ? "white" : "black"));
       
       // Update hovered point state
       setHoveredPoint({
-        day,
+        hour,
         status: statusKey,
         value: statusValue
       });
@@ -395,7 +395,7 @@ const PresenceWeekActivityChart: React.FC<PresenceWeekActivityChartProps> = ({
 
   return (
     <div className={`w-full h-full flex flex-col ${darkMode ? 'text-gray-200' : 'text-gray-800'}`}>
-      <div className="flex justify-between items-center mb-4">
+      <div className="flex justify-between items-center my-4">
         <Select value={selectedStatus} onValueChange={(value) => setSelectedStatus(value)}>
           <SelectTrigger className={`w-40 h-8 text-xs ${darkMode ? 'bg-gray-800 border-gray-700' : 'bg-white border-gray-200'}`}>
             <SelectValue placeholder="Select Status" />
@@ -452,7 +452,7 @@ const Modal = ({ closeModal, data, darkMode = false }: ModalProps) => {
       >
         <div className={`p-4 border-b ${darkMode ? 'border-gray-700' : 'border-gray-200'} flex justify-between items-center`}>
           <h2 className={`text-xl font-bold ${darkMode ? 'text-gray-100' : 'text-gray-900'}`}>
-            Weekly Presence Activity
+            Hourly Presence Status Activity
           </h2>
           <button 
             onClick={closeModal}
@@ -481,11 +481,19 @@ const ExpandablePresenceChart: React.FC<PresenceWeekActivityChartProps> = ({ dat
       <div className="h-full flex flex-col">
         <div className={`flex justify-between items-center p-4 border-b ${darkMode ? 'border-gray-800' : 'border-gray-100'}`}>
           <div className="flex items-center gap-2">
-            <h3 className={`font-medium ${darkMode ? 'text-gray-100' : 'text-gray-900'}`}>
-              Weekly Presence Activity
+            <h3 className="text-gray-500 text-base md:text-lg font-bold">
+              Hourly Presence Status Activity
             </h3>
-            <ClickableTooltip content="Shows user presence status activity over the past week">
-              <Info className={`w-4 h-4 ${darkMode ? 'text-gray-500' : 'text-gray-400'}`} />
+            <ClickableTooltip content={
+              <motion.p
+                initial={{ opacity: 0, y: 5 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.2 }}
+              >
+                <strong>Hourly Activity:</strong> Shows user presence status activity over the past week
+              </motion.p>
+            }>
+              <span className="bg-gray-300 bg-opacity-25 text-gray-600 px-[7px] rounded-full cursor-help">?</span>
             </ClickableTooltip>
           </div>
           <button

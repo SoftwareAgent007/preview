@@ -240,7 +240,6 @@ const KeywordsDataTableComponent = ({
           <Select
             value={`${table.getState().pagination.pageSize}`}
             onValueChange={handlePageSizeChange}
-            disabled={isLoading}
           >
             <SelectTrigger className="w-[100px]">
               <SelectValue placeholder="10" />
@@ -265,7 +264,6 @@ const KeywordsDataTableComponent = ({
           debouncedSearch(value);
         }}
         className="mb-4"
-        disabled={isLoading}
       />
       
       <div className="rounded-md border min-h-[400px] relative">

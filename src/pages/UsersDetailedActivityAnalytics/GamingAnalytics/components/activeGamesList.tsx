@@ -24,7 +24,7 @@ const ActiveGamesList = ({ topGames }: { topGames: ActiveGame[] | undefined }) =
           <li key={index} className="flex flex-col">
             <div className="flex justify-between text-sm font-semibold text-gray-800 mb-1">
               <span>{game.gameName}</span>
-              <span>{game.playerCount} hrs</span>
+              <span>{game.playerCount.toLocaleString()} hrs</span>
             </div>
             <div className="h-2 rounded-full" style={{ backgroundColor: "#E5E7EB" }}>
               <div

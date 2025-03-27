@@ -227,7 +227,7 @@ const PeakListeningHoursChart: React.FC<PeakListeningHoursChartProps> = ({
                         .style("visibility", "visible")
                         .html(`
                             <div style="font-weight: bold;">${d.hour}:00${d.isCurrentHour ? ' (Current Hour)' : ''}</div>
-                            <div>Count: ${d.value}</div>
+                            <div>Count: ${d.value.toLocaleString()}</div>
                             <div>Percentage: ${d.percentage}%</div>
                         `);
                 }
@@ -284,16 +284,6 @@ const PeakListeningHoursChart: React.FC<PeakListeningHoursChartProps> = ({
             animate={{ opacity: 1 }}
             transition={{ duration: 0.5 }}
         >
-            <div className="flex justify-between items-center mb-2">
-                <div className="flex items-center gap-2">
-                    <h3 className={`text-sm font-medium ${darkMode ? 'text-white' : 'text-gray-900'}`}>
-                        Peak Listening Hours
-                    </h3>
-                    <ClickableTooltip content="Shows when users are most active listening to music throughout the day">
-                        <Info className={`w-4 h-4 ${darkMode ? 'text-gray-400' : 'text-gray-500'}`} />
-                    </ClickableTooltip>
-                </div>
-            </div>
             <div className="flex-1 relative">
                 <svg 
                     ref={svgRef} 

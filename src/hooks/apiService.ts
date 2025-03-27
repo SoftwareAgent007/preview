@@ -8,8 +8,8 @@ type ApiService<T> = {
   putData: (endpoint: string, body: any, guildId: string) => Promise<T>;
 };
 
-export const DEFAULT_START_DATE = new Date('2024-01-01').toISOString();
-export const DEFAULT_END_DATE = new Date('2026-12-31').toISOString();
+export const DEFAULT_START_DATE = new Date(new Date().setFullYear(new Date().getFullYear() - 1)).toISOString();
+export const DEFAULT_END_DATE = new Date().toISOString();
 
 export const DEFAULT_DATE_RANGE: DateRange = {
   from: new Date(DEFAULT_START_DATE),
