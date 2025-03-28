@@ -189,7 +189,7 @@ const TopGamesList = () => {
         </div>
 
         <motion.ul className="space-y-3" variants={containerVariants}>
-          {popularGames && popularGames.length > 0 ? (
+          {popularGames && popularGames.length > 0 && !isLoading ? (
             popularGames.map((game, index) => (
               <motion.li
                 key={index}

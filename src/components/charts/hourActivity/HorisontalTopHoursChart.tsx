@@ -58,8 +58,8 @@ const HorizontalTopHoursChart: React.FC<HorizontalTopHoursChartProps> = ({
     const chartHeight = height - margin.top - margin.bottom;
 
     // Responsive font sizes
-    const fontSize = Math.max(12, Math.min(14, width * 0.025));
-    const usersFontSize = Math.max(12, Math.min(14, width * 0.025));
+    const fontSize = Math.max(14, Math.min(14, width * 0.025));
+    const usersFontSize = Math.max(14, Math.min(14, width * 0.025));
 
     const svg = d3.select(svgRef.current)
       .attr("width", width)

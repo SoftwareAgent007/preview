@@ -24,6 +24,11 @@ interface DataPoint {
   count: number;
 }
 
+interface TooltipPosition {
+  x: number;
+  y: number;
+}
+
 interface HorizontalBarChartProps {
   data: number[];
   width?: number;
@@ -49,6 +54,7 @@ const HorizontalBarChart: React.FC<HorizontalBarChartProps> = ({
   const svgRef = useRef<SVGSVGElement>(null);
   const chartInitializedRef = useRef<boolean>(false);
   const [hoveredBar, setHoveredBar] = useState<DataPoint | null>(null);
+  const [tooltipPosition, setTooltipPosition] = useState<TooltipPosition>({ x: 0, y: 0 });
   const [animationComplete, setAnimationComplete] = useState(false);
   const [date, setDate] = useState<Date>(new Date());
   const [skipAnimation, setSkipAnimation] = useState(false);
@@ -109,7 +115,7 @@ const HorizontalBarChart: React.FC<HorizontalBarChartProps> = ({
     };
 
     const chartWidth = width * 0.9 - margin.left - margin.right;
-    const chartHeight = height - margin.top - margin.bottom - 60;
+    const chartHeight = height - margin.top - margin.bottom - 70;
 
     const fontSize = Math.max(12, Math.min(16, width * 0.03));
 
@@ -218,8 +224,9 @@ const HorizontalBarChart: React.FC<HorizontalBarChartProps> = ({
         .attr("width", 0)
         .attr("opacity", 0.9)
         .attr("cursor", "pointer")
-        .on("mouseover", (event, d) => {
+        .on("mousemove", (event, d) => {
           setHoveredBar(d);
+          setTooltipPosition({ x: event.pageX, y: event.pageY });
           d3.select(event.currentTarget)
             .attr("opacity", 1)
             .attr("stroke", barColor)
@@ -362,7 +369,7 @@ const HorizontalBarChart: React.FC<HorizontalBarChartProps> = ({
                     backgroundColor: tooltipBgColor,
                     color: tooltipTextColor,
                     border: `1px solid ${darkMode ? '#475569' : '#e2e8f0'}`,
-                    top: `${(height / transformedData.length) * (hoveredBar.hour + 0.5)}px`,
+                    top: `${tooltipPosition.y - 450}px`,
                     right: "20px",
                     minWidth: "120px"
                   }}
