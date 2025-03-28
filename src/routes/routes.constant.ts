@@ -64,8 +64,8 @@ export const BREADCRUMB_PATHS: Record<string, BreadcrumbItem[]> = {
     { label: "Dashboard", path: ROUTES.DASHBOARD },
     { label: "Music Metrics" },
   ],
-  [ROUTES.MESSAGE_REACTIONS]: [
-    { label: "Dashboard", path: ROUTES.DASHBOARD },
-    { label: "Message reaction", path: ROUTES.MESSAGE_REACTIONS },
-  ],
+  // [ROUTES.MESSAGE_REACTIONS]: [
+  //   { label: "Dashboard", path: ROUTES.DASHBOARD },
+  //   { label: "Message reaction", path: ROUTES.MESSAGE_REACTIONS },
+  // ],
 } as const;

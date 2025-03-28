@@ -8,9 +8,10 @@ interface ChartCardProps {
   children: React.ReactNode;
   className?: string;
   index: number;
+  setRef?: (ref: HTMLDivElement | null) => void;
 }
 
-const ChartCard = ({ title, tooltipContent, children, className = "", index }: ChartCardProps) => {
+const ChartCard = ({ title, tooltipContent, children, className = "", index, setRef }: ChartCardProps) => {
   const container = {
     hidden: { opacity: 0 },
     show: {
@@ -63,6 +64,7 @@ const ChartCard = ({ title, tooltipContent, children, className = "", index }: C
       }}
       transition={{ duration: 0.3 }}
       className={`h-full ${className}`}
+      ref={setRef}
     >
       <Card className="relative p-6 h-full">
         <motion.div

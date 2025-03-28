@@ -71,7 +71,7 @@ export const useKeywordsAnalytics = (
         await Promise.all([
           queryClient.invalidateQueries(['keywordTags']),
           queryClient.invalidateQueries(['keywordsAnalytics']),
-          queryClient.invalidateQueries(['keywordsAnalytics', 1]),
+          queryClient.invalidateQueries(['keywordTimeline']),
           refetchAnalytics(),
           refetchTags()
         ]);
@@ -86,6 +86,7 @@ export const useKeywordsAnalytics = (
       onSuccess: () => {
         queryClient.invalidateQueries(['keywordTags']);
         queryClient.invalidateQueries(['keywordsAnalytics']);
+        queryClient.invalidateQueries(['keywordTimeline']);
       }
     }
   );
@@ -97,6 +98,7 @@ export const useKeywordsAnalytics = (
       onSuccess: () => {
         queryClient.invalidateQueries(['keywordTags']);
         queryClient.invalidateQueries(['keywordsAnalytics']);
+        queryClient.invalidateQueries(['keywordTimeline']);
       }
     }
   );

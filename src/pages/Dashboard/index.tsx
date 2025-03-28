@@ -40,9 +40,11 @@ const Dashboard = () => {
   const { trend: dailyMessageMetrics, isLoading: isMessageTrendLoading } = useMessageTrend(messageViewType === 'daily' ? TimeViewType.DAY : messageViewType === 'weekly' ? TimeViewType.WEEK : messageViewType === 'monthly' ? TimeViewType.MONTH : TimeViewType.YEAR);
 
   const [graphWidth, setGraphWidth] = useState(0);
+  const [horizontalChartWidth, setHorizontalChartWidth] = useState(0);
   const [activityDate, setActivityDate] = useState(new Date());
   const [activityHourlyDate, setActivityHourlyDate] = useState(new Date());
   const wrapperRef = useRef<HTMLDivElement | null>(null);
+  const horizontalChartRef = useRef<HTMLDivElement | null>(null);
 
   const {
     currentActivities,
@@ -59,6 +61,10 @@ const Dashboard = () => {
   const updateGraphWidth = () => {
     if (wrapperRef.current) {
       setGraphWidth(wrapperRef.current.offsetWidth / 2.3);
+    }
+    if (horizontalChartRef.current) {
+      console.log('horizontalChartRef.current.offsetWidth', horizontalChartRef.current.offsetWidth);
+      setHorizontalChartWidth(horizontalChartRef.current.offsetWidth); // Subtract padding
     }
   };
 
@@ -248,7 +254,7 @@ const Dashboard = () => {
                   <ListElement
                     logo={<Users className="w-8 h-8 text-gray-600" />}
                     title="Active Gamers"
-                    description={`${currentActivities?.activeGamers?.count ?? 0} ${currentActivities?.activeGamers?.label ?? 'Users'}`}
+                    description={`${currentActivities?.activeGamers?.count.toLocaleString() ?? 0} ${currentActivities?.activeGamers?.label ?? 'Users'}`}
                   />
                   <ListElement
                     logo={
@@ -259,7 +265,7 @@ const Dashboard = () => {
                       />
                     }
                     title="Spotify Listeners"
-                    description={`${currentActivities?.spotifyListeners?.count ?? 0} ${currentActivities?.spotifyListeners?.label ?? 'Users'}`}
+                    description={`${currentActivities?.spotifyListeners?.count.toLocaleString() ?? 0} ${currentActivities?.spotifyListeners?.label ?? 'Users'}`}
                   />
                 </>
               )}
@@ -296,7 +302,7 @@ const Dashboard = () => {
 
             <ChartCard
               title="Top Users" 
-              tooltipContent="Users with the highest message counts"
+              tooltipContent="Users with the highest message count"
               index={2}
               className="w-full md:w-[35%]"
             >
@@ -318,7 +324,7 @@ const Dashboard = () => {
                     key={index}
                     logo={<Users className="w-8 h-8 text-gray-600" />}
                     title={user.username}
-                    description={`${user.messages} Messages`}
+                    description={`${user.messages.toLocaleString()} Messages`}
                   />
                 ))
               )}
@@ -332,11 +338,12 @@ const Dashboard = () => {
               tooltipContent="Displays the number of users at different hours of the day"
               index={0}
               className="flex-1"
+              setRef={(ref) => horizontalChartRef.current = ref}
             >
               <HorizontalBarChart
                 data={hourlyActivity?.hourlyDistribution ?? []}
                 height={500}
-                width={600}
+                width={horizontalChartWidth}
                 isLoading={isHourlyLoading}
                 isError={!!isHourlyError}
                 onDateChange={setActivityHourlyDate}

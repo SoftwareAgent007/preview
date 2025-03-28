@@ -77,10 +77,8 @@ const HorizontalBarChart: React.FC<HorizontalBarChartProps> = ({
   const handleNextDay = () => {
     setSkipAnimation(true);
     const newDate = addDays(date, 1);
-    if (!isAfter(newDate, today)) {
-      setDate(newDate);
-      onDateChange?.(newDate);
-    }
+    setDate(newDate);
+    onDateChange?.(newDate);
   };
 
   // Transform array data into DataPoint format
@@ -153,7 +151,7 @@ const HorizontalBarChart: React.FC<HorizontalBarChartProps> = ({
         .attr("y2", chartHeight)
         .attr("stroke", gridColor)
         .attr("stroke-opacity", 0.3)
-        .attr("stroke-dasharray", "3,3");
+        .attr("stroke-dasharray", `${width * 0.003},${width * 0.003}`);
 
     svg.append("g")
       .attr("transform", `translate(0,${chartHeight})`)
@@ -303,15 +301,15 @@ const HorizontalBarChart: React.FC<HorizontalBarChartProps> = ({
               mode="single"
               selected={date}
               onSelect={handleDateChange}
-              disabled={(date) => isAfter(date, today)}
+              disabled={(date) => isAfter(date, startOfToday())}
               initialFocus
             />
           </PopoverContent>
-        </Popover>
+        </Popover>  
         <Button 
           variant="outline" 
           onClick={handleNextDay}
-          disabled={isAfter(addDays(date, 1), today)}
+          disabled={isAfter(date, startOfToday())}
         >
           Next
         </Button>

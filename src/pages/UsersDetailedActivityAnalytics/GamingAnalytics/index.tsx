@@ -159,7 +159,7 @@ const GamingAnalytics = () => {
       <div className="mx-auto" style={{ maxWidth: `${import.meta.env.VITE_MAX_WIDTH || 1200}px` }}>
         {/* Game Selector */}
         
-        <Card className="p-4 mb-6">
+        <Card className="p-4 mb-6" style={{boxShadow: "rgba(0, 0, 0, 0.15) 0px 2px 5px 0px"}}>
           {statsLoading ? (
             <CardSkeleton width="100%" height="40" />
           ) : (

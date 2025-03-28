@@ -1,10 +1,8 @@
+import { AnimatePresence, motion } from "framer-motion";
 import { ReactNode, useState } from "react";
-import { motion, AnimatePresence } from "framer-motion";
-import { Menu } from "lucide-react";
-import { Button } from "@/components/ui/button";
+import { Outlet } from "react-router-dom";
 import Header from "./Header";
 import Sidebar from "./Sidebar";
-import { Outlet } from "react-router-dom";
 
 interface DashboardLayoutProps {
   children: ReactNode;
@@ -13,7 +11,7 @@ interface DashboardLayoutProps {
 const SIDEBAR_WIDTH = 128;
 
 const DashboardLayout = ({ children }: DashboardLayoutProps) => {
-  const [isSidebarOpen, setIsSidebarOpen] = useState(true);
+  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
 
   return (
     <div className="flex h-screen overflow-hidden">

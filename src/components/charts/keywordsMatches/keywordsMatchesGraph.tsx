@@ -176,8 +176,8 @@ const KeywordsMatchesTimeline: React.FC<MessageFrequencyChartProps> = ({
                             <SelectValue />
                         </SelectTrigger>
                         <SelectContent>
-                            <SelectItem value="day">day</SelectItem>
-                            <SelectItem value="week">week</SelectItem>
+                            <SelectItem value="day">Day</SelectItem>
+                            <SelectItem value="week">Week</SelectItem>
                             <SelectItem value="month">Month</SelectItem>
                             <SelectItem value="year">Year</SelectItem>
                         </SelectContent>

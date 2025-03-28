@@ -17,7 +17,7 @@ export const DEFAULT_DATE_RANGE: DateRange = {
 };
 
 const API_CONTROL_URL = import.meta.env.VITE_API_ANALYTICS_URL || '';
-const AUTH_TOKEN = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJmYWQ3NDFlZi1kNzc3LTQyM2MtYTE0NS1lNjZjMjAzNjU4YTQiLCJlbWFpbCI6InJhYmNodWsuYWxla3NhbmRyQGdtaWFsLmNvbSIsImd1aWxkSWRzIjpbIjEzMDY3NDgyNzk5MDM2MjExNDIiXSwiaWF0IjoxNzQyNTU1MTkzLCJleHAiOjE3NDMxNTk5OTN9.TIsREcA5lBkB77zwtWee6ip1PcJ-RqwnY3-HC-xuPmM';
+const AUTH_TOKEN = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMTM1MjVkMS01NGQ3LTQwMmMtYjhiZS1kMTQ5YWY2YmIwMTQiLCJlbWFpbCI6InJvbWFuLnRAZGV2YnJvdGhlci5jb20iLCJndWlsZElkcyI6W10sImlhdCI6MTc0MzE2ODc1MCwiZXhwIjoxNzQzNzczNTUwfQ.nmQgog7t8Nks_5zaGizmyji9JcRoAQAXrDacUJMY6LQ';
 const IS_DEV = import.meta.env.VITE_MODE === 'development';
 
 const requestInterceptor = (url: string, options: RequestInit) => {

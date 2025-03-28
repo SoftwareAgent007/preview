@@ -43,7 +43,7 @@ export const menuCategories: MenuCategories = {
       ]
     },
     { icon: <Music2 />, label: "Music Metrics", path: ROUTES.MUSIC_METRICS, beta: true },
-    { icon: <MessageSquare />, label: "Message Reactions", path: ROUTES.MESSAGE_REACTIONS },
+    // { icon: <MessageSquare />, label: "Message Reactions", path: ROUTES.MESSAGE_REACTIONS },
   ],
   // Community: [
   //   { icon: <UserCircle />, label: "Members", path: "/members" },

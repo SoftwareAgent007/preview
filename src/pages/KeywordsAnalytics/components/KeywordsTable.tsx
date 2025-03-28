@@ -37,7 +37,7 @@ const KeywordsTable = () => {
         currentPage={pagination?.currentPage ?? currentPage} 
         setCurrentPage={setCurrentPage} 
         totalKeywords={totalCount ?? 0}
-        totalPages={pagination?.totalPages ?? 1}
+        totalPages={searchTerm ? 1 : pagination?.totalPages ?? 1}
         onPageSizeChange={setPageSize}
         pageSize={pagination?.itemsPerPage ?? pageSize}
         isLoading={isLoading || isTimelineLoading}

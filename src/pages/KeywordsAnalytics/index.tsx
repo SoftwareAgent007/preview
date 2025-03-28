@@ -1,4 +1,4 @@
-import { useState, useMemo, useEffect } from "react";
+import { useState, useMemo, useEffect, useRef } from "react";
 import { motion } from "framer-motion";
 import KeywordsMatchesTimeline from "@/components/charts/keywordsMatches/keywordsMatchesGraph";
 import BreadcrumbsNavigation from "@/components/common/BreadcrumbsNavigation";
@@ -19,7 +19,9 @@ const CardSkeleton = ({ width, height }: { width: string; height: string }) => (
 
 const KeywordsAnalytics = () => {
   // #region Hooks & State
+  const [matchesChartWidth, setMatchesChartWidth] = useState(0);
   const [searchKeywordTerm, setSelectedKeywordTerm] = useState<string>("");
+  const matchesChartRef = useRef<HTMLDivElement | null>(null);
   const [currentPage, setCurrentPage] = useState(1);
   const [pageSize, setPageSize] = useState(10);
   const [viewType, setViewType] = useState<'day' | 'week' | 'month' | 'year'>('day');
@@ -32,6 +34,24 @@ const KeywordsAnalytics = () => {
       end: end.toISOString()
     };
   });
+
+  const updateGraphWidth = () => {
+    if (matchesChartRef.current) {
+      console.log('matchesChartRef.current.offsetWidth', matchesChartRef.current.offsetWidth);
+      setMatchesChartWidth(matchesChartRef.current.offsetWidth); // Subtract padding
+    }
+  };
+
+  useEffect(() => {
+    if (matchesChartRef.current) {
+      updateGraphWidth();
+    }
+  }, [matchesChartRef.current]);
+
+  useEffect(() => {
+    window.addEventListener("resize", updateGraphWidth);
+    return () => window.removeEventListener("resize", updateGraphWidth);
+  }, []);
 
   const updateDateRange = (viewType: 'day' | 'week' | 'month' | 'year') => {
     const start = new Date().setFullYear(new Date().getFullYear() - 1);;
@@ -165,7 +185,7 @@ const KeywordsAnalytics = () => {
           className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6"
           variants={container}
         >
-          <Card className="flex-1 p-6">
+          <Card ref={matchesChartRef} className="flex-1 p-6">
             {isLoading ? (
               <CardSkeleton width="100%" height="200px" />
             ) : (
@@ -174,6 +194,7 @@ const KeywordsAnalytics = () => {
                 keywords={keywordsList?.map(keyword => keyword.keyword) || []}
                 matchesTimeline={searchKeywordTerm ? trendData : []}
                 onSearch={setSelectedKeywordTerm}
+                width={matchesChartWidth}
                 selectedKeyword={searchKeywordTerm}
               />
             )}

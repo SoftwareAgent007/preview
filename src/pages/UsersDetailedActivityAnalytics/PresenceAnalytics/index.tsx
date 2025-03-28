@@ -1,6 +1,6 @@
 import PresenceWeekActivityChart from "@/components/charts/userActivityTimeline/presenceActivityChart/userPresenceWeekActivityChart";
 import { motion } from "framer-motion";
-import { useRef, useMemo, useState } from "react";
+import { useRef, useMemo, useState, useEffect } from "react";
 import ActiveStatusChart from "./components/ActiveStatusChart";
 import PeakActivityHours from "./components/PeakActivityHours";
 import StatCard from "./components/StatCard";
@@ -14,7 +14,6 @@ import { useActivityData, useDashboardData } from "@/hooks/analytics/useDashboar
 import ChartCard from "@/pages/Dashboard/components/ChartCard";
 import { Card } from "@/components/ui/card";
 
-// Skeleton loader for cards
 const CardSkeleton = ({ width, height }: { width: string; height: string }) => (
   <ContentLoader speed={2} width={width} height={height} viewBox={`0 0 ${width} ${height}`}>
     <rect x="0" y="0" rx="10" ry="10" width="100%" height="100%" />
@@ -35,13 +34,30 @@ const PresenceAnalytics = () => {
   const wrapperRef = useRef<HTMLDivElement | null>(null);
   const hasErrors = useMemo(() => Boolean(error), [error]);
   const [activityHourlyDate, setActivityHourlyDate] = useState(new Date());
+  const [horizontalChartWidth, setHorizontalChartWidth] = useState(0);
+  const horizontalChartRef = useRef<HTMLDivElement | null>(null);
+
+  const updateGraphWidth = () => {
+    if (horizontalChartRef.current) {
+      setHorizontalChartWidth(horizontalChartRef.current.offsetWidth);
+    }
+  };
+
+  useEffect(() => {
+    console.log('horizontalChartRef.current', horizontalChartRef.current);
+    updateGraphWidth();
+  },[horizontalChartRef.current])
+
+  useEffect(() => {
+    window.addEventListener("resize", updateGraphWidth);
+    return () => window.removeEventListener("resize", updateGraphWidth);
+  }, []);
 
   const {
     hourlyActivity,
     isLoading: isHourlyLoading,
     error: isHourlyError  
   } = useActivityData(activityHourlyDate);
-
 
   const containerVariants = {
     hidden: { opacity: 0 },
@@ -133,120 +149,102 @@ const PresenceAnalytics = () => {
         
         {/* Stats Cards */}
         <motion.div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6 mb-6">
-          {isLoading ? (
-            <>
-              <div className="bg-white rounded-lg shadow p-4">
-                <CardSkeleton width="100%" height="100" />
-              </div>
-              <div className="bg-white rounded-lg shadow p-4">
-                <CardSkeleton width="100%" height="100" />
-              </div>
-              <div className="bg-white rounded-lg shadow p-4">
-                <CardSkeleton width="100%" height="100" />
-              </div>
-              <div className="bg-white rounded-lg shadow p-4">
-                <CardSkeleton width="100%" height="100" />
-              </div>
-            </>
-          ) : (
-            statsData.map((stat, index) => {
-              const value = getFormattedStatValue(stat);
-              
-              return (
-                <>
-                  {value !== null ? (
-                    <StatCard 
-                      title={
-                        <div className="flex items-center gap-2">
-                          {stat.title}
-                          <ClickableTooltip content={
-                            <motion.p
-                              initial={{ opacity: 0, y: 5 }}
-                              animate={{ opacity: 1, y: 0 }}
-                              transition={{ duration: 0.2 }}
-                            >
-                              {stat.tooltip}
-                            </motion.p>
-                          }>
-                            <motion.span
-                              className="bg-gray-300 bg-opacity-25 text-gray-600 px-[7px] rounded-full cursor-help"
-                              whileHover={{
-                                scale: 1.1,
-                                backgroundColor: "rgba(209, 213, 219, 0.4)",
-                              }}
-                              whileTap={{ scale: 0.95 }}
-                            >
-                              ?
-                            </motion.span>
-                          </ClickableTooltip>
-                        </div>
-                      }
-                      value={value} 
-                      subtitle={stat.subtitle} 
-                      index={index} 
-                      />
-                  ) : (
-                    <ErrorComponent message={`${stat.title} data unavailable`} />
-                  )}
-                </>
-              );
-            })
-          )}
+          {statsData.map((stat, index) => {
+            const value = getFormattedStatValue(stat);
+            
+            return (
+              <StatCard 
+                key={stat.title}
+                title={
+                  <div className="flex items-center gap-2">
+                    {stat.title}
+                    <ClickableTooltip content={
+                      <motion.p
+                        initial={{ opacity: 0, y: 5 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ duration: 0.2 }}
+                      >
+                        {stat.tooltip}
+                      </motion.p>
+                    }>
+                      <motion.span
+                        className="bg-gray-300 bg-opacity-25 text-gray-600 px-[7px] rounded-full cursor-help"
+                        whileHover={{
+                          scale: 1.1,
+                          backgroundColor: "rgba(209, 213, 219, 0.4)",
+                        }}
+                        whileTap={{ scale: 0.95 }}
+                      >
+                        ?
+                      </motion.span>
+                    </ClickableTooltip>
+                  </div>
+                }
+                value={isLoading ? <CardSkeleton width="100%" height="24" /> : value} 
+                subtitle={stat.subtitle} 
+                index={index} 
+              />
+            );
+          })}
         </motion.div>
-
         {/* Charts */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
           <motion.div variants={itemVariants}>
-            {isLoading ? (
-              <CardSkeleton width="100%" height="250" />
-            ) : isHourlyLoading ? (
+              {isLoading || isHourlyLoading ? (
               <Card className="p-6">
-                <div className="flex items-center justify-center h-[470px]">
-                  <Loader2 className="w-8 h-8 animate-spin text-blue-500" />
-                </div>
+                <CardSkeleton width="100%" height="470" />
               </Card>
-            ) : hourlyActivity?.statusDistribution ? (
-              <PresenceWeekActivityChart data={hourlyActivity.statusDistribution} />
-            ) : (
-              <ErrorComponent message="Weekly activity data unavailable" />
-            )}
+              ) : hourlyActivity?.statusDistribution ? (
+                <PresenceWeekActivityChart data={hourlyActivity.statusDistribution} />
+              ) : (
+                <ErrorComponent message="Weekly activity data unavailable" />
+              )}
           </motion.div>
 
-          {isLoading ? (
-            <CardSkeleton width="100%" height="250" />
-          ) : statusBreakdown && Array.isArray(statusBreakdown) && statusBreakdown.length > 0 ? (
-            <ActiveStatusChart data={statusBreakdown} />
-          ) : (
-            <ErrorComponent message="Status breakdown data unavailable" />
-          )}
+          <motion.div variants={itemVariants}>
+              {isLoading ? (
+              <Card className="p-6">
+                <CardSkeleton width="100%" height="470" />
+              </Card>
+              ) : statusBreakdown && Array.isArray(statusBreakdown) && statusBreakdown.length > 0 ? (
+                <ActiveStatusChart data={statusBreakdown} />
+              ) : (
+                <ErrorComponent message="Status breakdown data unavailable" />
+              )}
+          </motion.div>
 
-          {isLoading ? (
-            <CardSkeleton width="100%" height="250" />
-          ) : peakHours && Array.isArray(peakHours) && peakHours.length > 0 ? (
-            <PeakActivityHours hourlyActivity={peakHours} />
-          ) : (
-            <ErrorComponent message="Peak hours data unavailable" />
-          )}
+          <motion.div variants={itemVariants}>
+              {isLoading ? (
+              <Card className="p-6">
+                <CardSkeleton width="100%" height="470" />
+              </Card>
+              ) : peakHours && Array.isArray(peakHours) && peakHours.length > 0 ? (
+                <PeakActivityHours hourlyActivity={peakHours} />
+              ) : (
+                <ErrorComponent message="Peak hours data unavailable" />
+              )}
+          </motion.div>
 
-          {isLoading ? (
-            <CardSkeleton width="100%" height="500px" />
-          ) : (
-            <ChartCard
-              title="Hourly Activity"
-              tooltipContent="Displays the number of users at different hours of the day"
-              index={0}
-              className="flex-1]"
-            >
+          <ChartCard
+            title={isLoading ? "" : "Hourly Activity"}
+            tooltipContent="Displays the number of users at different hours of the day"
+            index={0}
+            className="flex-1"              
+            setRef={(ref) => horizontalChartRef.current = ref}
+          >
+            {isLoading ? (
+              <CardSkeleton width="100%" height="470" />
+            ) : (
               <HorizontalBarChart
                 data={hourlyActivity?.hourlyDistribution ?? []}
                 height={500}
-                width={600}
+                width={horizontalChartWidth}
                 isLoading={isHourlyLoading}
                 isError={!!isHourlyError}
                 onDateChange={setActivityHourlyDate}
               />
-            </ChartCard>
-          )}
+            )}
+          </ChartCard>
         </div>
       </div>
     </motion.div>

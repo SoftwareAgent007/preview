@@ -85,11 +85,11 @@ const PeakListeningHoursChart: React.FC<PeakListeningHoursChartProps> = ({
         const innerHeight = height - margin.top - margin.bottom;
 
         const currentHour = new Date().getHours();
-        const total = data.reduce((sum, val) => sum + val, 0);
+        const max = Math.max(...data);
         const fullDayData = data.map((value, i) => ({
             hour: i,
             value,
-            percentage: ((value / total) * 100).toFixed(1),
+            percentage: ((value / max) * 100).toFixed(1),
             isCurrentHour: i === currentHour
         }));
 
@@ -264,10 +264,11 @@ const PeakListeningHoursChart: React.FC<PeakListeningHoursChartProps> = ({
             .attr("x", d => (x(d.hour.toString()) || 0) + x.bandwidth() / 2)
             .attr("y", d => y(parseFloat(d.percentage)) - 5)
             .attr("text-anchor", "middle")
-            .attr("font-size", "10px")
-            .attr("fill", darkMode ? "rgba(255, 255, 255, 0.7)" : "rgba(0, 0, 0, 0.7)")
+            .attr("font-size", "12px") 
+            .attr("font-weight", "bold")
+            .attr("fill", darkMode ? "rgba(255, 255, 255, 0.85)" : "rgba(0, 0, 0, 0.85)")
             .attr("opacity", 0)
-            .text(d => `${d.percentage}%`)
+            .text(d => `${Number(d.percentage).toFixed(0)}`)
             .transition()
             .duration(1000)
             .delay((d, i) => i * 50 + 500)
