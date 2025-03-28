@@ -17,10 +17,6 @@ export interface GameStats {
   peakPartySize: number;
   returnRate: number;
   peakHours: PeakHour[];
-  weeklyTrends: WeeklyTrend[];
-  playtimeDistribution: PlaytimeDistribution[];
-  topGamers: TopGamer[];
-  timeOfDayBreakdown: TimeOfDayBreakdown[];
 }
 
 export interface ActiveGame {
@@ -62,6 +58,7 @@ export interface GameReport {
   weeklyTrends: WeeklyTrend[];
   timeOfDayBreakdown: TimeOfDayBreakdown[];
 }
+
 interface PaginationWrapper {
   total: number;
   currentPage: number;

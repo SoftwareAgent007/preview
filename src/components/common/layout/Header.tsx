@@ -30,10 +30,16 @@ const Header = ({ isSidebarOpen, setIsSidebarOpen }: {
 }) => {
   const location = useLocation();
   const navigate = useNavigate();
-  const { logout } = useAuth();
+  const { user, logout } = useAuth();
   const [isUserMenuOpen, setIsUserMenuOpen] = useState(false);
   const { selectedPeriod, guildId, setSelectedPeriod, setGuildId } = useDashboardContext();
   const queryClient = useQueryClient();
+
+  useEffect(() => {
+    if (!guildId && user?.guildIds && user.guildIds.length > 0) {
+      setGuildId(user.guildIds[0]);
+    }
+  }, [user, guildId, setGuildId]);
 
   const getCurrentTitle = (pathname: string) => {
     if (
@@ -57,8 +63,11 @@ const Header = ({ isSidebarOpen, setIsSidebarOpen }: {
 
   const handleDatePickerClose = () => {
     queryClient.invalidateQueries();
-    console.log('DatePicker closed');
   };
+
+  const userInitials = user?.name
+    ? user.name.split(' ').map(n => n[0]).join('').toUpperCase()
+    : 'U';
 
   return (
     <motion.header
@@ -97,15 +106,18 @@ const Header = ({ isSidebarOpen, setIsSidebarOpen }: {
                 disabledDays={{ after: new Date() }}
               />
               
-              {/* <Select value={guildId} onValueChange={(id) => setGuildId && setGuildId(id)}>
+              <Select value={guildId} onValueChange={(id) => setGuildId && setGuildId(id)}>
                 <SelectTrigger className="w-[180px]">
                   <SelectValue placeholder="Select Guild" />
                 </SelectTrigger>
                 <SelectContent className="bg-white">
-                  <SelectItem value="guild1">Guild 1</SelectItem>
-                  <SelectItem value="guild2">Guild 2</SelectItem>
+                  {user?.guildIds?.map((id) => (
+                    <SelectItem key={id} value={id}>
+                      Guild {id}
+                    </SelectItem>
+                  ))}
                 </SelectContent>
-              </Select> */}
+              </Select>
             </div>
           </div>
 
@@ -119,15 +131,14 @@ const Header = ({ isSidebarOpen, setIsSidebarOpen }: {
             <Popover open={isUserMenuOpen} onOpenChange={setIsUserMenuOpen}>
               <PopoverTrigger asChild>
                 <Avatar className="cursor-pointer">
-                  <AvatarImage
-                    src="https://github.com/shadcn.png"
-                    alt="@shadcn"
-                  />
-                  <AvatarFallback>CN</AvatarFallback>
+                  <AvatarImage src="" alt={user?.name || ''} />
+                  <AvatarFallback>{userInitials}</AvatarFallback>
                 </Avatar>
               </PopoverTrigger>
               <PopoverContent className="w-fit bg-white">
                 <div className="flex flex-col space-y-1">
+                  <div className="px-2 py-1.5 text-sm font-medium">{user?.name}</div>
+                  <div className="px-2 pb-1.5 text-xs text-gray-500">{user?.email}</div>
                   <Button
                     variant="ghost"
                     className="justify-start w-[180px]"
@@ -135,10 +146,6 @@ const Header = ({ isSidebarOpen, setIsSidebarOpen }: {
                   >
                     <LogOut className="h-4 mr-2" />
                     Logout
-                  </Button>
-                  <Button variant="ghost" className="justify-start w-[180px]">
-                    <SwitchCamera className="h-4 mr-2" />
-                    Switch Account
                   </Button>
                 </div>
               </PopoverContent>
@@ -163,8 +170,11 @@ const Header = ({ isSidebarOpen, setIsSidebarOpen }: {
                 <SelectValue placeholder="Select Guild" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="guild1">Guild 1</SelectItem>
-                <SelectItem value="guild2">Guild 2</SelectItem>
+                {user?.guildIds.map((id) => (
+                  <SelectItem key={id} value={id}>
+                    Guild {id}
+                  </SelectItem>
+                ))}
               </SelectContent>
             </Select>
           </div>

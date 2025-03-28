@@ -1,31 +1,57 @@
-import { createContext, useContext, useState, useEffect, ReactNode } from 'react';
+import { createContext, useContext, useState, useEffect } from 'react';
+import { authService } from '@/hooks/apiService';
+import { jwtDecode } from 'jwt-decode';
 
 interface User {
   id: string;
-  name: string;
   email: string;
+  name: string;
+  guildIds: string[];
+}
+
+interface JWTPayload {
+  sub: string;
+  email: string;
+  guildIds: string[];
+  iat: number;
+  exp: number;
 }
 
 interface AuthContextType {
   user: User | null;
-  isAuthenticated: boolean;
   isLoading: boolean;
   login: (email: string, password: string) => Promise<void>;
-  register: (name: string, email: string, password: string) => Promise<void>;
   logout: () => void;
+  register: ({email, password, name}: {email: string, password: string, name: string}) => Promise<void>;
+  assignGuild: (ownerId: string, guildId: string, password: string) => Promise<void>;
+  checkLogin: (email: string, password: string) => Promise<boolean>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
-export const AuthProvider = ({ children }: { children: ReactNode }) => {
+export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    // Check if user is stored in localStorage
-    const storedUser = localStorage.getItem('user');
-    if (storedUser) {
-      setUser(JSON.parse(storedUser));
+    // Check for stored user data and token on mount
+    const token = localStorage.getItem('auth_token');
+    if (token) {
+      try {
+        const decoded = jwtDecode<JWTPayload>(token);
+        const storedUser = localStorage.getItem('user');
+        if (storedUser) {
+          const userData = JSON.parse(storedUser);
+          setUser({
+            ...userData,
+            guildIds: decoded.guildIds
+          });
+        }
+      } catch (error) {
+        console.error('Invalid token:', error);
+        localStorage.removeItem('auth_token');
+        localStorage.removeItem('user');
+      }
     }
     setIsLoading(false);
   }, []);
@@ -33,65 +59,73 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const login = async (email: string, password: string) => {
     setIsLoading(true);
     try {
-      // For demo purposes, we'll just simulate a successful login
-      await new Promise(resolve => setTimeout(resolve, 1000));
+      const response = await authService.login(email, password);
+      const decoded = jwtDecode<JWTPayload>(response.accessToken);
       
-      const newUser = {
-        id: '1',
-        name: 'Demo User',
-        email
+      const userData = {
+        id: response.owner.id,
+        email: response.owner.email,
+        name: response.owner.name,
+        guildIds: decoded.guildIds
       };
       
-      setUser(newUser);
-      localStorage.setItem('user', JSON.stringify(newUser));
+      setUser(userData);
+      localStorage.setItem('user', JSON.stringify(userData));
     } finally {
       setIsLoading(false);
     }
   };
 
-  const register = async (name: string, email: string, password: string) => {
-    setIsLoading(true);
+  const checkLogin = async (email: string, password: string) => {
     try {
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      
-      // Usually we would not auto-login after registration
-      // but for demo purposes we'll do it
-      const newUser = {
-        id: '1',
-        name,
-        email
-      };
-      
-      setUser(newUser);
-      localStorage.setItem('user', JSON.stringify(newUser));
-    } finally {
-      setIsLoading(false);
+      const response = await authService.login(email, password);
+      return true;
+    } catch (error) {
+      return false;
     }
   };
 
   const logout = () => {
+    authService.logout();
     setUser(null);
     localStorage.removeItem('user');
   };
 
+  const register = async ({email, password, name}: {email: string, password: string, name: string}) => {
+    setIsLoading(true);
+    try {
+      const response = await authService.register({email, password, name});
+      // After registration, automatically log in
+      await login(email, password);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const assignGuild = async (ownerId: string, guildId: string, password: string) => {
+    setIsLoading(true);
+    try {
+      await authService.assignGuild(ownerId, guildId);
+      // Refresh token to get updated guild list
+      if (user) {
+        await login(user.email, password);
+      }
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   return (
-    <AuthContext.Provider value={{
-      user,
-      isAuthenticated: !!user,
-      isLoading,
-      login,
-      register,
-      logout
-    }}>
+    <AuthContext.Provider value={{ user, isLoading, login, logout, register, assignGuild, checkLogin }}>
       {children}
     </AuthContext.Provider>
   );
-};
+}
 
-export const useAuth = () => {
+export function useAuth() {
   const context = useContext(AuthContext);
   if (context === undefined) {
     throw new Error('useAuth must be used within an AuthProvider');
   }
   return context;
-};
+}

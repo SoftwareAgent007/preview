@@ -17,14 +17,18 @@ export const DEFAULT_DATE_RANGE: DateRange = {
 };
 
 const API_CONTROL_URL = import.meta.env.VITE_API_ANALYTICS_URL || '';
-const AUTH_TOKEN = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJmYWQ3NDFlZi1kNzc3LTQyM2MtYTE0NS1lNjZjMjAzNjU4YTQiLCJlbWFpbCI6InJhYmNodWsuYWxla3NhbmRyQGdtaWFsLmNvbSIsImd1aWxkSWRzIjpbIjEzMDY3NDgyNzk5MDM2MjExNDIiXSwiaWF0IjoxNzQyNTU1MTkzLCJleHAiOjE3NDMxNTk5OTN9.TIsREcA5lBkB77zwtWee6ip1PcJ-RqwnY3-HC-xuPmM';
 const IS_DEV = import.meta.env.VITE_MODE === 'development';
 
+const getAuthToken = () => localStorage.getItem('auth_token');
+const setAuthToken = (token: string) => localStorage.setItem('auth_token', token);
+const removeAuthToken = () => localStorage.removeItem('auth_token');
+
 const requestInterceptor = (url: string, options: RequestInit) => {
+  const token = getAuthToken();
   const headers = {
     ...options.headers,
-    'Authorization': `Bearer ${AUTH_TOKEN}`,
-    'Content-Type': 'application/json'
+    'Content-Type': 'application/json',
+    ...(token && { 'Authorization': `Bearer ${token}` })
   };
   
   const interceptedOptions = {
@@ -106,3 +110,40 @@ const createApiService = <T>(baseUrl: string): ApiService<T> => {
 };
 
 export const apiService = createApiService<any>(API_CONTROL_URL);
+
+// Auth specific methods
+export const authService = {
+  login: async (email: string, password: string) => {
+    const response = await fetch(`${API_CONTROL_URL}/auth/login`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email, password })
+    });
+    
+    const data = await responseInterceptor(response);
+    setAuthToken(data.accessToken);
+    return data;
+  },
+
+  register: async ({email, password, name}: {email: string, password: string, name: string}) => {
+    const response = await fetch(`${API_CONTROL_URL}/auth/register`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email, password, name })
+    });
+    return responseInterceptor(response);
+  },
+
+  assignGuild: async (ownerId: string, guildId: string) => {
+    const response = await fetch(`${API_CONTROL_URL}/auth/assign-guild`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ ownerId, guildId })
+    });
+    return responseInterceptor(response);
+  },
+
+  logout: () => {
+    removeAuthToken();
+  }
+};
