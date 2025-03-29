@@ -139,7 +139,7 @@ const TopGamesList = () => {
   const [pageSize, setPageSize] = useState(3);
   const [isModalOpen, setIsModalOpen] = useState(false);
 
-  const { popularGames, pagination, isLoading } = useGamingStats({
+  const { popularGames, pagination, isLoading, error } = useGamingStats({
     page: currentPage,
     limit: pageSize,
   });
@@ -187,9 +187,20 @@ const TopGamesList = () => {
             <Expand className="w-4 h-4 text-gray-500" />
           </button>
         </div>
-
         <motion.ul className="space-y-3" variants={containerVariants}>
-          {popularGames && popularGames.length > 0 && !isLoading ? (
+          {isLoading ? (
+            [...Array(9)].map((_, i) => (
+              <motion.li key={i} className="flex flex-col" variants={itemVariants}>
+                <div className="flex justify-between mb-3">
+                  <div className="h-4 bg-gray-200 rounded w-24 animate-pulse" />
+                  <div className="h-4 bg-gray-200 rounded w-16 animate-pulse" />
+                </div>
+                <div className="h-2 rounded-full bg-gray-200 animate-pulse" />
+              </motion.li>
+            ))
+          ) : error ? (
+            <ErrorComponent height={350} />
+          ) : (
             popularGames.map((game, index) => (
               <motion.li
                 key={index}
@@ -222,8 +233,6 @@ const TopGamesList = () => {
                 </motion.div>
               </motion.li>
             ))
-          ) : (
-            <ErrorComponent height={350} />
           )}
         </motion.ul>
       </Card>

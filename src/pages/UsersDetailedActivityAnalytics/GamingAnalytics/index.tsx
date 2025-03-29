@@ -209,14 +209,7 @@ const GamingAnalytics = () => {
             className="grid gap-6"
             variants={itemVariants}
           >
-            {/* Top Games List */}
-            {statsLoading ? (
-              <Card className="p-6">
-                <CardSkeleton width="100%" height="500" />
-              </Card>
-            ) : (
-              <TopGamesList topGames={popularGames} />
-            )}
+            <TopGamesList />
 
             {/* Activity Timeline */}
             <motion.div variants={itemVariants}>

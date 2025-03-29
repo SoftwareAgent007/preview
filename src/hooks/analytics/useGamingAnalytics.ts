@@ -109,7 +109,7 @@ export const useGamingStats = (paginationParams?: PaginatedParams) => {
 
   return {
     ...stats,
-    isLoading: popularGamesLoading,
+    isLoading: stats.pagination && popularGamesLoading,
     error: popularGamesError,
   };
 };
