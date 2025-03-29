@@ -219,6 +219,7 @@ const Dashboard = () => {
                   activityTimeline={activeUsersTrend?.data ?? []} 
                   width={graphWidth}
                   isLoading={isActiveUsersTrendLoading}
+                  tooltipContent="Displays the number of users over different time periods."
                   onViewTypeChange={setUserActivityViewType}
                 />
               )}

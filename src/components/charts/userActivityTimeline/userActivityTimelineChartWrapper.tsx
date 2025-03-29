@@ -17,6 +17,7 @@ interface ActivityTimelineProps {
     }[];
     onViewTypeChange?: (viewType: ViewType) => void;
     title?: string;
+    tooltipContent?: string;
 }
 
 type ViewType = 'daily' | 'weekly' | 'monthly' | 'yearly';
@@ -26,7 +27,8 @@ const ActivityTimeline: React.FC<ActivityTimelineProps> = ({
     isLoading = false,
     activityTimeline = [],
     onViewTypeChange,
-    title = "Active users"
+    title = "Active users",
+    tooltipContent = ''
 }) => {
     const [isModalOpen, setIsModalOpen] = useState(false);
     const { selectedPeriod } = useContext(DashboardContext);
@@ -103,7 +105,7 @@ const ActivityTimeline: React.FC<ActivityTimelineProps> = ({
                             transition={{ duration: 0.2 }}
                         >
                             <strong>User Activity Timeline: </strong> 
-                            Displays the number of users over different time periods.
+                            {tooltipContent}
                         </motion.p>
                     }>
                         <motion.span 

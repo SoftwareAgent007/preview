@@ -229,6 +229,7 @@ const GamingAnalytics = () => {
                     activityTimeline={activityTrend?.data || []} 
                     width={graphWidth}
                     isLoading={trendLoading}
+                    tooltipContent="Displays the number of users playing games across various time periods."
                     onViewTypeChange={setViewType}
                   />
                 ) : (
