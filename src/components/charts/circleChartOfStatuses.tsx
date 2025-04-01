@@ -9,15 +9,6 @@ export interface StatusData {
   color?: string;
 }
 
-// Generate random hex color
-const getRandomColor = () => {
-  const letters = '0123456789ABCDEF';
-  let color = '#';
-  for (let i = 0; i < 6; i++) {
-    color += letters[Math.floor(Math.random() * 16)];
-  }
-  return color;
-};
 
 const CircleStatusChart = ({ data, width = 500, height = 600, darkMode = false }: { data: StatusData[]; width?: number; height?: number; darkMode?: boolean; }) => {
   const svgRef = useRef<SVGSVGElement>(null);
@@ -42,7 +33,7 @@ const CircleStatusChart = ({ data, width = 500, height = 600, darkMode = false }
     const processedData = data.map((item) => ({
       ...item,
       percentage: typeof item.percentage === "string" ? parseFloat(item.percentage) : item.percentage,
-      color: item.color || getRandomColor()
+      color: item.color
     }));
 
     const margin = { top: 20, right: 20, bottom: 60, left: 20 };
@@ -117,7 +108,7 @@ const CircleStatusChart = ({ data, width = 500, height = 600, darkMode = false }
         .attr("stop-color", d3.rgb(d.color).darker(0.3).toString());
 
       // Update the color to use the gradient
-      processedData[i].color = `url(#${gradientId})`;
+      // processedData[i].color = `url(#${gradientId})`;
     });
 
     // Create pie layout

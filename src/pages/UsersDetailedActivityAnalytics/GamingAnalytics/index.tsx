@@ -38,6 +38,7 @@ const GamingAnalytics = () => {
     }
   }, [popularGames]);
 
+  
   const {
     basicStats: {
       totalPlayers = 0,
@@ -66,18 +67,24 @@ const GamingAnalytics = () => {
     console.log('timeOfDayBreakdown:', timeOfDayBreakdown);
   }, [totalPlayers, avgSessionMinutes, peakPartySize, totalHours, returnRate, weeklyTrends, peakHours, playtimeDistribution, topGamers, timeOfDayBreakdown]);
 
-  // Effects
-  useEffect(() => {
-    const updateGraphWidth = () => {
-      if (wrapperRef.current) {
-        setGraphWidth(wrapperRef.current.offsetWidth / 2.3);
-      }
-    };
+  const updateGraphWidth = () => {
+    if (wrapperRef.current && wrapperRef.current.offsetWidth > 910) {
+      setGraphWidth(wrapperRef.current.offsetWidth * 0.8);
+    } else if (wrapperRef.current) {
+      setGraphWidth(wrapperRef.current.offsetWidth * 0.8);
+    }
+  };
 
-    window.addEventListener("resize", updateGraphWidth);
-    updateGraphWidth();
+  useEffect(() => {
+    const resizeObserver = new ResizeObserver(() => {
+        updateGraphWidth();
+    });
     
-    return () => window.removeEventListener("resize", updateGraphWidth);
+    if (wrapperRef.current) {
+        resizeObserver.observe(wrapperRef.current);
+    }
+
+    return () => resizeObserver.disconnect();
   }, [wrapperRef.current]);
 
   // Animation Variants
@@ -157,8 +164,8 @@ const GamingAnalytics = () => {
       animate="visible"
     >
       <div className="mx-auto" style={{ maxWidth: `${import.meta.env.VITE_MAX_WIDTH || 1200}px` }}>
-        {/* Game Selector */}
         
+        {/* Game Selector */}
         <Card className="p-4 mb-6" style={{boxShadow: "rgba(0, 0, 0, 0.15) 0px 2px 5px 0px"}}>
           {statsLoading ? (
             <CardSkeleton width="100%" height="40" />
@@ -185,7 +192,11 @@ const GamingAnalytics = () => {
         </Card>
 
         {/* Stats Cards */}
-        <motion.div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-5 gap-4 md:gap-6 mb-6">
+        <motion.div className={`grid gap-4 md:gap-6 mb-6 ${
+          graphWidth < 800 
+            ? "grid-cols-1 md:grid-cols-2 lg:grid-cols-3" 
+            : "grid-cols-1 md:grid-cols-3 lg:grid-cols-5"
+        }`}>
           {gameDetailsLoading ? (
             <>
               {[...Array(5)].map((_, i) => (
@@ -204,38 +215,17 @@ const GamingAnalytics = () => {
         </motion.div>
 
         {/* Main Gaming Data Grid */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
           <motion.div 
             className="grid gap-6"
-            variants={itemVariants}
-          >
+            variants={itemVariants}>
             <TopGamesList />
-
-            {/* Activity Timeline */}
-            <motion.div variants={itemVariants}>
-              <Card className="p-6 h-[400px]">
-                {trendLoading ? (
-                  <CardSkeleton width="100%" height="350" />
-                ) : (activityTrend?.data || []).length > 0 ? (
-                  <UserActivityTimeline 
-                    title="User Activity Timeline"
-                    activityTimeline={activityTrend?.data || []} 
-                    width={graphWidth}
-                    isLoading={trendLoading}
-                    tooltipContent="Displays the number of users playing games across various time periods."
-                    onViewTypeChange={setViewType}
-                  />
-                ) : (
-                  <ErrorComponent height={300} />
-                )}
-              </Card>
-            </motion.div>
           </motion.div>
 
           {/* Roles Chart */}
           <motion.div variants={itemVariants}>
             {rolesLoading ? (
-              <Card className="p-6">
+              <Card >
                 <CardSkeleton width="100%" height="500" />
               </Card>
             ) : (
@@ -243,6 +233,26 @@ const GamingAnalytics = () => {
             )}
           </motion.div>
         </div> 
+
+        {/* Activity Timeline */}
+        <motion.div variants={itemVariants}>
+          <Card className="p-6 h-[400px] hover:scale-[101%] transition-all duration-150">
+            {trendLoading ? (
+              <CardSkeleton width="100%" height="350" />
+            ) : (activityTrend?.data || []).length > 0 ? (
+              <UserActivityTimeline 
+                title="User Activity Timeline"
+                activityTimeline={activityTrend?.data || []} 
+                width={graphWidth}
+                isLoading={trendLoading}
+                tooltipContent="Displays the number of users playing games across various time periods."
+                onViewTypeChange={setViewType}
+              />
+            ) : (
+              <ErrorComponent height={300} />
+            )}
+          </Card>
+        </motion.div>
       </div>
     </motion.div>
   );

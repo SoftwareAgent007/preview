@@ -21,23 +21,26 @@ const PeakListeningHoursChart: React.FC<PeakListeningHoursChartProps> = ({
     const [hoveredBar, setHoveredBar] = useState<number | null>(null);
     const tooltipRef = useRef<HTMLDivElement | null>(null);
     const barsRef = useRef<d3.Selection<SVGRectElement, any, SVGGElement, unknown> | null>(null);
+    const updateDimensions = () => {
+        if (containerRef.current) {
+            setDimensions({
+                width: containerRef.current.clientWidth,
+                height
+            });
+        }
+    };
 
-    // Update dimensions on resize
     useEffect(() => {
-        const updateDimensions = () => {
-            if (containerRef.current) {
-                setDimensions({
-                    width: containerRef.current.clientWidth,
-                    height
-                });
-            }
-        };
-
-        updateDimensions();
-        window.addEventListener('resize', updateDimensions);
+        const resizeObserver = new ResizeObserver(() => {
+            updateDimensions()
+        });
         
-        return () => window.removeEventListener('resize', updateDimensions);
-    }, [height]);
+        if (containerRef.current) {
+            resizeObserver.observe(containerRef.current);
+        }
+
+        return () => resizeObserver.disconnect();
+    }, [containerRef.current]);
 
     // Create tooltip once
     useEffect(() => {
@@ -80,7 +83,12 @@ const PeakListeningHoursChart: React.FC<PeakListeningHoursChartProps> = ({
 
         const width = dimensions.width;
         const height = dimensions.height;
-        const margin = { top: 30, right: 30, bottom: 60, left: 50 };
+        const margin = { 
+            top: 30, 
+            right: 20, 
+            bottom: width < 500 ? 80 : 60, // Increase bottom margin for small screens
+            left: width < 500 ? 40 : 50 // Adjust left margin for small screens
+        };
         const innerWidth = width - margin.left - margin.right;
         const innerHeight = height - margin.top - margin.bottom;
 
@@ -151,7 +159,7 @@ const PeakListeningHoursChart: React.FC<PeakListeningHoursChartProps> = ({
         const x = d3.scaleBand()
             .domain(fullDayData.map(d => d.hour.toString()))
             .range([0, innerWidth])
-            .padding(0.3);
+            .padding(width < 500 ? 0.2 : 0.3); // Reduce padding for small screens
 
         const y = d3.scaleLinear()
             .domain([0, Math.max(...fullDayData.map(d => parseFloat(d.percentage)))])
@@ -162,11 +170,15 @@ const PeakListeningHoursChart: React.FC<PeakListeningHoursChartProps> = ({
         const xAxis = g.append("g")
             .attr("transform", `translate(0, ${innerHeight})`)
             .call(d3.axisBottom(x)
-                .tickFormat(d => `${d}:00`)
+                .tickFormat(d => width < 500 ? 
+                    // Show fewer ticks on small screens
+                    Number(d) % 3 === 0 ? `${d}:00` : '' :
+                    `${d}:00`
+                )
             );
             
         xAxis.selectAll("text")
-            .attr("font-size", "10px")
+            .attr("font-size", width < 500 ? "8px" : "10px")
             .attr("fill", darkMode ? "rgba(255, 255, 255, 0.7)" : "rgba(0, 0, 0, 0.7)")
             .attr("transform", "rotate(-45)")
             .attr("text-anchor", "end")
@@ -182,12 +194,12 @@ const PeakListeningHoursChart: React.FC<PeakListeningHoursChartProps> = ({
         // Add y-axis with custom styling
         const yAxis = g.append("g")
             .call(d3.axisLeft(y)
-                .ticks(5)
+                .ticks(width < 500 ? 3 : 5) // Fewer ticks on small screens
                 .tickFormat(d => `${d}%`)
             );
             
         yAxis.selectAll("text")
-            .attr("font-size", "10px")
+            .attr("font-size", width < 500 ? "8px" : "10px")
             .attr("fill", darkMode ? "rgba(255, 255, 255, 0.7)" : "rgba(0, 0, 0, 0.7)");
             
         yAxis.selectAll("line")
@@ -197,14 +209,16 @@ const PeakListeningHoursChart: React.FC<PeakListeningHoursChartProps> = ({
             .attr("stroke", darkMode ? "rgba(255, 255, 255, 0.3)" : "rgba(0, 0, 0, 0.3)");
 
         // Add y-axis label
-        g.append("text")
-            .attr("transform", "rotate(-90)")
-            .attr("y", -margin.left + 15)
-            .attr("x", -innerHeight / 2)
-            .attr("text-anchor", "middle")
-            .attr("fill", darkMode ? "rgba(255, 255, 255, 0.7)" : "rgba(0, 0, 0, 0.7)")
-            .attr("font-size", "12px")
-            .text("Listening %");
+        if (width >= 500) { // Only show y-axis label on larger screens
+            g.append("text")
+                .attr("transform", "rotate(-90)")
+                .attr("y", -margin.left + 15)
+                .attr("x", -innerHeight / 2)
+                .attr("text-anchor", "middle")
+                .attr("fill", darkMode ? "rgba(255, 255, 255, 0.7)" : "rgba(0, 0, 0, 0.7)")
+                .attr("font-size", "12px")
+                .text("Listening %");
+        }
 
         // Add bars with animations
         barsRef.current = g.selectAll(".bar")
@@ -216,8 +230,8 @@ const PeakListeningHoursChart: React.FC<PeakListeningHoursChartProps> = ({
             .attr("width", x.bandwidth())
             .attr("y", innerHeight)
             .attr("height", 0)
-            .attr("rx", 4)
-            .attr("ry", 4)
+            .attr("rx", width < 500 ? 2 : 4) // Smaller border radius on small screens
+            .attr("ry", width < 500 ? 2 : 4)
             .attr("fill", d => d.isCurrentHour ? "url(#current-hour-gradient)" : "url(#bar-gradient)")
             .attr("opacity", 1)
             .on("mouseover", (event, d) => {
@@ -234,9 +248,25 @@ const PeakListeningHoursChart: React.FC<PeakListeningHoursChartProps> = ({
             })
             .on("mousemove", (event) => {
                 if (tooltipRef.current) {
+                    const tooltipWidth = tooltipRef.current.offsetWidth;
+                    const tooltipHeight = tooltipRef.current.offsetHeight;
+                    const viewportWidth = window.innerWidth;
+                    
+                    // Calculate position to prevent tooltip from going off screen
+                    let left = event.pageX + 10;
+                    let top = event.pageY - 10;
+                    
+                    if (left + tooltipWidth > viewportWidth) {
+                        left = event.pageX - tooltipWidth - 10;
+                    }
+                    
+                    if (top < 0) {
+                        top = event.pageY + 20;
+                    }
+                    
                     d3.select(tooltipRef.current)
-                        .style("top", `${event.pageY - 10}px`)
-                        .style("left", `${event.pageX + 10}px`);
+                        .style("top", `${top}px`)
+                        .style("left", `${left}px`);
                 }
             })
             .on("mouseout", () => {
@@ -255,24 +285,26 @@ const PeakListeningHoursChart: React.FC<PeakListeningHoursChartProps> = ({
             .attr("y", d => y(parseFloat(d.percentage)))
             .attr("height", d => innerHeight - y(parseFloat(d.percentage)));
 
-        // Add value labels on top of bars
-        g.selectAll(".value-label")
-            .data(fullDayData)
-            .enter()
-            .append("text")
-            .attr("class", "value-label")
-            .attr("x", d => (x(d.hour.toString()) || 0) + x.bandwidth() / 2)
-            .attr("y", d => y(parseFloat(d.percentage)) - 5)
-            .attr("text-anchor", "middle")
-            .attr("font-size", "12px") 
-            .attr("font-weight", "bold")
-            .attr("fill", darkMode ? "rgba(255, 255, 255, 0.85)" : "rgba(0, 0, 0, 0.85)")
-            .attr("opacity", 0)
-            .text(d => `${Number(d.percentage).toFixed(0)}`)
-            .transition()
-            .duration(1000)
-            .delay((d, i) => i * 50 + 500)
-            .attr("opacity", d => parseFloat(d.percentage) > 10 ? 1 : 0);
+        // Add value labels on top of bars only for wider screens
+        if (width >= 400) {
+            g.selectAll(".value-label")
+                .data(fullDayData)
+                .enter()
+                .append("text")
+                .attr("class", "value-label")
+                .attr("x", d => (x(d.hour.toString()) || 0) + x.bandwidth() / 2)
+                .attr("y", d => y(parseFloat(d.percentage)) - 5)
+                .attr("text-anchor", "middle")
+                .attr("font-size", "12px") 
+                .attr("font-weight", "bold")
+                .attr("fill", darkMode ? "rgba(255, 255, 255, 0.85)" : "rgba(0, 0, 0, 0.85)")
+                .attr("opacity", 0)
+                .text(d => `${Number(d.percentage).toFixed(0)}`)
+                .transition()
+                .duration(1000)
+                .delay((d, i) => i * 50 + 500)
+                .attr("opacity", d => parseFloat(d.percentage) > 10 ? 1 : 0);
+        }
 
     }, [data, dimensions, darkMode]);
 

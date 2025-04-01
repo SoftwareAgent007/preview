@@ -25,6 +25,8 @@ interface LineDataPoint {
 
 interface PresenceWeekActivityChartProps {
   data: StatusDistribution;
+  pageWrapperWidth: number;
+  chartWrapperWidth: number;
   darkMode?: boolean;
 }
 
@@ -86,6 +88,8 @@ const statusColors: Record<string, string> = {
 
 const PresenceWeekActivityChart: React.FC<PresenceWeekActivityChartProps> = ({ 
   data,
+  chartWrapperWidth,
+  pageWrapperWidth,
   darkMode = false
 }) => {
   const svgRef = useRef<SVGSVGElement | null>(null);
@@ -94,20 +98,21 @@ const PresenceWeekActivityChart: React.FC<PresenceWeekActivityChartProps> = ({
   const [hoveredPoint, setHoveredPoint] = useState<{hour: number, status: string, value: number} | null>(null);
 
   const [chartWidth, setChartWidth] = useState(800);
-  const [chartHeight, setChartHeight] = useState(500);
-
-  const updateChartDimensions = () => {
-    if (chartRef.current) {
-      setChartWidth(chartRef.current.offsetWidth * 1.01);
-      setChartHeight(chartRef.current.offsetHeight);
-    }
-  };
-
+  const [chartHeight] = useState(400);
+  
   useEffect(() => {
-    updateChartDimensions();
-    window.addEventListener("resize", updateChartDimensions);
-    return () => window.removeEventListener("resize", updateChartDimensions);
-  }, []);
+    const resizeObserver = new ResizeObserver(() => {
+      if (chartRef.current) {
+        setChartWidth(chartRef.current.offsetWidth);
+      }
+    });
+    
+    if (chartRef.current) {
+      resizeObserver.observe(chartRef.current);
+    }
+
+    return () => resizeObserver.disconnect();
+  }, [chartRef.current]);
 
   useEffect(() => {
     if (!svgRef.current || !data) return;
@@ -277,8 +282,8 @@ const PresenceWeekActivityChart: React.FC<PresenceWeekActivityChartProps> = ({
         .attr("transform", `translate(${x(hour.toString())! + x.bandwidth() / 2 - 60},${y(statusValue) - 60})`);
       
       tooltip.select("text:nth-child(2)")
-        .text(`Hour ${hour}`);
-      
+        .text(`${hour > 12 ? hour - 12 : hour}${hour === 12 ? 'pm' : hour > 12 ? 'pm' : 'am'}`);
+
       tooltip.select("text:nth-child(3)")
         .text(`${statusKey}: ${statusValue.toLocaleString()}`)
         .attr("fill", statusColors[statusKey] || (darkMode ? "white" : "black"));
@@ -462,7 +467,7 @@ const Modal = ({ closeModal, data, darkMode = false }: ModalProps) => {
           </button>
         </div>
         <div className="p-6 h-[calc(90vh-80px)]">
-          <PresenceWeekActivityChart data={data} darkMode={darkMode} />
+          <PresenceWeekActivityChart data={data} pageWrapperWidth={pageWrapperWidth} chartWrapperWidth={chartWrapperWidth} darkMode={darkMode} />
         </div>
       </motion.div>
     </motion.div>,
@@ -470,17 +475,17 @@ const Modal = ({ closeModal, data, darkMode = false }: ModalProps) => {
   );
 };
 
-const ExpandablePresenceChart: React.FC<PresenceWeekActivityChartProps> = ({ data, darkMode = false }) => {
+const ExpandablePresenceChart: React.FC<PresenceWeekActivityChartProps> = ({ data, pageWrapperWidth, chartWrapperWidth, darkMode = false }) => {
   const [isModalOpen, setIsModalOpen] = useState(false);
-  
+  console.log('chartWrapperWidth1', chartWrapperWidth);
   const openModal = () => setIsModalOpen(true);
   const closeModal = () => setIsModalOpen(false);
   
   return (
-    <Card className={`w-full h-[512px] overflow-hidden ${darkMode ? 'bg-gray-900 border-gray-800' : 'bg-white'}`}>
-      <div className="h-full flex flex-col">
-        <div className={`flex justify-between items-center p-4 border-b ${darkMode ? 'border-gray-800' : 'border-gray-100'}`}>
-          <div className="flex items-center gap-2">
+    <Card className={`w-full h-[512px] overflow-hidden hover:scale-[101%] transition-all duration-150 ${darkMode ? 'bg-gray-900 border-gray-800' : 'bg-white'}`}>
+      <motion.div className="h-full flex flex-col">
+        <motion.div className={`flex justify-between items-center p-4 border-b ${darkMode ? 'border-gray-800' : 'border-gray-100'}`}>
+          <motion.div className="flex items-center gap-2">
             <h3 className="text-gray-500 text-base md:text-lg font-bold">
               Hourly Presence Status Activity
             </h3>
@@ -495,19 +500,19 @@ const ExpandablePresenceChart: React.FC<PresenceWeekActivityChartProps> = ({ dat
             }>
               <span className="bg-gray-300 bg-opacity-25 text-gray-600 px-[7px] rounded-full cursor-help">?</span>
             </ClickableTooltip>
-          </div>
+          </motion.div>
           <button
             onClick={openModal}
             className={`p-1 rounded-full ${darkMode ? 'hover:bg-gray-800' : 'hover:bg-gray-100'} transition-colors`}
           >
             <Expand className={`w-4 h-4 ${darkMode ? 'text-gray-400' : 'text-gray-500'}`} />
           </button>
-        </div>
+        </motion.div>
         
         <div className="flex-1 px-2 pb-2">
-          <PresenceWeekActivityChart data={data} darkMode={darkMode} />
+          <PresenceWeekActivityChart data={data} pageWrapperWidth={pageWrapperWidth} chartWrapperWidth={chartWrapperWidth} darkMode={darkMode} />
         </div>
-      </div>
+      </motion.div>
 
       <AnimatePresence>
         {isModalOpen && (

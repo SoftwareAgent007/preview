@@ -21,21 +21,18 @@ const GenrePreferencesCard = ({ data }: GenrePreferencesCardProps) => {
   const isDarkMode = theme === "dark";
   const containerRef = useRef<HTMLDivElement>(null);
   const [width, setWidth] = useState(0);
-
+  
   useEffect(() => {
+    const resizeObserver = new ResizeObserver(() => {
+      setWidth(containerRef.current?.offsetWidth || 0);
+    });
+    
     if (containerRef.current) {
-      setWidth(containerRef.current.offsetWidth);
+      resizeObserver.observe(containerRef.current);
     }
 
-    const handleResize = () => {
-      if (containerRef.current) {
-        setWidth(containerRef.current.offsetWidth);
-      }
-    };
-
-    window.addEventListener('resize', handleResize);
-    return () => window.removeEventListener('resize', handleResize);
-  }, []);
+    return () => resizeObserver.disconnect();
+  }, [containerRef.current]);
 
   const item = {
     hidden: { opacity: 0, y: 10 },

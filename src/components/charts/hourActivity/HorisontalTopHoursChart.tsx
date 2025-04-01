@@ -169,7 +169,13 @@ const HorizontalTopHoursChart: React.FC<HorizontalTopHoursChartProps> = ({
               .attr("font-size", `${usersFontSize}px`)
               .attr("font-weight", "500")
               .attr("opacity", 0)
-              .text(d => `${d.users.toLocaleString()} users`)
+              .text(d => {
+                const users = +d.users;
+                if (users >= 1000000) {
+                  return `${(users / 1000000).toFixed(1)}M users`;
+                }
+                return `${users.toLocaleString()} users`;
+              })
               .transition()
               .duration(500)
               .attr("opacity", 1);

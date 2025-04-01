@@ -59,6 +59,7 @@ const Dashboard = () => {
   } = useActivityData(activityHourlyDate);
 
   const updateGraphWidth = () => {
+    console.log('wrapperRef.current changed');
     if (wrapperRef.current) {
       setGraphWidth(wrapperRef.current.offsetWidth / 2.3);
     }
@@ -69,13 +70,16 @@ const Dashboard = () => {
   };
 
   useEffect(() => {
-    console.log('messageViewType', messageViewType);
-  }, [messageViewType]);
+    const resizeObserver = new ResizeObserver(() => {
+      updateGraphWidth();
+    });
+    
+    if (wrapperRef.current) {
+      resizeObserver.observe(wrapperRef.current);
+    }
 
-  useEffect(() => {
-    window.addEventListener("resize", updateGraphWidth);
-    return () => window.removeEventListener("resize", updateGraphWidth);
-  }, []);
+    return () => resizeObserver.disconnect();
+  }, [wrapperRef.current]);
 
   useEffect(() => {
     if (!isLoading && wrapperRef.current) {
@@ -123,13 +127,17 @@ const Dashboard = () => {
     },
   ], [totalUsers, activeUsers, totalMessages, totalReactions]);
 
-  const bottomStatsCards = useMemo(() => [
-    {
-      title: "Peak Activity Time",
-      value: `${(hourlyActivity?.peakHour ?? 0) > 12 ? (hourlyActivity?.peakHour ?? 0) - 12 : (hourlyActivity?.peakHour ?? 0)}${(hourlyActivity?.peakHour ?? 0) >= 12 ? 'PM' : 'AM'}`,
-      description: `${hourlyActivity?.hourlyDistribution?.[hourlyActivity?.peakHour ?? 0]?.count ?? 0} Active Users`,
-      trend: hourlyActivity?.peakHourChange?.change ?? 0,
-      isTrendPositive: (hourlyActivity?.peakHourChange?.change ?? 0) > 0,
+  const peakHour = hourlyActivity?.peakHour ?? 0;
+  const peakHourIndex = hourlyActivity?.peakHour ? hourlyActivity.peakHour - 1 : 0;
+  const activeUserCount = hourlyActivity?.hourlyDistribution?.[peakHourIndex] ?? 0;
+  const trendChange = hourlyActivity?.peakHourChange?.change ?? 0;
+  
+  const bottomStatsCards = useMemo(() => [{
+      title: "Peak Activity Time", 
+      value: `${peakHour > 12 ? peakHour - 12 : peakHour}${peakHour >= 12 ? 'PM' : 'AM'}`,
+      description: `${activeUserCount.toLocaleString()} Active Users`,
+      trend: trendChange,
+      isTrendPositive: trendChange > 0,
       trendUnit: "%",
       tooltipContent: "Time with the highest user activity",
       index: 1,
@@ -350,11 +358,11 @@ const Dashboard = () => {
                 onDateChange={setActivityHourlyDate}
               />
             </ChartCard>
-            <div className="flex-1 grid grid-cols-2 gap-6 h-fit">
+            <div className={`flex-1 ${horizontalChartWidth < 500 ? 'flex flex-col gap-6' : 'grid grid-cols-2 gap-6'} h-fit`}>
               {isLoading ? (
                 Array(4).fill(0).map((_, i) => (
                   <ChartCard key={i} className="flex-1" index={i}>
-                    <CardSkeleton width="100%" height="120px" />
+                    <CardSkeleton width="100%" height={horizontalChartWidth > 600 ? "80px" : "120px"} />
                   </ChartCard>
                 ))
               ) : (

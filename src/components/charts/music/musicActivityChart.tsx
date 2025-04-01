@@ -37,8 +37,9 @@ const HorizontalBarChartRelatedGenres: React.FC<HorizontalBarChartRelatedGenresP
   useEffect(() => {
     const updateDimensions = () => {
       if (containerRef.current) {
+        const newWidth = width || containerRef.current.clientWidth;
         setDimensions({
-          width: width || containerRef.current.clientWidth,
+          width: Math.max(300, newWidth), // Minimum width of 300px
           height: height || containerRef.current.clientHeight
         });
       }
@@ -102,20 +103,25 @@ const HorizontalBarChartRelatedGenres: React.FC<HorizontalBarChartRelatedGenresP
     const actualWidth = dimensions.width;
     const actualHeight = dimensions.height;
     
-    // Adjust margins based on data length to prevent overlapping
+    // Dynamic margins based on screen width
     const margin = { 
       top: 20, 
-      right: 10, 
-      bottom: 30, 
-      left: Math.min(150, actualWidth * 0.2) // Responsive left margin
+      right: actualWidth < 400 ? 5 : 10,
+      bottom: actualWidth < 400 ? 40 : 30,
+      left: Math.min(120, Math.max(80, actualWidth * 0.25)) // Responsive left margin with min/max bounds
     };
     
     const chartWidth = actualWidth - margin.left - margin.right;
     const chartHeight = actualHeight - margin.top - margin.bottom;
     
-    // Calculate optimal bar height based on available space and data length
-    const optimalBarHeight = Math.max(20, Math.min(40, (chartHeight / data.length) * 0.6));
-    const barPadding = Math.max(10, Math.min(30, (chartHeight / data.length) * 0.4));
+    // Adjust bar dimensions for small screens
+    const optimalBarHeight = actualWidth < 400 
+      ? Math.max(15, Math.min(30, (chartHeight / data.length) * 0.6))
+      : Math.max(20, Math.min(40, (chartHeight / data.length) * 0.6));
+      
+    const barPadding = actualWidth < 400
+      ? Math.max(5, Math.min(20, (chartHeight / data.length) * 0.4))
+      : Math.max(10, Math.min(30, (chartHeight / data.length) * 0.4));
 
     const svg = d3.select(svgRef.current);
     svg.selectAll("*").remove();
@@ -163,7 +169,7 @@ const HorizontalBarChartRelatedGenres: React.FC<HorizontalBarChartRelatedGenresP
     g.append("g")
       .attr("class", "grid")
       .selectAll("line")
-      .data(x.ticks(5))
+      .data(x.ticks(actualWidth < 400 ? 3 : 5))
       .enter()
       .append("line")
       .attr("x1", d => x(d))
@@ -177,12 +183,12 @@ const HorizontalBarChartRelatedGenres: React.FC<HorizontalBarChartRelatedGenresP
     const xAxis = g.append("g")
       .attr("transform", `translate(0,${chartHeight})`)
       .call(d3.axisBottom(x)
-        .ticks(5)
-        .tickFormat(d => `${d}`)
+        .ticks(actualWidth < 400 ? 3 : 5)
+        .tickFormat(d => actualWidth < 400 ? `${d/1000}k` : `${d}`)
       );
       
     xAxis.selectAll("text")
-      .attr("font-size", "10px")
+      .attr("font-size", actualWidth < 400 ? "8px" : "10px")
       .attr("fill", darkMode ? "rgba(255, 255, 255, 0.7)" : "rgba(0, 0, 0, 0.7)");
       
     xAxis.selectAll("line")
@@ -194,10 +200,10 @@ const HorizontalBarChartRelatedGenres: React.FC<HorizontalBarChartRelatedGenresP
     // Add x-axis label
     g.append("text")
       .attr("x", chartWidth / 2)
-      .attr("y", chartHeight + margin.bottom + 10)
+      .attr("y", chartHeight + margin.bottom + (actualWidth < 400 ? -5 : 10))
       .attr("text-anchor", "middle")
       .attr("fill", darkMode ? "rgba(255, 255, 255, 0.5)" : "rgba(0, 0, 0, 0.5)")
-      .attr("font-size", "14px")
+      .attr("font-size", actualWidth < 400 ? "10px" : "14px")
       .attr("font-weight", "500")
       .text("Listening Count");
 
@@ -212,8 +218,8 @@ const HorizontalBarChartRelatedGenres: React.FC<HorizontalBarChartRelatedGenresP
       .attr("height", y.bandwidth())
       .attr("fill", darkMode ? "rgba(59, 130, 246, 0.1)" : "rgba(96, 165, 250, 0.1)")
       .attr("opacity", 0.15)
-      .attr("rx", 4)
-      .attr("ry", 4);
+      .attr("rx", actualWidth < 400 ? 2 : 4)
+      .attr("ry", actualWidth < 400 ? 2 : 4);
 
     // Add data bars with animations
     barsRef.current = g.selectAll(".data-bar")
@@ -228,8 +234,8 @@ const HorizontalBarChartRelatedGenres: React.FC<HorizontalBarChartRelatedGenresP
       .attr("stroke", darkMode ? "#fff" : "#000")
       .attr("stroke-width", 0)
       .attr("stroke-opacity", 0.5)
-      .attr("rx", 4)
-      .attr("ry", 4)
+      .attr("rx", actualWidth < 400 ? 2 : 4)
+      .attr("ry", actualWidth < 400 ? 2 : 4)
       .on("mouseover", (event, d) => {
         setHoveredGenre(d.genre);
         if (tooltipRef.current) {
@@ -243,9 +249,18 @@ const HorizontalBarChartRelatedGenres: React.FC<HorizontalBarChartRelatedGenresP
       })
       .on("mousemove", (event) => {
         if (tooltipRef.current) {
+          const tooltipWidth = tooltipRef.current.offsetWidth;
+          const xPos = event.pageX + 10;
+          const yPos = event.pageY - 10;
+          
+          // Prevent tooltip from going off screen
+          const adjustedX = xPos + tooltipWidth > window.innerWidth 
+            ? event.pageX - tooltipWidth - 10 
+            : xPos;
+
           d3.select(tooltipRef.current)
-            .style("top", `${event.pageY - 10}px`)
-            .style("left", `${event.pageX + 10}px`);
+            .style("top", `${yPos}px`)
+            .style("left", `${adjustedX}px`);
         }
       })
       .on("mouseout", () => {
@@ -265,7 +280,7 @@ const HorizontalBarChartRelatedGenres: React.FC<HorizontalBarChartRelatedGenresP
         .attr("width", d => x(d.count));
     }
 
-    // Add genre labels on y-axis
+    // Add genre labels on y-axis with responsive font size and truncation
     g.selectAll(".genre-label")
       .data(sortedData)
       .join("text")
@@ -274,45 +289,37 @@ const HorizontalBarChartRelatedGenres: React.FC<HorizontalBarChartRelatedGenresP
       .attr("y", d => (y(d.genre) ?? 0) + y.bandwidth() / 2)
       .attr("dy", "0.35em")
       .attr("text-anchor", "end")
-      .attr("font-size", "14px")
+      .attr("font-size", actualWidth < 400 ? "10px" : "14px")
       .attr("font-weight", "500")
       .attr("fill", darkMode ? "#fff" : "#4a4a4a")
       .each(function(d) {
         const genre = capitalizeGenre(d.genre);
-        console.log('Processing genre:', genre);
+        const maxChars = actualWidth < 400 ? 8 : 13;
         
+        const text = d3.select(this);
         const words = genre.split(' ');
-        console.log('Split words:', words);
-        
         let lines: string[] = [];
+        let currentLine = '';
+        
         words.forEach(word => {
-          console.log('Processing word:', word);
-          if (word.length > 13) {
-            console.log('Word too long, splitting:', word);
-            lines.push(word.slice(0, 12) + '-');
-            lines.push(word.slice(12));
+          if (currentLine.length + word.length > maxChars) {
+            if (currentLine) lines.push(currentLine);
+            currentLine = word;
           } else {
-            const lastLine = lines.length > 0 ? lines[lines.length - 1] : '';
-            console.log('Last line:', lastLine);
-            if (lastLine && lastLine.length + word.length + 1 <= 13) {
-              lines[lines.length - 1] = `${lastLine} ${word}`;
-              console.log('Added to last line:', lines[lines.length - 1]);
-            } else {
-              lines.push(word);
-              console.log('Started new line:', word);
-            }
+            currentLine = currentLine ? `${currentLine} ${word}` : word;
           }
         });
-        console.log('Final lines:', lines);
-
-        const text = d3.select(this);
+        if (currentLine) lines.push(currentLine);
+        
+        lines = lines.map(line => 
+          line.length > maxChars ? line.slice(0, maxChars-2) + '..' : line
+        );
+        
         lines.forEach((line, i) => {
-          const displayLine = line.length > 13 ? line.slice(0, 10) + '...' : line;
-          console.log(`Line ${i}:`, displayLine);
           text.append('tspan')
             .attr('x', -10)
             .attr('dy', i === 0 ? 0 : '1.2em')
-            .text(displayLine)
+            .text(line)
             .append('title')
             .text(genre);
         });
@@ -323,19 +330,19 @@ const HorizontalBarChartRelatedGenres: React.FC<HorizontalBarChartRelatedGenresP
       .delay((d, i) => i * 100)
       .style("opacity", 1);
 
-    // Add percentage labels at the end of bars
+    // Add percentage labels with responsive positioning
     g.selectAll(".percentage-label")
       .data(sortedData)
       .join("text")
       .attr("class", "percentage-label")
-      .attr("x", d => x(d.count) + 5)
+      .attr("x", d => x(d.count) + (actualWidth < 400 ? 2 : 5))
       .attr("y", d => (y(d.genre) ?? 0) + y.bandwidth() / 2)
       .attr("dy", "0.35em")
       .attr("text-anchor", "start")
-      .attr("font-size", "12px")
+      .attr("font-size", actualWidth < 400 ? "10px" : "12px")
       .attr("font-weight", "bold")
       .attr("fill", darkMode ? "#fff" : "#4a4a4a")
-      .text(d => `${d.percentage}%`)
+      .text(d => actualWidth < 400 ? `${Math.round(d.percentage)}%` : `${d.percentage}%`)
       .style("opacity", 0)
       .transition()
       .duration(500)
@@ -352,7 +359,7 @@ const HorizontalBarChartRelatedGenres: React.FC<HorizontalBarChartRelatedGenresP
       animate={{ opacity: 1 }}
       transition={{ duration: 0.5 }}
     >
-      <div className="flex-1 relative">
+      <div className="flex-1 relative" style={{ marginLeft: dimensions.width < 400 ? '-40px' : '0' }}>
         <svg 
           ref={svgRef} 
           className="w-full h-full"

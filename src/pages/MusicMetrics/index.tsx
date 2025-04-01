@@ -12,6 +12,7 @@ import GenrePreferencesCard from "./components/GenrePreferencesCard";
 import MusicStatCard from "./components/MusicStatCard";
 import SessionStatsCard from "./components/SessionStatsCard";
 import TopPlayedArtistsCard from "./components/TopPlayedArtistCard";
+import TopTracksList from "./components/TopTracksList";
 
 const CardSkeleton = ({ width, height }: { width: string; height: string }) => (
   <ContentLoader speed={2} width={width} height={height} viewBox={`0 0 ${width} ${height}`}>
@@ -20,7 +21,7 @@ const CardSkeleton = ({ width, height }: { width: string; height: string }) => (
 );
 
 const MusicMetrics = () => {
-  const { overview, genres, topArtists, peakHours, avgSession, hasError, isLoading, error } = useMusicData();
+  const { overview, genres, topArtists, peakHours, avgSession, popularTracks, isLoading, error } = useMusicData();
 
   // #region Animation Variants
   const container = {
@@ -173,23 +174,17 @@ const MusicMetrics = () => {
                 )}
               </BaseCard>
               
-              <Card className="flex-1 p-6 h-[300px] ">
-                <span className="text-gray-500 text-lg font-bold mb-4">Average Listening Session</span>
+              <BaseCard  className="flex-1 p-6 h-[300px] ">
                 {!avgSession?.current ? (
                   <ErrorComponent />
                 ) : avgSession ? (
-                    <SessionStatsCard stats={{
-                      current: avgSession.current,
-                      previous: avgSession.previous,
-                      change: avgSession.change,
-                      isPositive: avgSession.isPositive
-                    }} />
+                    <TopTracksList tracks={popularTracks} isLoading={isLoading} error={error} />
                 ) : (
                   <div className="flex items-center justify-center h-[200px] text-gray-500">
                     No session data available
                   </div>
                 )}
-              </Card>
+              </BaseCard>
             </>
           )}
         </motion.div>

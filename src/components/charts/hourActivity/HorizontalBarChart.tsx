@@ -3,7 +3,7 @@ import * as d3 from 'd3';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Button } from '@/components/ui/button';
 import { format, addDays, subDays, isAfter, startOfToday } from 'date-fns';
-import { CalendarIcon } from 'lucide-react';
+import { CalendarIcon, CircleArrowLeft, CircleArrowRight } from 'lucide-react';
 import { Calendar } from '@/components/ui/calendar';
 import {
   Popover,
@@ -288,7 +288,9 @@ const HorizontalBarChart: React.FC<HorizontalBarChartProps> = ({
   return (
     <div className="w-full h-full">
       <div className="flex items-center justify-between mb-4">
-        <Button variant="outline" onClick={handlePrevDay}>Previous</Button>
+        <Button variant="outline" onClick={handlePrevDay}>
+          {width < 400 ? <CircleArrowLeft /> : 'Previous'}
+        </Button>
         <Popover>
           <PopoverTrigger asChild>
             <Button variant="outline" className="min-w-[240px]">
@@ -311,7 +313,7 @@ const HorizontalBarChart: React.FC<HorizontalBarChartProps> = ({
           onClick={handleNextDay}
           disabled={isAfter(date, startOfToday())}
         >
-          Next
+          {width < 400 ? <CircleArrowRight /> : 'Next'}
         </Button>
       </div>
       <div className="relative w-full h-[440px] flex items-center justify-center">

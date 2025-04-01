@@ -25,13 +25,10 @@ interface TopPlayedArtistsCardProps {
 
 const TopPlayedArtistsCard = ({ artists }: TopPlayedArtistsCardProps) => {
   const container = {
-    hidden: { opacity: 0 },
-    show: {
-      opacity: 1,
-      transition: {
-        staggerChildren: 0.15,
-        delayChildren: 0.1
-      }
+    hidden: { opacity: 0, y: 10 },
+    show: { 
+      opacity: 1, 
+      y: 0,
     }
   };
 

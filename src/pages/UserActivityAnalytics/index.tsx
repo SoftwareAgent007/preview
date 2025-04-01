@@ -20,6 +20,9 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import ActivityChartsSection from "./components/ActivityChartsSection";
+import { GamepadIcon } from "lucide-react";
+import { ClockIcon } from "lucide-react";
+import { UsersIcon } from "lucide-react";
 interface ErrorType {
   message: string;
 }
@@ -158,7 +161,8 @@ const UserActivityAnalytics = () => {
   // Stats data
   const statsData = hasValidData ? [
     {
-      title: "Peak Activity Time", 
+      title: "Peak Activity Time",
+      icon: <ClockIcon className="w-5 h-5" />,
       value: hourlyActivity?.peakHour
         ? `${String(hourlyActivity.peakHour).padStart(2, '0')}:00`
         : peakHours?.length > 0
@@ -169,13 +173,15 @@ const UserActivityAnalytics = () => {
       tooltip: "The hour of the day when user activity reaches its highest point",
     },
     {
-      title: "Online Users",
+      title: "Online Users", 
+      icon: <UsersIcon className="w-5 h-5" />,
       value: (overview?.activeUsers?.count ?? 0).toLocaleString(),
       isPositive: true,
       tooltip: "Total number of users currently online and active on the server",
     },
     {
       title: "Avg Session Time",
+      icon: <ClockIcon className="w-5 h-5" />,
       value: overview?.totalPresenceTime?.hours 
         ? formatDuration(
             Math.floor(overview.totalPresenceTime.hours / overview.activeUsers.count),
@@ -187,6 +193,7 @@ const UserActivityAnalytics = () => {
     },
     {
       title: "Active Games (Now)",
+      icon: <GamepadIcon className="w-5 h-5" />,
       value: (popularGames?.length ?? 0).toLocaleString(),
       isPositive: true,
       tooltip: "Number of different games currently being played by server members",
@@ -298,27 +305,40 @@ const UserActivityAnalytics = () => {
 
         {/* Activity Charts Section */}
         {isLoading ? (
-          <Card className="p-6 w-full h-[300px] mb-10">
+          <Card className="p-6 w-full h-[466px] mb-10">
             <CardSkeleton width="100%" height="100%" />
           </Card>
         ) : hasValidData ? (
-          <ActivityChartsSection 
-            className="mb-6" 
-          />
+        <ActivityChartsSection
+          className="mb-6" 
+        />
         ) : (
           <ErrorComponent 
             title="Activity Data Error" 
             message={(error as ErrorType)?.message || "Failed to load activity data"}
           />
         )}
-
-        <div className="flex flex-col lg:flex-row gap-6 mb-10">
+        <div className="flex flex-col lg:flex-row gap-4 mb-6">
           {/* Stats Grid */}
-          <div className="grid grid-cols-1 gap-4 md:gap-6 flex-1">          
-            <div className="flex flex-col gap-3 w-full left-col">
+          <div className="flex flex-col gap-4 md:gap-6 flex-1">          
+            <div className="mb-4">
+              {presenceLoading ? (
+                <Card className="p-4">
+                  <CardSkeleton width="100%" height="200px" />
+                </Card>
+              ) : deviceUsage?.length > 0 ? (
+                <DeviceUsageTable data={deviceUsage} />
+              ) : (
+                <Card className="p-4">
+                  <p className="text-center text-gray-500">No device usage data available</p>
+                </Card>
+              )}
+            </div>
+            
+            <div className="info flex flex-col gap-2 w-full left-col">
               {isLoading ? (
                 [...Array(4)].map((_, i) => (
-                  <Card key={i} className="w-full p-6">
+                  <Card key={i} className="w-full p-4">
                     <CardSkeleton width="100%" height="60px" />
                   </Card>
                 ))
@@ -337,20 +357,6 @@ const UserActivityAnalytics = () => {
                   title="Stats Data Error" 
                   message={(error as ErrorType)?.message || "Failed to load statistics"}
                 />
-              )}
-            </div>
-
-            <div className="w-full col-span-1 pr-2">
-              {presenceLoading ? (
-                <Card className="p-4">
-                  <CardSkeleton width="100%" height="200px" />
-                </Card>
-              ) : deviceUsage?.length > 0 ? (
-                <DeviceUsageTable data={deviceUsage} />
-              ) : (
-                <Card className="p-4">
-                  <p className="text-center text-gray-500">No device usage data available</p>
-                </Card>
               )}
             </div>
           </div>

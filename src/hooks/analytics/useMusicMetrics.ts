@@ -1,6 +1,20 @@
 import { useMemo } from 'react';
-import { MusicDashboardResponse } from '@/types/music.interface';
+import { MusicDashboardResponse, PopularTrack } from '@/types/music.interface';
 import { useQueryBuilder } from './common/useQueryBuilder';
+
+export const usePopularTracks = (limit = 10) => {
+  const { data, isLoading, error } = useQueryBuilder<PopularTrack[]>(
+    ['popular-tracks', limit],
+    (guildId, startDate, endDate) =>
+      `/music-metrics/popular-tracks?guildId=${guildId}&startDate=${startDate}&endDate=${endDate}&limit=${limit}`
+  );
+
+  return {
+    popularTracks: data || [],
+    isLoading,
+    error
+  } as const;
+};
 
 export const useMusicData = () => {
   const {

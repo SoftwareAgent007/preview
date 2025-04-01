@@ -6,9 +6,10 @@ import { PeakHour } from "../interfaces/presence-activirt.interfaces";
 
 interface PeakActivityHoursProps {
   hourlyActivity: PeakHour[];
+  width: number;
 }
 
-const PeakActivityHours = ({ hourlyActivity }: PeakActivityHoursProps) => {
+const PeakActivityHours = ({ hourlyActivity, width }: PeakActivityHoursProps) => {
   const chartRef = useRef<HTMLDivElement>(null);
   const [chartDimensions, setChartDimensions] = useState({ width: 0, height: 0 });
 
@@ -49,7 +50,7 @@ const PeakActivityHours = ({ hourlyActivity }: PeakActivityHoursProps) => {
           >
             <HorizontalTopHoursChart 
               data={hourlyActivity} 
-              width={chartDimensions.width} 
+              width={width} 
               height={chartDimensions.height}
             />
           </motion.div>

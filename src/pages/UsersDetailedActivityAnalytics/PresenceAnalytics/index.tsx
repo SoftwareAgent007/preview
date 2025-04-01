@@ -30,28 +30,60 @@ const PresenceAnalytics = () => {
     isLoading, 
     error 
   } = usePresenceActivity("week");
-
   const wrapperRef = useRef<HTMLDivElement | null>(null);
+  const presenceChartRef = useRef<HTMLDivElement | null>(null);
+  const peakHoursRef = useRef<HTMLDivElement | null>(null);
+  const horizontalChartRef = useRef<HTMLDivElement | null>(null);
+  
+  const [presenceChartWidth, setPresenceChartWidth] = useState(0);
+  const [peakHoursWidth, setPeakHoursWidth] = useState(0);
+  const [horizontalChartWidth, setHorizontalChartWidth] = useState(0);
+  
   const hasErrors = useMemo(() => Boolean(error), [error]);
   const [activityHourlyDate, setActivityHourlyDate] = useState(new Date());
-  const [horizontalChartWidth, setHorizontalChartWidth] = useState(0);
-  const horizontalChartRef = useRef<HTMLDivElement | null>(null);
-
-  const updateGraphWidth = () => {
+  
+  useEffect(() => {
+    const resizeObserver = new ResizeObserver(() => {
+      if (horizontalChartRef.current) {
+        setHorizontalChartWidth(horizontalChartRef.current.offsetWidth || 0);
+      }
+    });
+    
     if (horizontalChartRef.current) {
-      setHorizontalChartWidth(horizontalChartRef.current.offsetWidth);
+      resizeObserver.observe(horizontalChartRef.current);
     }
-  };
+
+    return () => resizeObserver.disconnect();
+  }, [horizontalChartRef.current]);
 
   useEffect(() => {
-    console.log('horizontalChartRef.current', horizontalChartRef.current);
-    updateGraphWidth();
-  },[horizontalChartRef.current])
+    const resizeObserver = new ResizeObserver(() => {
+      if (presenceChartRef.current) {
+        console.log('presenceChartRef.current.offsetWidth', presenceChartRef.current.offsetWidth);
+        setPresenceChartWidth(presenceChartRef.current.offsetWidth || 0);
+      }
+    });
+    
+    if (presenceChartRef.current) {
+      resizeObserver.observe(presenceChartRef.current);
+    }
+
+    return () => resizeObserver.disconnect();
+  }, [presenceChartRef.current]);
 
   useEffect(() => {
-    window.addEventListener("resize", updateGraphWidth);
-    return () => window.removeEventListener("resize", updateGraphWidth);
-  }, []);
+    const resizeObserver = new ResizeObserver(() => {
+      if (peakHoursRef.current) {
+        setPeakHoursWidth(peakHoursRef.current.offsetWidth * 0.8 || 0);
+      }
+    });
+    
+    if (peakHoursRef.current) {
+      resizeObserver.observe(peakHoursRef.current);
+    }
+
+    return () => resizeObserver.disconnect();
+  }, [peakHoursRef.current]);
 
   const {
     hourlyActivity,
@@ -114,7 +146,6 @@ const PresenceAnalytics = () => {
     },
   ];
 
-  // Safely format stats data with proper validation
   const getFormattedStatValue = (stat: any) => {
     if (!overview) return null;
 
@@ -132,7 +163,6 @@ const PresenceAnalytics = () => {
     }
   };
 
-  // Display top-level error if request failed
   if (hasErrors && !isLoading) {
     return (
       <div className="w-full bg-gray-50 p-4 md:p-6">
@@ -147,7 +177,6 @@ const PresenceAnalytics = () => {
     <motion.div ref={wrapperRef} className="w-full bg-gray-50 p-4 md:p-6" variants={containerVariants} initial="hidden" animate="visible">
       <div className="mx-auto" style={{ maxWidth: `${import.meta.env.VITE_MAX_WIDTH || 1200}px` }}>
         
-        {/* Stats Cards */}
         <motion.div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6 mb-6">
           {statsData.map((stat, index) => {
             const value = getFormattedStatValue(stat);
@@ -187,15 +216,14 @@ const PresenceAnalytics = () => {
             );
           })}
         </motion.div>
-        {/* Charts */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
-          <motion.div variants={itemVariants}>
+        <div className={`grid grid-cols-1 ${wrapperRef.current && wrapperRef.current.offsetWidth >= 800 ? 'lg:grid-cols-2' : ''} gap-6 mb-6`}>
+          <motion.div variants={itemVariants} ref={presenceChartRef}>
               {isLoading || isHourlyLoading ? (
               <Card className="p-6">
                 <CardSkeleton width="100%" height="470" />
               </Card>
               ) : hourlyActivity?.statusDistribution ? (
-                <PresenceWeekActivityChart data={hourlyActivity.statusDistribution} />
+                <PresenceWeekActivityChart pageWrapperWidth={wrapperRef?.current?.offsetWidth} chartWrapperWidth={presenceChartWidth} data={hourlyActivity.statusDistribution} />
               ) : (
                 <ErrorComponent message="Weekly activity data unavailable" />
               )}
@@ -213,13 +241,13 @@ const PresenceAnalytics = () => {
               )}
           </motion.div>
 
-          <motion.div variants={itemVariants}>
+          <motion.div variants={itemVariants} ref={peakHoursRef}>
               {isLoading ? (
               <Card className="p-6">
                 <CardSkeleton width="100%" height="470" />
               </Card>
               ) : peakHours && Array.isArray(peakHours) && peakHours.length > 0 ? (
-                <PeakActivityHours hourlyActivity={peakHours} />
+                <PeakActivityHours hourlyActivity={peakHours} width={peakHoursWidth} />
               ) : (
                 <ErrorComponent message="Peak hours data unavailable" />
               )}

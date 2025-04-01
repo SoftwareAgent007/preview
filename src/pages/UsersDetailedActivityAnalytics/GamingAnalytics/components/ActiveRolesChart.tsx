@@ -2,6 +2,7 @@ import { motion } from "framer-motion";
 import { Card } from "@/components/ui/card";
 import { ClickableTooltip } from "@/components/ui/tooltip";
 import CircleRoleChart from "@/components/charts/circleChartOfRoles";
+import { useRef, useState, useEffect } from "react";
 
 interface RolesData {
   role: string;
@@ -15,6 +16,24 @@ interface ActiveRolesChartProps {
 }
 
 const ActiveRolesChart = ({ data }: ActiveRolesChartProps) => {
+  const chartRef = useRef<HTMLDivElement | null>(null);
+  const [chartWidth, setChartWidth] = useState(500);
+
+  useEffect(() => {
+    const updateWidth = () => {
+      if (chartRef.current) {
+        const containerWidth = chartRef.current.offsetWidth;
+        setChartWidth(Math.min(containerWidth - 48, 800)); // 48px for padding
+      }
+    };
+
+    const resizeObserver = new ResizeObserver(updateWidth);
+    if (chartRef.current) {
+      resizeObserver.observe(chartRef.current);
+    }
+    return () => resizeObserver.disconnect();
+  }, []);
+
   // #region Animation Variants
   const containerVariants = {
     hidden: { opacity: 0, y: 20 },
@@ -46,7 +65,7 @@ const ActiveRolesChart = ({ data }: ActiveRolesChartProps) => {
       animate="visible"
       className="grid gap-6"
     >
-      <Card className="p-6 h-full hover:scale-[101%] transition-all duration-150">
+      <Card className="p-6 h-full hover:scale-[101%] transition-all duration-150" ref={chartRef}>
         <motion.div 
           className="title text-gray-500 text-lg font-bold mb-4 flex items-center"
           whileHover={{ x: 5 }}
@@ -88,7 +107,7 @@ const ActiveRolesChart = ({ data }: ActiveRolesChartProps) => {
             delay: 0.2
           }}
         >
-          <CircleRoleChart data={data} />
+          <CircleRoleChart data={data} width={chartWidth} />
         </motion.div>
       </Card>
     </motion.div>

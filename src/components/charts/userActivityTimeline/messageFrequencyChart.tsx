@@ -117,7 +117,7 @@ const MessageFrequencyChart: React.FC<MessageFrequencyChartProps> = ({
                             transition={{ duration: 0.2 }}
                         >
                             <strong>Message Frequency: </strong> 
-                            Shows the frequency of messages sent over time. Adjusting the timeframe updates the data.
+                            Shows the frequency of messages sent by all members during a certain time in the guild. When the time frame changes, the data is updated.
                         </motion.p>
                     }>
                         <motion.span 

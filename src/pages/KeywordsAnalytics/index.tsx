@@ -34,6 +34,18 @@ const KeywordsAnalytics = () => {
       end: end.toISOString()
     };
   });
+  
+  useEffect(() => {
+    const resizeObserver = new ResizeObserver(() => {
+        setMatchesChartWidth(matchesChartRef.current?.offsetWidth || 0);
+    });
+    
+    if (matchesChartRef.current) {
+        resizeObserver.observe(matchesChartRef.current);
+    }
+
+    return () => resizeObserver.disconnect();
+  }, [matchesChartRef.current]);
 
   const updateGraphWidth = () => {
     if (matchesChartRef.current) {

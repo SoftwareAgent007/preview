@@ -74,14 +74,22 @@ export function usePresenceActivity(period: 'day' | 'week' | 'month' | 'year' = 
     (guildId) => `/presence-activity/overview?guildId=${guildId}&startDate=${timeRange.startDate}&endDate=${timeRange.endDate}`
   );
 
-  // Status Breakdown
   const {
     data: statusBreakdown,
     isLoading: statusLoading,
     error: statusError
   } = useQueryBuilder<StatusBreakdown[]>(
     ['statusBreakdown', timeRange],
-    (guildId) => `/presence-activity/status-breakdown?guildId=${guildId}&startDate=${timeRange.startDate}&endDate=${timeRange.endDate}`
+    (guildId) => `/presence-activity/status-breakdown?guildId=${guildId}&startDate=${timeRange.startDate}&endDate=${timeRange.endDate}`,
+    {
+      select: (data) => data.map(item => ({
+        ...item,
+        color: item.status === 'online' ? '#10b981' : // Green
+               item.status === 'idle' ? '#f59e0b' :   // Amber
+               item.status === 'dnd' ? '#ef4444' :    // Red
+               '#6b7280'                              // Gray for offline
+      }))
+    }
   );
 
   // Hourly Activity

@@ -8,36 +8,34 @@ import { motion, AnimatePresence } from "framer-motion";
 
 const RolesChart = ({ width, data }: { width?: number, data: { roleName: string, count: number, percentage: number, color: string }[] }) => {
     const chartRef = useRef<HTMLDivElement | null>(null);
-    const [chartWidth, setChartWidth] = useState(400);
+    const [chartWidth, setChartWidth] = useState(width || 400);
     const [chartHeight, setChartHeight] = useState(300);
     const [isModalOpen, setIsModalOpen] = useState(false);
 
-    const MIN_CHART_SIZE = 400; // Reduced from 580
-    const MAX_CHART_SIZE = 500;
+    const MIN_CHART_SIZE = 300;
+    const MAX_CHART_SIZE = 800;
 
     const updateChartDimensions = () => {
         if (chartRef.current) {
             const containerWidth = chartRef.current.offsetWidth;
-            const screenWidth = window.innerWidth;
+            const containerHeight = chartRef.current.offsetHeight;
             
-            if (screenWidth < 1300) {
-                // For smaller screens, use a more compact size
-                const size = Math.max(MIN_CHART_SIZE, Math.min(containerWidth * 0.5, MAX_CHART_SIZE));
-                setChartWidth(size);
-                setChartHeight(size);
-            } else {
-                // For larger screens, maintain original proportions
-                const size = Math.min(containerWidth * 0.7, MAX_CHART_SIZE);
-                setChartWidth(size);
-                setChartHeight(size);
-            }
+            // Calculate width based on container size
+            const newWidth = Math.min(containerWidth - 48, 800); // 48px for padding
+            const newHeight = Math.min(containerHeight - 100, 800); // 100px for header/margins
+
+            setChartWidth(newWidth);
+            setChartHeight(newHeight);
         }
     };
 
     useEffect(() => {
         updateChartDimensions();
-        window.addEventListener("resize", updateChartDimensions);
-        return () => window.removeEventListener("resize", updateChartDimensions);
+        const resizeObserver = new ResizeObserver(updateChartDimensions);
+        if (chartRef.current) {
+            resizeObserver.observe(chartRef.current);
+        }
+        return () => resizeObserver.disconnect();
     }, []);
 
     const containerVariants = {
@@ -127,7 +125,7 @@ const RolesChart = ({ width, data }: { width?: number, data: { roleName: string,
                     >
                         <div className="relative flex items-center justify-center">
                             <CircleRoleChart 
-                                width={width || chartWidth} 
+                                width={chartWidth} 
                                 height={chartHeight} 
                                 data={data} 
                             />

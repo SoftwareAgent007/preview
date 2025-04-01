@@ -6,6 +6,14 @@ import { ClickableTooltip } from "@/components/ui/tooltip";
 import ErrorComponent from "@/components/common/errorModel";
 import { motion } from "framer-motion";
 import { useActivityTrend } from "@/hooks/analytics/useUserActivityAnalytics";
+import ContentLoader from "react-content-loader";
+
+
+const LoaderCard = ({ width, height }: { width: string; height: string }) => (
+    <div className="w-full h-full flex items-center justify-center">
+      <div className="w-8 h-8 border-4 border-gray-200 border-t-blue-500 rounded-full animate-spin" />
+    </div>
+);
 
 const ActivityCharts = ({
     className,
@@ -20,18 +28,19 @@ const ActivityCharts = ({
         activityType: 'user',
         viewType: 'daily'
     });
-
+    
     const { data: spotifyTrend, isLoading: spotifyLoading } = useActivityTrend({
         activityType: 'spotify',
         viewType: 'daily'
     });
-
+    
     const { data: gamingTrend, isLoading: gamingLoading } = useActivityTrend({
         activityType: 'gaming',
         viewType: 'daily'
     });
 
-    console.log(userTrend, spotifyTrend, gamingTrend);
+    const isLoading = userLoading || spotifyLoading || gamingLoading;
+    
     const processedData: DataSet = {
         'Active Users': {
             data: userTrend?.data?.map(point => ({ date: new Date(point.date).toISOString(), count: point.activeUsers })) || [],
@@ -47,7 +56,6 @@ const ActivityCharts = ({
         }
     };
 
-    const isLoading = userLoading || spotifyLoading || gamingLoading;
 
     const updateChartDimensions = () => {
         if (chartRef.current) {
@@ -69,13 +77,18 @@ const ActivityCharts = ({
             }
         }
     };
-
+    
     useEffect(() => {
-        updateChartDimensions();
-        window.addEventListener("resize", updateChartDimensions);
-        return () =>
-            window.removeEventListener("resize", updateChartDimensions);
-    }, []);
+        const resizeObserver = new ResizeObserver(() => {
+            updateChartDimensions()
+        });
+        
+        if (chartRef.current) {
+            resizeObserver.observe(chartRef.current);
+        }
+
+        return () => resizeObserver.disconnect();
+    }, [chartRef.current]);
 
     // #region Animation Variants
     const containerVariants = {
@@ -168,44 +181,42 @@ const ActivityCharts = ({
                             variants={itemVariants}
                         >
                             {isLoading ? (
-                                <div>Loading...</div>
+                                <motion.div className="p-6 w-full h-[339px]">
+                                    <LoaderCard width="100%" height="100%" />
+                                </motion.div>
                             ) : Object.keys(processedData).length ? (
-                                Object.entries(processedData).map(([key, value]) => (
-                                    <motion.div
-                                        key={key}
-                                        className="flex items-center gap-2"
-                                        whileHover={{ scale: 1.05 }}
-                                    >
-                                        <div className="w-6 h-6 bg-gray-200 rounded-full flex items-center justify-center">
-                                            <div
-                                                className="w-3 h-3 rounded-full"
-                                                style={{
-                                                    backgroundColor: value.color,
-                                                }}
-                                            />
-                                        </div>
-                                        <span className="text-sm font-medium">
-                                            {key}
-                                        </span>
+                                <>
+                                    {Object.entries(processedData).map(([key, value]) => (
+                                        <motion.div
+                                            key={key}
+                                            className="flex items-center gap-2"
+                                            whileHover={{ scale: 1.05 }}
+                                        >
+                                            <div className="w-6 h-6 bg-gray-200 rounded-full flex items-center justify-center">
+                                                <div
+                                                    className="w-3 h-3 rounded-full"
+                                                    style={{
+                                                        backgroundColor: value.color,
+                                                    }}
+                                                />
+                                            </div>
+                                            <span className="text-sm font-medium">
+                                                {key}
+                                            </span>
+                                        </motion.div>
+                                    ))}
+                                    <motion.div variants={itemVariants}>
+                                        <MultiLayerAreaChart
+                                            datasets={processedData}
+                                            width={chartWidth}
+                                            height={chartHeight}
+                                        />
                                     </motion.div>
-                                ))
+                                </>
                             ) : (
                                 <ErrorComponent />
                             )}
                         </motion.div>
-                        {isLoading ? (
-                            <div>Loading chart...</div>
-                        ) : Object.keys(processedData).length ? (
-                            <motion.div variants={itemVariants}>
-                                <MultiLayerAreaChart
-                                    datasets={processedData}
-                                    width={chartWidth}
-                                    height={chartHeight}
-                                />
-                            </motion.div>
-                        ) : (
-                            <ErrorComponent />
-                        )}
                     </motion.div>
                 </CardContent>
             </motion.div>

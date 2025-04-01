@@ -10,7 +10,6 @@ export interface RoleData {
   color: string;
 }
 
-
 const CircleRoleChart = ({ data, width = 500, height = 600, darkMode = false }: { data: RoleData[]; width?: number; height?: number; darkMode?: boolean; }) => {
   const svgRef = useRef<SVGSVGElement>(null);
   const [activeSlice, setActiveSlice] = useState<string | null>(null);
@@ -26,23 +25,60 @@ const CircleRoleChart = ({ data, width = 500, height = 600, darkMode = false }: 
   const textColor = darkMode ? "#e2e8f0" : "#1e293b";
   const backgroundColor = darkMode ? "#1e293b" : "white";
 
+  console.log('width',width);
+
+  // Adaptive sizing based on width
+  const getAdaptiveSizes = (width: number) => {
+    let chartHeight, radius, fontSize, legendSize;
+    
+    if (width <= 300) {
+      chartHeight = width;
+      radius = width * 0.35;
+      fontSize = 10;
+      legendSize = 10;
+    } else if (width <= 500) {
+      chartHeight = width * 1.1;
+      radius = width * 0.4;
+      fontSize = 12;
+      legendSize = 12;
+    } else if (width <= 800) {
+      chartHeight = width * 0.9;
+      radius = width * 0.35;
+      fontSize = 14;
+      legendSize = 14;
+    } else {
+      chartHeight = width * 0.8;
+      radius = width * 0.3;
+      fontSize = 16;
+      legendSize = 14;
+    }
+
+    return { chartHeight, radius, fontSize, legendSize };
+  };
+
   useEffect(() => {
     if (!svgRef.current) return;
+
+    const { chartHeight, radius, fontSize, legendSize } = getAdaptiveSizes(width);
 
     // Ensure percentage is always a number
     const processedData = data.map((item) => ({
       ...item,
-      role: item.role || item.roleName, // Handle both role and roleName
+      role: item.role || item.roleName,
       percentage:
         typeof item.percentage === "string"
           ? parseFloat(item.percentage)
           : item.percentage,
     }));
 
-    const margin = { top: 20, right: 20, bottom: 60, left: 20 };
+    const margin = { 
+      top: radius * 0.1, 
+      right: radius * 0.1, 
+      bottom: radius * 0.3, 
+      left: radius * 0.1 
+    };
+
     const chartWidth = width - margin.left - margin.right;
-    const chartHeight = height - margin.top - margin.bottom;
-    const radius = (Math.min(chartWidth, chartHeight) / 2) * 0.8;
 
     // Create SVG
     const svg = d3.select(svgRef.current);
@@ -50,9 +86,9 @@ const CircleRoleChart = ({ data, width = 500, height = 600, darkMode = false }: 
 
     const chartGroup = svg
       .attr("width", width)
-      .attr("height", height)
+      .attr("height", chartHeight)
       .append("g")
-      .attr("transform", `translate(${width / 2}, ${height / 2 - 30})`);
+      .attr("transform", `translate(${width / 2}, ${chartHeight / 2 - margin.bottom})`);
 
     // Add a subtle shadow filter
     const defs = svg.append("defs");
@@ -64,14 +100,14 @@ const CircleRoleChart = ({ data, width = 500, height = 600, darkMode = false }: 
     filter
       .append("feGaussianBlur")
       .attr("in", "SourceAlpha")
-      .attr("stdDeviation", 3)
+      .attr("stdDeviation", radius * 0.01)
       .attr("result", "blur");
 
     filter
       .append("feOffset")
       .attr("in", "blur")
       .attr("dx", 0)
-      .attr("dy", 3)
+      .attr("dy", radius * 0.01)
       .attr("result", "offsetBlur");
 
     const feComponentTransfer = filter
@@ -112,7 +148,6 @@ const CircleRoleChart = ({ data, width = 500, height = 600, darkMode = false }: 
         .attr("offset", "100%")
         .attr("stop-color", d3.rgb(d.color).darker(0.3).toString());
 
-      // Update the color to use the gradient
       processedData[i].color = `url(#${gradientId})`;
     });
 
@@ -156,7 +191,7 @@ const CircleRoleChart = ({ data, width = 500, height = 600, darkMode = false }: 
       .attr("d", (d) => arc(d))
       .attr("fill", (d) => d.data.color)
       .attr("stroke", backgroundColor)
-      .attr("stroke-width", 2)
+      .attr("stroke-width", radius * 0.004)
       .style("filter", "url(#drop-shadow)")
       .style("cursor", "pointer")
       .on("mouseover", function (event, d) {
@@ -166,7 +201,7 @@ const CircleRoleChart = ({ data, width = 500, height = 600, darkMode = false }: 
           count: d.data.count,
           percentage: d.data.percentage,
           x: x + width / 2,
-          y: y + height / 2 - 30,
+          y: y + chartHeight / 2 - margin.bottom,
         });
 
         setActiveSlice(d.data.role || '');
@@ -194,13 +229,13 @@ const CircleRoleChart = ({ data, width = 500, height = 600, darkMode = false }: 
 
     // Add inner labels
     const innerLabels = slices
-      .filter((d) => d.data.percentage >= 15) // Only add labels for slices that are large enough
+      .filter((d) => d.data.percentage >= 15)
       .append("text")
       .attr("transform", (d) => `translate(${labelArc.centroid(d)})`)
       .attr("dy", ".35em")
       .attr("text-anchor", "middle")
       .attr("fill", "white")
-      .attr("font-size", "14px")
+      .attr("font-size", `${fontSize}px`)
       .attr("font-weight", "bold")
       .attr("pointer-events", "none")
       .style("text-shadow", "0px 0px 4px rgba(0,0,0,0.6)")
@@ -210,14 +245,14 @@ const CircleRoleChart = ({ data, width = 500, height = 600, darkMode = false }: 
       });
 
     // Create legend with wrapping
-    const legendHeight = 30;
-    const legendPadding = 10;
-    const legendRectSize = 14;
-    const legendSpacing = 4;
-    const legendTextOffset = 20;
+    const legendHeight = fontSize * 2;
+    const legendPadding = fontSize * 0.7;
+    const legendRectSize = legendSize;
+    const legendSpacing = legendSize * 0.3;
+    const legendTextOffset = legendSize * 1.4;
 
     // Calculate text widths for legend items
-    const tempText = svg.append("text").attr("font-size", "14px");
+    const tempText = svg.append("text").attr("font-size", `${legendSize}px`);
     const legendItemWidths = processedData.map(d => {
       const role = d.role || '';
       tempText.text(role.charAt(0).toUpperCase() + role.slice(1));
@@ -246,7 +281,7 @@ const CircleRoleChart = ({ data, width = 500, height = 600, darkMode = false }: 
     // Create legend group
     const legendGroup = svg
       .append("g")
-      .attr("transform", `translate(${margin.left}, ${height - totalLegendHeight})`);
+      .attr("transform", `translate(${margin.left}, ${chartHeight - totalLegendHeight})`);
 
     const legendItems = legendGroup
       .selectAll(".legend-item")
@@ -292,7 +327,7 @@ const CircleRoleChart = ({ data, width = 500, height = 600, darkMode = false }: 
       .attr("x", legendTextOffset)
       .attr("y", legendRectSize - 2)
       .attr("fill", textColor)
-      .attr("font-size", "14px")
+      .attr("font-size", `${legendSize}px`)
       .text((d) => {
         const role = d.role || '';
         return role.charAt(0).toUpperCase() + role.slice(1);
