@@ -98,7 +98,7 @@ const PresenceWeekActivityChart: React.FC<PresenceWeekActivityChartProps> = ({
   const [hoveredPoint, setHoveredPoint] = useState<{hour: number, status: string, value: number} | null>(null);
 
   const [chartWidth, setChartWidth] = useState(800);
-  const [chartHeight] = useState(400);
+  const [chartHeight] = useState(350);
   
   useEffect(() => {
     const resizeObserver = new ResizeObserver(() => {
