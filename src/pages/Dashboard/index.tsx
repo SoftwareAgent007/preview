@@ -153,11 +153,11 @@ const Dashboard = () => {
     {
       title: "Active Listeners",
       value: (activeListeners?.count ?? 0).toLocaleString(),
-      description: "Count of users listening during selected period",
+      description: "during selected period",
       trend: activeListeners?.percentChange ?? 0,
       isTrendPositive: (activeListeners?.percentChange ?? 0) > 0,
       trendUnit: "%",
-      tooltipContent: "Listeners currently active on the platform",
+      tooltipContent: "Count of users listening during selected period",
       index: 3,
     },
     {
