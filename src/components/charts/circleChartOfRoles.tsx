@@ -25,8 +25,6 @@ const CircleRoleChart = ({ data, width = 500, height = 600, darkMode = false }: 
   const textColor = darkMode ? "#e2e8f0" : "#1e293b";
   const backgroundColor = darkMode ? "#1e293b" : "white";
 
-  console.log('width',width);
-
   // Adaptive sizing based on width
   const getAdaptiveSizes = (width: number) => {
     let chartHeight, radius, fontSize, legendSize;

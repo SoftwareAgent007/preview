@@ -57,7 +57,6 @@ const createApiService = <T>(baseUrl: string): ApiService<T> => {
   };
 
   const postData = async (endpoint: string, body: any, guildId: string): Promise<T> => {
-    console.log( 'endpoint body guildId',endpoint,body,guildId)
     if (!baseUrl) throw new Error("API URL is missing!");
     if (!guildId) throw new Error("guildId is required!");
     const { url, options } = requestInterceptor(`${baseUrl}${endpoint}?guildId=${guildId}`, {
@@ -69,8 +68,6 @@ const createApiService = <T>(baseUrl: string): ApiService<T> => {
   };
 
   const deleteData = async (endpoint: string, guildId: string): Promise<T> => {
-    console.log( 'endpoint guildId',endpoint,guildId)
-
     if (!baseUrl) throw new Error("API URL is missing!");
     if (!guildId) throw new Error("guildId is required!");
     const { url, options } = requestInterceptor(`${baseUrl}${endpoint}?guildId=${guildId}`, { method: 'DELETE' });
@@ -79,8 +76,6 @@ const createApiService = <T>(baseUrl: string): ApiService<T> => {
   };
 
   const patchData = async (endpoint: string, body: any, guildId: string ): Promise<T> => {
-    console.log( 'endpoint body guildId',endpoint,body,guildId)
-
     if (!baseUrl) throw new Error("API URL is missing!");
     if (!guildId) throw new Error("guildId is required!");
     const { url, options } = requestInterceptor(`${baseUrl}${endpoint}?guildId=${guildId}`, {

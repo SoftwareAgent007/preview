@@ -365,7 +365,6 @@ const KeywordsDataTableComponent = ({
             <AlertDialogCancel>Cancel</AlertDialogCancel>
             <AlertDialogAction
               onClick={() => {
-                console.log('Deleting keyword:', keywordToDelete);
                 keywordToDelete && onDelete(keywordToDelete?.id);
               }}
               className="bg-red-500 hover:bg-red-600"

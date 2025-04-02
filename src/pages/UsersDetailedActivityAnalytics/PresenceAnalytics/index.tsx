@@ -59,7 +59,6 @@ const PresenceAnalytics = () => {
   useEffect(() => {
     const resizeObserver = new ResizeObserver(() => {
       if (presenceChartRef.current) {
-        console.log('presenceChartRef.current.offsetWidth', presenceChartRef.current.offsetWidth);
         setPresenceChartWidth(presenceChartRef.current.offsetWidth || 0);
       }
     });

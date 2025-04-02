@@ -477,7 +477,6 @@ const Modal = ({ closeModal, data, darkMode = false }: ModalProps) => {
 
 const ExpandablePresenceChart: React.FC<PresenceWeekActivityChartProps> = ({ data, pageWrapperWidth, chartWrapperWidth, darkMode = false }) => {
   const [isModalOpen, setIsModalOpen] = useState(false);
-  console.log('chartWrapperWidth1', chartWrapperWidth);
   const openModal = () => setIsModalOpen(true);
   const closeModal = () => setIsModalOpen(false);
   

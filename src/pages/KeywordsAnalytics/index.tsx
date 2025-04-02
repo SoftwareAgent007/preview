@@ -49,7 +49,6 @@ const KeywordsAnalytics = () => {
 
   const updateGraphWidth = () => {
     if (matchesChartRef.current) {
-      console.log('matchesChartRef.current.offsetWidth', matchesChartRef.current.offsetWidth);
       setMatchesChartWidth(matchesChartRef.current.offsetWidth); // Subtract padding
     }
   };
@@ -92,7 +91,6 @@ const KeywordsAnalytics = () => {
 
   useEffect(() => {
     updateDateRange(viewType);
-    console.log('viewType, dateRange.start, dateRange.end',viewType, dateRange.start, dateRange.end);  
   }, [viewType]);
 
   const {

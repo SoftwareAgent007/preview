@@ -134,7 +134,6 @@ export const generateRandomData = {
       ),
     };
 
-    console.log('Generated Gaming Analytics Response:', response);
     return response;
   },
 

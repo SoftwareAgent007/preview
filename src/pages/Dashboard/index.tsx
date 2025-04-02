@@ -59,12 +59,10 @@ const Dashboard = () => {
   } = useActivityData(activityHourlyDate);
 
   const updateGraphWidth = () => {
-    console.log('wrapperRef.current changed');
     if (wrapperRef.current) {
       setGraphWidth(wrapperRef.current.offsetWidth / 2.3);
     }
     if (horizontalChartRef.current) {
-      console.log('horizontalChartRef.current.offsetWidth', horizontalChartRef.current.offsetWidth);
       setHorizontalChartWidth(horizontalChartRef.current.offsetWidth); // Subtract padding
     }
   };

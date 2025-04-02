@@ -48,24 +48,7 @@ const GamingAnalytics = () => {
       returnRate = 0,
       peakHours = gamePeakHours || []
     } = {},
-    weeklyTrends = [],
-    playtimeDistribution = [],
-    topGamers = [],
-    timeOfDayBreakdown = []
   } = gameReport || {};
-
-  useEffect(() => {
-    console.log('totalPlayers:', totalPlayers);
-    console.log('avgSessionMinutes:', avgSessionMinutes); 
-    console.log('peakPartySize:', peakPartySize);
-    console.log('totalHours:', totalHours);
-    console.log('returnRate:', returnRate);
-    console.log('weeklyTrends:', weeklyTrends);
-    console.log('peakHours:', peakHours);
-    console.log('playtimeDistribution:', playtimeDistribution);
-    console.log('topGamers:', topGamers);
-    console.log('timeOfDayBreakdown:', timeOfDayBreakdown);
-  }, [totalPlayers, avgSessionMinutes, peakPartySize, totalHours, returnRate, weeklyTrends, peakHours, playtimeDistribution, topGamers, timeOfDayBreakdown]);
 
   const updateGraphWidth = () => {
     if (wrapperRef.current && wrapperRef.current.offsetWidth > 910) {

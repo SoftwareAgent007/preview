@@ -57,7 +57,6 @@ const Header = ({ isSidebarOpen, setIsSidebarOpen }: {
 
   const handleDatePickerClose = () => {
     queryClient.invalidateQueries();
-    console.log('DatePicker closed');
   };
 
   return (
@@ -91,7 +90,6 @@ const Header = ({ isSidebarOpen, setIsSidebarOpen }: {
                 value={selectedPeriod || DEFAULT_DATE_RANGE}
                 onClose={handleDatePickerClose}
                 onChange={(period) => {
-                  console.log('DatePicker period changed:', period);
                   setSelectedPeriod && period && setSelectedPeriod(period);
                 }}
                 disabledDays={{ after: new Date() }}
@@ -153,7 +151,6 @@ const Header = ({ isSidebarOpen, setIsSidebarOpen }: {
               value={selectedPeriod || DEFAULT_DATE_RANGE}
               onClose={handleDatePickerClose}
               onChange={(period) => {
-                console.log('DatePicker period changed desk:', period);
                 setSelectedPeriod && period && setSelectedPeriod(period);
               }}
               disabledDays={{ after: new Date() }}
