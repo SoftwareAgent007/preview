@@ -21,7 +21,8 @@ import ProtectedRoute from "./components/common/ProtectedRoute.tsx";
 import PublicRoute from "./components/common/PublicRoute.tsx";
 import { DashboardContext } from "./common/context/queryContext.ts";
 import { DateRange } from "react-day-picker";
-import { DEFAULT_DATE_RANGE } from "./hooks/apiService.ts";
+import { DEFAULT_DATE_RANGE, DEFAULT_START_DATE, DEFAULT_END_DATE } from "./hooks/apiService.ts";
+import AssignGuild from "./pages/Auth/AssignGuild.tsx";
 
 const queryClient = new QueryClient({
   defaultOptions: { 
@@ -42,12 +43,34 @@ const queryClient = new QueryClient({
 
 function App() {
   const [selectedPeriod, setSelectedPeriod] = useState<DateRange>(DEFAULT_DATE_RANGE);
-  const [guildId, setGuildId] = useState('');
+  const [guildId, setGuildId] = useState<string>(localStorage.getItem('selected_guild') || '');
+  
+  const handleSetPeriod = (period: DateRange) => {
+    setSelectedPeriod(period);
+    localStorage.setItem('dashboard_period', JSON.stringify({
+      from: period.from?.toISOString(),
+      to: period.to?.toISOString()
+    }));
+  };
+
+  const handleSetGuildId = (id: string) => {
+    setGuildId(id);
+    localStorage.setItem('selected_guild', id);
+  };
 
   return (
     <ThemeProvider defaultTheme="light" storageKey="vite-ui-theme">
       <AuthProvider>
-        <DashboardContext.Provider value={{ selectedPeriod, guildId, setSelectedPeriod, setGuildId }}>
+        <DashboardContext.Provider 
+          value={{ 
+            selectedPeriod,
+            setSelectedPeriod: handleSetPeriod, 
+            startDate: selectedPeriod.from?.toISOString() || DEFAULT_START_DATE,
+            endDate: selectedPeriod.to?.toISOString() || DEFAULT_END_DATE,
+            guildId,
+            setGuildId: handleSetGuildId
+          }}
+        >
           <QueryClientProvider client={queryClient}>
             <BrowserRouter>
               <AnimatePresence mode="wait">
@@ -59,7 +82,12 @@ function App() {
                     <Route path="/forgot-password" element={<ForgotPassword />} />
                   </Route>
                   
-                  {/* Protected routes */}
+                  {/* Semi-protected route - requires auth but no guild */}
+                  <Route element={<ProtectedRoute allowNoGuild />}>
+                    <Route path="/assign-guild" element={<AssignGuild />} />
+                  </Route>
+
+                  {/* Protected routes - require both auth and guild */}
                   <Route element={<ProtectedRoute />}>
                     <Route element={<DashboardLayout children/>}>
                       <Route path="/" element={<Dashboard />}/>

@@ -5,6 +5,7 @@ export const ROUTES = {
   LOGIN: "/login",
   REGISTER: "/register",
   FORGOT_PASSWORD: "/forgot-password",
+  ASSIGN_GUILD: "/assign-guild",
 
   // Dashboard routes
   DASHBOARD: "/",
@@ -68,4 +69,7 @@ export const BREADCRUMB_PATHS: Record<string, BreadcrumbItem[]> = {
   //   { label: "Dashboard", path: ROUTES.DASHBOARD },
   //   { label: "Message reaction", path: ROUTES.MESSAGE_REACTIONS },
   // ],
+  [ROUTES.ASSIGN_GUILD]: [
+    { label: "Assign Guild", path: ROUTES.ASSIGN_GUILD }
+  ],
 } as const;

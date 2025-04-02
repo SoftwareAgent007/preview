@@ -11,6 +11,7 @@ import {
   GamepadIcon,
   ShoppingCart,
   Activity,
+  Building2
 } from "lucide-react";
 
 interface MenuItem {
@@ -44,6 +45,7 @@ export const menuCategories: MenuCategories = {
     },
     { icon: <Music2 />, label: "Music Metrics", path: ROUTES.MUSIC_METRICS, beta: true },
     // { icon: <MessageSquare />, label: "Message Reactions", path: ROUTES.MESSAGE_REACTIONS },
+    { icon: <Building2 />, label: "Assign Guild", path: ROUTES.ASSIGN_GUILD },
   ],
   // Community: [
   //   { icon: <UserCircle />, label: "Members", path: "/members" },

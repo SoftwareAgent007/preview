@@ -2,13 +2,14 @@ import { createContext, useContext, useEffect } from 'react';
 import { DateRange } from 'react-day-picker';
 import { DEFAULT_START_DATE, DEFAULT_END_DATE } from '@/hooks/apiService';
 
-const STORAGE_KEY = 'dashboard_period';
+export const STORAGE_KEY = 'dashboard_period';
+export const GUILD_STORAGE_KEY = 'selected_guild';
 
 export interface DashboardContextType {
   selectedPeriod?: DateRange;
   guildId: string;
-  setSelectedPeriod: (period: DateRange) => void;
   setGuildId: (id: string) => void;
+  setSelectedPeriod: (period: DateRange) => void;
   startDate: string;
   endDate: string;
 }
@@ -30,22 +31,24 @@ const getStoredPeriod = (): DateRange => {
 
 export const DashboardContext = createContext<DashboardContextType>({
   selectedPeriod: getStoredPeriod(),
-  guildId: '',
+  guildId: localStorage.getItem(GUILD_STORAGE_KEY) || '',
   setSelectedPeriod: (period: DateRange) => {
     localStorage.setItem(STORAGE_KEY, JSON.stringify({
       from: period.from?.toISOString(),
       to: period.to?.toISOString()
     }));
   },
-  setGuildId: () => {},
+  setGuildId: (id: string) => {
+    localStorage.setItem(GUILD_STORAGE_KEY, id);
+  },
   startDate: DEFAULT_START_DATE,
   endDate: DEFAULT_END_DATE
 });
 
-export const useDashboardContext = () => {
+export const useDashboardContext = (): Required<DashboardContextType> => {
   const context = useContext(DashboardContext);
   if (!context) {
     throw new Error('useDashboardContext must be used within a DashboardProvider');
   }
-  return context;
+  return context as Required<DashboardContextType>;
 };

@@ -8,15 +8,19 @@ import LoadingState from "@/components/states/LoadingState";
  * If user is authenticated, they will be redirected to the dashboard
  */
 const PublicRoute = () => {
-  const { isAuthenticated, isLoading } = useAuth();
+  const { user, isLoading } = useAuth();
   const location = useLocation();
 
-  if (isLoading) {
-    return <LoadingState fullScreen text="Checking authentication..." />;
-  }
+  // if (isLoading) {
+  //   return <LoadingState fullScreen text="Checking authentication..." />;
+  // }
 
   // If user is authenticated, redirect to dashboard
-  if (isAuthenticated) {
+  if (user && !isLoading) {
+    // If user has no guilds, redirect to assign guild page
+    if (!user.guildIds || user.guildIds.length === 0) {
+      return <Navigate to={ROUTES.ASSIGN_GUILD} replace />;
+    }
     return <Navigate to={ROUTES.DASHBOARD} replace />;
   }
 

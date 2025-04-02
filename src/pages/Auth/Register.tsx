@@ -45,7 +45,7 @@ const Register = () => {
     setIsLoading(true);
     
     try {
-      await register(formData.name, formData.email, formData.password);
+      await register({email: formData.email, password: formData.password, name: formData.name});
       navigate(ROUTES.DASHBOARD);
     } catch (err) {
       setError("Registration failed. Please try again.");

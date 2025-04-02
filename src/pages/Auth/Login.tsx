@@ -17,10 +17,10 @@ const Login = () => {
   const [password, setPassword] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [sessionExpired, setSessionExpired] = useState(true); // Set to true to show the message
+  const [sessionExpired, setSessionExpired] = useState(true);
   const [isHumanVerified, setIsHumanVerified] = useState(false);
+  const [layoutError, setLayoutError] = useState<string | null>(null);
 
-  // Get the redirect path from location state or default to dashboard
   const from = location.state?.from?.pathname || ROUTES.DASHBOARD;
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -28,24 +28,47 @@ const Login = () => {
     
     if (!isHumanVerified) {
       setError("Please verify that you are human before signing in.");
+      setLayoutError("Human verification required");
       return;
     }
     
     setError(null);
+    setLayoutError(null);
     setIsLoading(true);
     
     try {
-      await login(email, password);
-      navigate(from, { replace: true });
+      const user = await login(email, password);
+
+      if (user) navigate(from, { replace: true });
+
     } catch (err) {
-      setError("Invalid email or password. Please try again.");
+      if (err instanceof Error) {
+        if (err.message === 'Invalid credentials') {
+          setError("Invalid email or password. Please try again.");
+          setLayoutError("Authentication failed");
+        } else if (err.message === 'Login failed') {
+          setError("Login failed. Please try again later.");
+          setLayoutError("System error");
+        } else {
+          setError(err.message);
+          setLayoutError("Unexpected error");
+        }
+        console.error('Login error:', err);
+      } else {
+        setError("An unexpected error occurred. Please try again.");
+        setLayoutError("System error");
+        console.error('Unknown login error:', err);
+      }
     } finally {
       setIsLoading(false);
     }
   };
 
   return (
-    <AuthLayout backgroundImage="https://images.unsplash.com/photo-1614680376573-df3480f0c6ff?q=80&w=1974&auto=format&fit=crop">
+    <AuthLayout 
+      backgroundImage="https://images.unsplash.com/photo-1614680376573-df3480f0c6ff?q=80&w=1974&auto=format&fit=crop"
+      error={layoutError}
+    >
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}

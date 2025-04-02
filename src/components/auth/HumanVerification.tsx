@@ -72,7 +72,7 @@ const HumanVerification = ({ onVerificationChange, className = "" }: HumanVerifi
       setShowChallenge(!success);
       setIsLoading(false);
       onVerificationChange(success);
-    }, 1000);
+    }, 1);
   };
 
   const handleReset = () => {

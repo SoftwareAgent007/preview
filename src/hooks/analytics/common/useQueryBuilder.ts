@@ -3,12 +3,7 @@ import { apiService } from '@/hooks/apiService';
 import { useContext } from 'react';
 import { useQuery, UseQueryOptions } from 'react-query';
 
-const defaultContext = {
-  guildId: "1306748279903621142"
-};
-
-
-export function useQueryBuilder<TData>(  
+export function useQueryBuilder<TData>(
   queryKey: any[],
   buildUrl: (guildId: string, startDate: string, endDate: string) => string,
   options?: UseQueryOptions<TData, Error>
@@ -19,12 +14,26 @@ export function useQueryBuilder<TData>(
     throw new Error("useQueryBuilder must be used within a DashboardContextProvider");
   }
 
-  const selectedPeriod = dashboardContext?.selectedPeriod 
-  
-  const guildId = defaultContext.guildId;
+  const selectedPeriod = dashboardContext?.selectedPeriod;
+  const guildId = dashboardContext.guildId;
+
+  if (!guildId) {
+    return useQuery<TData, Error>(
+      [...queryKey, 'no-guild-id'],
+      async () => {
+        throw new Error('Guild ID is required for API operations');
+      },
+      {
+        ...options,
+        enabled: false,
+        retry: false
+      }
+    );
+  }
 
   const fullQueryKey = [
     ...queryKey, 
+    guildId,
     selectedPeriod?.from?.toISOString(),
     selectedPeriod?.to?.toISOString()
   ];
@@ -43,6 +52,7 @@ export function useQueryBuilder<TData>(
     cacheTime: 1000 * 60 * 30,
     refetchOnWindowFocus: false,
     retry: 1,
+    enabled: !!guildId,
     ...options,
   });
 }

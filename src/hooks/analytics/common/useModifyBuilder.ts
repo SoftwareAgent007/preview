@@ -2,10 +2,8 @@ import { DashboardContext } from '@/common/context/queryContext';
 import { apiService } from '@/hooks/apiService';
 import { useContext } from 'react';
 import { useMutation, UseMutationOptions } from 'react-query';
-
-const defaultContext = {
-  guildId: "1306748279903621142"
-};
+import { useNavigate } from 'react-router-dom';
+import { ROUTES } from '@/routes/routes.constant';
 
 export function useModifyBuilder<TParams, TResponse = any>(
   buildUrl: (params: TParams) => string,
@@ -15,7 +13,21 @@ export function useModifyBuilder<TParams, TResponse = any>(
   } & Omit<UseMutationOptions<TResponse, Error, TParams>, 'mutationFn'>
 ) {
   const dashboardContext = useContext(DashboardContext);
-  const guildId = defaultContext.guildId;
+  const navigate = useNavigate();
+  const guildId = dashboardContext.guildId;
+
+  if (!guildId) {
+    return useMutation<TResponse, Error, TParams>(
+      async () => {
+        navigate(ROUTES.ASSIGN_GUILD);
+        throw new Error('Guild ID is required for API operations');
+      },
+      {
+        ...options,
+        retry: false
+      }
+    );
+  }
 
   const mutationFn = async (params: TParams): Promise<TResponse> => {
     const url = buildUrl(params);
