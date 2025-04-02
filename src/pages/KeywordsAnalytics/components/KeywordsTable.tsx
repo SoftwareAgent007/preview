@@ -11,6 +11,7 @@ const KeywordsTable = () => {
   const {
     keywordsList,
     pagination,
+    totalKeywords,
     isLoading,
     toggleKeywordActive,
     deleteKeyword,
@@ -19,7 +20,7 @@ const KeywordsTable = () => {
   const { selectedKeywordTimeline = { keywords: [], totalCount: 0 }, isLoading: isTimelineLoading } = useKeywordTimeline(
     searchTerm || undefined
   );
-  const { keywords: timelineKeywords, totalCount } = selectedKeywordTimeline;
+  const { keywords: timelineKeywords, totalCount: searchMatchesCount } = selectedKeywordTimeline;
 
   if (!keywordsList?.length && !isLoading && !searchTerm) {
     return <ErrorComponent />;
@@ -36,7 +37,7 @@ const KeywordsTable = () => {
         setSearchTerm={setSearchTerm} 
         currentPage={pagination?.currentPage ?? currentPage} 
         setCurrentPage={setCurrentPage} 
-        totalKeywords={totalCount ?? 0}
+        totalKeywords={searchMatchesCount || totalKeywords || 0}
         totalPages={searchTerm ? 1 : pagination?.totalPages ?? 1}
         onPageSizeChange={setPageSize}
         pageSize={pagination?.itemsPerPage ?? pageSize}

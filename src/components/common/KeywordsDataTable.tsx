@@ -233,7 +233,7 @@ const KeywordsDataTableComponent = ({
       <div className="flex justify-between items-center mb-4">
         <div>
           <h2 className="text-lg font-bold">Keywords List</h2>
-          <span className="text-sm text-gray-500">Total keywords: {totalKeywords}</span>
+          <span className="text-sm text-gray-500">Found keywords: {totalKeywords}</span>
         </div>
         <div className="flex items-center gap-2">
           <span className="text-sm text-gray-500">Rows per page:</span>

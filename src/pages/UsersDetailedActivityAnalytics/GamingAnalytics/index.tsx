@@ -135,7 +135,7 @@ const GamingAnalytics = () => {
     },
     { 
       title: "Return Rate", 
-      value: returnRate.toLocaleString(), 
+      value: `${returnRate.toFixed(2).toLocaleString()}%`, 
       subtitle: "Daily Return Percentage", 
       unit: "%",
       tooltip: "How many players from the previous day returned to play the same game"

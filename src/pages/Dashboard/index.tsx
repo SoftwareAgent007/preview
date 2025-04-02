@@ -144,7 +144,7 @@ const Dashboard = () => {
     },
     {
       title: "Total Game Time",
-      value: `${((totalGameTime?.hours ?? 0) / 100).toLocaleString()}h`,
+      value: `${((totalGameTime?.hours ?? 0) / 100).toFixed().toLocaleString()}h`,
       description: "Hours Played", 
       trend: parseInt(totalGameTime?.hourChange ?? "0"),
       isTrendPositive: totalGameTime?.hourChange?.startsWith('+') ?? false,
@@ -155,7 +155,7 @@ const Dashboard = () => {
     {
       title: "Active Listeners",
       value: (activeListeners?.count ?? 0).toLocaleString(),
-      description: "Currently Listening",
+      description: "Count of users listening during selected period",
       trend: activeListeners?.percentChange ?? 0,
       isTrendPositive: (activeListeners?.percentChange ?? 0) > 0,
       trendUnit: "%",

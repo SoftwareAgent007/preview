@@ -82,32 +82,34 @@ const TopPlayedArtistsCard = ({ artists }: TopPlayedArtistsCardProps) => {
           </motion.div>
         </div>
 
-        {artists ? (
-          <div className="space-y-3">
-            {artists.map((artist, index) => (
-              <motion.div
-                key={index}
-                variants={item}
-                whileHover={{ scale: 1.02, translateX: 4 }}
-                whileTap={{ scale: 0.98 }}
-                className={`transition-all ${index % 2 !== 1 ? 'bg-gray-50' : ''}`}
-              >
-                <ListElement
-                  logo={
-                    <div className="bg-indigo-50 p-2 rounded-lg">
-                      <Users className="w-6 h-6 text-indigo-600" />
-                    </div>
-                  }
-                  title={artist?.artist?.name}
-                  description={`${artist?.plays.toLocaleString()} plays`}
-                  backgroundColor={index % 2 !== 1 ? 'hover:bg-gray-100' : 'hover:bg-gray-50'}
-                />
-              </motion.div>
-            ))}
-          </div>
-        ) : (
-          <ErrorComponent />
-        )}
+        <motion.div>
+          {artists.length > 0 ? (
+            <div className="space-y-3">
+              {artists.map((artist, index) => (
+                <motion.div
+                  key={index}
+                  variants={item}
+                  whileHover={{ scale: 1.02, translateX: 4 }}
+                  whileTap={{ scale: 0.98 }}
+                  className={`transition-all ${index % 2 !== 1 ? 'bg-gray-50' : ''}`}
+                >
+                  <ListElement
+                    logo={
+                      <div className="bg-indigo-50 p-2 rounded-lg">
+                        <Users className="w-6 h-6 text-indigo-600" />
+                      </div>
+                    }
+                    title={artist?.artist?.name}
+                    description={`${artist?.plays.toLocaleString()} plays`}
+                    backgroundColor={index % 2 !== 1 ? 'hover:bg-gray-100' : 'hover:bg-gray-50'}
+                  />
+                </motion.div>
+              ))}
+            </div>
+          ) : (
+            <ErrorComponent />
+          )}
+        </motion.div>
       </motion.div>
     </BaseCard>
   );

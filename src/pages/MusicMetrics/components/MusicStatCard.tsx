@@ -2,6 +2,8 @@ import { motion } from "framer-motion";
 import { ClickableTooltip } from "@/components/ui/tooltip";
 import { Card } from "@/components/ui/card";
 import TrendIndicator from "@/components/common/TrendIndicator";
+import { DashboardContext } from "@/common/context/queryContext";
+import { useContext } from "react";
 
 interface MusicStatCardProps {
   label: string;
@@ -20,6 +22,16 @@ const MusicStatCard = ({
   tooltipContent,
   index 
 }: MusicStatCardProps) => {
+
+  const dashboardContext = useContext(DashboardContext);
+  const periodDays = dashboardContext?.selectedPeriod?.from ? 
+    Math.round((dashboardContext.selectedPeriod.to!.getTime() - dashboardContext.selectedPeriod.from.getTime()) / (1000 * 60 * 60 * 24)) : 30;
+  
+  const selectedPeriod = {
+    type: periodDays <= 30 ? 'week' : periodDays <= 365 ? 'month' : 'year',
+    count: Math.ceil(periodDays / (periodDays <= 30 ? 7 : periodDays <= 365 ? 30 : 365))
+  };
+  
   const container = {
     hidden: { opacity: 0 },
     show: {
@@ -103,7 +115,7 @@ const MusicStatCard = ({
             variants={item}
             className="text-sm text-gray-500 flex justify-between"
           >
-            <span>{change}% from last month</span>
+            <span>{change}% from last {selectedPeriod.count} {selectedPeriod.type}</span>
             <TrendIndicator 
               unit="%" 
               value={change} 

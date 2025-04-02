@@ -91,9 +91,6 @@ const Modal = ({ closeModal }: ModalProps) => {
                     <div className="text-sm text-gray-600 mb-2">
                       <div className="h-4 bg-gray-200 rounded w-32"></div>
                     </div>
-                    <div className="text-sm text-gray-600 mb-3">
-                      <div className="h-4 bg-gray-200 rounded w-36"></div>
-                    </div>
                     <div className="h-2 rounded-full bg-gray-200"></div>
                   </div>
                 ))
@@ -101,7 +98,7 @@ const Modal = ({ closeModal }: ModalProps) => {
                 modalTracks?.map((track, index) => (
                   <div 
                     key={index} 
-                    className="flex flex-col mb-8 mr-6 p-4 transition-colors bg-gray-50"
+                    className="flex flex-col mb-6 mr-6 p-4 transition-colors bg-gray-50"
                   >
                     <div className="flex justify-between text-sm font-semibold text-gray-800 mb-2">
                       <span className="text-base">{track.songName}</span>
@@ -109,9 +106,6 @@ const Modal = ({ closeModal }: ModalProps) => {
                     </div>
                     <div className="text-sm text-gray-600 mb-2">
                       <span>Artist: {track.artist}</span>
-                    </div>
-                    <div className="text-sm text-gray-600 mb-3">
-                      <span>Album: {track.album}</span>
                     </div>
                     <div className="h-2 rounded-full bg-gray-200">
                       <div

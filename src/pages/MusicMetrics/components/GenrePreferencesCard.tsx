@@ -1,9 +1,9 @@
-import { motion } from "framer-motion";
 import HorizontalBarChartRelatedGenres from "@/components/charts/music/musicActivityChart";
-import { ClickableTooltip } from "@/components/ui/tooltip";
-import { Info } from "lucide-react";
+import ErrorComponent from "@/components/common/errorModel";
 import { useTheme } from "@/components/theme/ThemeProvider";
-import { useRef, useEffect, useState } from "react";
+import { ClickableTooltip } from "@/components/ui/tooltip";
+import { motion } from "framer-motion";
+import { useEffect, useRef, useState } from "react";
 import BaseCard from "./BaseCard";
 
 interface GenreData {
@@ -54,7 +54,7 @@ const GenrePreferencesCard = ({ data }: GenrePreferencesCardProps) => {
   return (
     <BaseCard>
       <motion.div
-        className="flex items-center gap-2 mb-2"
+        className="flex items-center gap-2 mb-4"
         variants={item}
       >
         <h3 className={`text-base font-medium ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>
@@ -65,10 +65,11 @@ const GenrePreferencesCard = ({ data }: GenrePreferencesCardProps) => {
         </ClickableTooltip>
       </motion.div>
       
+      {filteredData.length > 0 ? (
       <motion.div 
         ref={containerRef}
         variants={item}
-        className="h-[350px] w-full"
+        className="h-[350px] w-full mt-2"
       >
         <HorizontalBarChartRelatedGenres
           data={filteredData.slice(0, 7)}
@@ -76,6 +77,9 @@ const GenrePreferencesCard = ({ data }: GenrePreferencesCardProps) => {
           width={width * 0.9}
         />
       </motion.div>
+      ) : (
+        <ErrorComponent />
+      )}
     </BaseCard>
   );
 };

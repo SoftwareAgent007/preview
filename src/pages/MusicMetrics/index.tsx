@@ -58,6 +58,14 @@ const MusicMetrics = () => {
     { label: "Active Listeners", value: overview.activeListeners.current, change: overview.activeListeners.previous, isPositive: overview.activeListeners.isPositive },
   ];
 
+  const isHourlyDistributionEmpty = () => {
+    const totalPlays = peakHours?.hourlyDistribution.reduce((acc, curr) => {
+      return acc + curr;
+    }, 0)
+
+    return totalPlays === 0;
+  }
+
   return (
     <motion.div
       className="w-full min-h-screen bg-gray-50 p-6"
@@ -119,23 +127,9 @@ const MusicMetrics = () => {
             ))
           ) : (
             <>
-              {topArtists?.length > 0 ? (
-                <TopPlayedArtistsCard artists={topArtists} />
-              ) : (
-                <div className="flex items-center justify-center h-[200px] text-gray-500">
-                  No artist data available
-                </div>
-              )}
+              <TopPlayedArtistsCard artists={topArtists} />
               
-              {genres?.length > 0 ? (
-                <GenrePreferencesCard data={genres} />
-              ) : (
-                <Card className="flex-1 p-6">
-                  <div className="flex items-center justify-center h-[200px] text-gray-500">
-                    No genre data available
-                  </div>
-                </Card>
-              )}
+              <GenrePreferencesCard data={genres} />
             </>
           )}
         </motion.div>
@@ -161,16 +155,13 @@ const MusicMetrics = () => {
                     <span className="bg-gray-300 bg-opacity-25 text-gray-600 px-[7px] rounded-full cursor-help">?</span>
                   </ClickableTooltip>
                 </div>
-                {!peakHours?.hourlyDistribution.length ? (
-                  <ErrorComponent />
-                ) : peakHours?.hourlyDistribution?.length > 0 ? (
+                
+                {isHourlyDistributionEmpty() ? (
+                  <ErrorComponent title="No peak hours data available" message="Each hour data is empty" />
+                ) : (
                   <motion.div variants={item}>
                     <PeakListeningHoursChart height={500} data={peakHours.hourlyDistribution} />
                   </motion.div>
-                ) : (
-                  <div className="flex items-center justify-center h-[200px] text-gray-500">
-                    No peak hours data available
-                  </div>
                 )}
               </BaseCard>
               
