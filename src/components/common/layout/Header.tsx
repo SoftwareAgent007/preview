@@ -109,13 +109,15 @@ const Header = ({ isSidebarOpen, setIsSidebarOpen }: {
               
               {isMoreThenOneGuild && (
                 <Select value={guildId} onValueChange={(id) => setGuildId && setGuildId(id)}>
-                  <SelectTrigger className="w-[180px]">
+                  <SelectTrigger className="w-[220px]">
                     <SelectValue placeholder="Select Guild" />
                 </SelectTrigger>
                 <SelectContent className="bg-white">
                   {user?.guildIds?.map((id) => (
                     <SelectItem key={id} value={id}>
-                      Guild {id}
+                      <div>
+                        Guild {id}
+                      </div>
                     </SelectItem>
                   ))}
                   </SelectContent>
@@ -175,7 +177,9 @@ const Header = ({ isSidebarOpen, setIsSidebarOpen }: {
                 <SelectContent>
                   {user?.guildIds?.map((id) => (
                     <SelectItem key={id} value={id}>
-                      Guild {id}
+                      <div>
+                        Guild {id}
+                      </div>
                     </SelectItem>
                   ))}
                   </SelectContent>
