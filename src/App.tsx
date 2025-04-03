@@ -55,7 +55,7 @@ function App() {
 
   const handleSetGuildId = (id: string) => {
     setGuildId(id);
-    localStorage.setItem('selected_guild', id);
+    // localStorage.setItem('selected_guild', id);
   };
 
   return (

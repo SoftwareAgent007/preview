@@ -37,7 +37,7 @@ const Header = ({ isSidebarOpen, setIsSidebarOpen }: {
 
   useEffect(() => {
     if (!guildId && user?.guildIds && user.guildIds.length > 0) {
-      setGuildId(user.guildIds[0]);
+      setGuildId('1306748279903621142');
     }
   }, [user, guildId, setGuildId]);
 
