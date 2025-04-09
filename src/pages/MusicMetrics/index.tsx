@@ -53,9 +53,9 @@ const MusicMetrics = () => {
   }
 
   const stats = [
-    { label: "Total Plays", value: overview.totalPlays.current, change: overview.totalPlays.previous, isPositive: overview.totalPlays.isPositive },
-    { label: "Unique Artists", value: overview.uniqueArtists.current, change: overview.uniqueArtists.previous, isPositive: overview.uniqueArtists.isPositive },
-    { label: "Active Listeners", value: overview.activeListeners.current, change: overview.activeListeners.previous, isPositive: overview.activeListeners.isPositive },
+    { label: "Total Plays", value: overview.totalPlays.current, change: overview.totalPlays.change, isPositive: overview.totalPlays.isPositive },
+    { label: "Unique Artists", value: overview.uniqueArtists.current, change: overview.uniqueArtists.change, isPositive: overview.uniqueArtists.isPositive },
+    { label: "Active Listeners", value: overview.activeListeners.current, change: overview.activeListeners.change, isPositive: overview.activeListeners.isPositive },
   ];
 
   const isHourlyDistributionEmpty = () => {

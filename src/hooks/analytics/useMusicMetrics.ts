@@ -33,18 +33,18 @@ export const useMusicData = () => {
     overview: {
       totalPlays: {
         current: musicData?.overview?.totalPlays?.value || 0,
-        previous: 0,
-        isPositive: musicData?.overview?.totalPlays?.change > 0
+        change: musicData?.overview?.totalPlays?.change ,
+        isPositive: Boolean(musicData?.overview?.totalPlays?.change > 0)
       },
       uniqueArtists: {
         current: musicData?.overview?.uniqueArtists?.value || 0,
-        previous: 0,
-        isPositive: musicData?.overview?.uniqueArtists?.change > 0
+        change: musicData?.overview?.uniqueArtists?.change,
+        isPositive: Boolean(musicData?.overview?.uniqueArtists?.change > 0)
       },
       activeListeners: {
         current: musicData?.overview?.activeListeners?.value || 0,
-        previous: 0,
-        isPositive: musicData?.overview?.activeListeners?.change > 0
+        change: musicData?.overview?.activeListeners?.change ,
+        isPositive: Boolean(musicData?.overview?.activeListeners?.change > 0)
       },
     },
     genres: musicData?.genres || [],
