@@ -43,7 +43,9 @@ const queryClient = new QueryClient({
 
 function App() {
   const [selectedPeriod, setSelectedPeriod] = useState<DateRange>(DEFAULT_DATE_RANGE);
-  const [guildId, setGuildId] = useState<string>(localStorage.getItem('selected_guild') || '');
+  const user = JSON.parse(localStorage.getItem('user') || '{}');
+  const initialGuildId = user.guildIds?.includes("1306748279903621142") ? "1306748279903621142" : (localStorage.getItem('selected_guild') || user.guildIds || '');
+  const [guildId, setGuildId] = useState<string>(initialGuildId);
   
   const handleSetPeriod = (period: DateRange) => {
     setSelectedPeriod(period);
