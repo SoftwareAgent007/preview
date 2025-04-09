@@ -96,21 +96,32 @@ export const useGamingStats = (paginationParams?: PaginatedParams) => {
       `/games/popular?guildId=${guildId}&startDate=${startDate}&endDate=${endDate}&page=${page}&limit=${limit}`
   );
 
+  const { data: currentlyPlayedGames, isLoading: currentlyPlayedGamesLoading, error: currentlyPlayedGamesError } = useQueryBuilder<{gameName: string; playerCount: number; percentage: number}[]>(
+    ['currently-played-games'],
+    (guildId) => `/games/currently-played?guildId=${guildId}`
+  );
+
   const stats = useMemo(() => ({
-    popularGames: popularGames?.data || [] as PopularGame[],
+    currentlyPlayedGames: currentlyPlayedGames || [],
+    popularGames: popularGames?.data || [],
     pagination: {
+      currentlyPlayedGames: {
+        total: currentlyPlayedGames?.length || 0,
+        page,
+        limit,
+      },
       popularGames: {
         total: popularGames?.total || 0,
         page: popularGames?.page || page,
         limit: popularGames?.limit || limit,
       }
     }
-  }), [popularGames, page, limit]);
+  }), [currentlyPlayedGames, page, limit]);
 
   return {
     ...stats,
-    isLoading: stats.pagination && popularGamesLoading,
-    error: popularGamesError,
+    isLoading: stats.pagination && (currentlyPlayedGamesLoading || popularGamesLoading),
+    error: currentlyPlayedGamesError || popularGamesError,
   };
 };
 

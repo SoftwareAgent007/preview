@@ -20,7 +20,7 @@ interface MessageOverview {
 interface MessageTrend {
   data: {
     date: string;
-    matchCount: number;
+    messageCount: number;
   }[];
 }
 
@@ -52,7 +52,7 @@ export function useMessageTrend(viewType: TimeViewType, limit?: number) {
   const { data, isLoading } = useQueryBuilder<MessageTrend>(
     ['message-match-trend', viewType, limit],
     (guildId, startDate, endDate) => 
-      `/message-match/trend?guildId=${guildId}&startDate=${startDate}&endDate=${endDate}&viewType=${viewType}${limit ? `&limit=${limit}` : ''}`
+      `/message-match/message-trend?guildId=${guildId}&startDate=${startDate}&endDate=${endDate}&viewType=${viewType}${limit ? `&limit=${limit}` : ''}`
   );
 
   return {
@@ -100,10 +100,30 @@ interface MessagesOverview {
 }
 
 interface KeywordsOverview {
-  topKeywords: {
+  totalKeywords: number;
+  activeKeywords: number;
+  totalMatches: number;
+  keywordsList: {
+    id: string;
     keyword: string;
-    matches: number;
+    matches: {
+      count: number;
+    };
+    createdAt: Record<string, unknown>;
+    active: boolean;
+    guildId: string;
   }[];
+  matchesTimeline: {
+    date: string;
+    count: number;
+  }[];
+  activeKeywordTags: string[];
+  pagination: {
+    totalItems: number;
+    itemsPerPage: number;
+    currentPage: number;
+    totalPages: number;
+  };
 }
 
 interface ActivityOverview {
@@ -156,6 +176,12 @@ interface TopContributorsOverview {
     username: string;
     messages: number;
   }[];
+}
+
+interface CurrentlyPlayedGame {
+  gameName: string;
+  playerCount: number;
+  percentage: number;
 }
 
 export interface ActivityTrendData {
@@ -213,7 +239,7 @@ export function useDashboardData() {
     data: keywordsData,
   } = useQueryBuilder<KeywordsOverview>(
     ['dashboard-keywords'],
-    (guildId, startDate, endDate) => `/dashboard/keywords?guildId=${guildId}&startDate=${startDate}&endDate=${endDate}`
+    (guildId) => `/keywords/analytics?guildId=${guildId}&limit=${3}&page=${1}`
   );
 
   const {
@@ -239,17 +265,23 @@ export function useDashboardData() {
 
   const { data: activeUsersTrend } = useActivityTrend('user', 'daily');
 
+  const { data: currentlyPlayedGames } = useQueryBuilder<{gameName: string; playerCount: number; percentage: number}[]>(
+    ['currently-played-games'],
+    (guildId) => `/games/currently-played?guildId=${guildId}`
+  );
+
   const dashboardData = useMemo(() => ({
     totalUsers: usersData?.totalUsers,
     activeUsers: usersData?.activeUsers,
     totalMessages: messagesData?.totalMessages,
     totalReactions: messagesData?.totalReactions,
-    topKeywords: keywordsData?.topKeywords,
+    topKeywords: keywordsData?.keywordsList,
     topUsers: contributorsData?.topUsers,
     totalGameTime: gamingData?.totalGameTime,
     activeListeners: activeUsersData?.activeListeners,
     activeGamers: activeUsersData?.activeGamers,
     activeUsersTrend: activeUsersTrend?.data,
+    currentlyPlayedGames: currentlyPlayedGames || []
   }), [
     usersData,
     messagesData,
@@ -257,7 +289,8 @@ export function useDashboardData() {
     gamingData,
     activeUsersData,
     contributorsData,
-    activeUsersTrend
+    activeUsersTrend,
+    currentlyPlayedGames
   ]);
 
   return {

@@ -142,7 +142,7 @@ const Dashboard = () => {
     },
     {
       title: "Total Game Time",
-      value: `${((totalGameTime?.hours ?? 0) / 100).toFixed().toLocaleString()}h`,
+      value: `${Math.floor(totalGameTime?.hours ?? 0).toLocaleString()}h`,
       description: "Hours Played", 
       trend: parseInt(totalGameTime?.hourChange ?? "0"),
       isTrendPositive: totalGameTime?.hourChange?.startsWith('+') ?? false,
@@ -301,7 +301,7 @@ const Dashboard = () => {
                     key={index}
                     logo={<span className="text-gray-600 text-3xl">#</span>}
                     title={keyword.keyword}
-                    description={`${keyword.matches} Matches`}
+                    description={`${keyword.matches.count} Matches`}
                   />
                 ))
               )}

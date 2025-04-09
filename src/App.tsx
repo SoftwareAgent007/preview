@@ -60,19 +60,19 @@ function App() {
 
   return (
     <ThemeProvider defaultTheme="light" storageKey="vite-ui-theme">
-      <AuthProvider>
-        <DashboardContext.Provider 
-          value={{ 
-            selectedPeriod,
-            setSelectedPeriod: handleSetPeriod, 
-            startDate: selectedPeriod.from?.toISOString() || DEFAULT_START_DATE,
-            endDate: selectedPeriod.to?.toISOString() || DEFAULT_END_DATE,
-            guildId,
-            setGuildId: handleSetGuildId
-          }}
-        >
-          <QueryClientProvider client={queryClient}>
-            <BrowserRouter>
+      <QueryClientProvider client={queryClient}>
+        <BrowserRouter>
+          <AuthProvider>
+            <DashboardContext.Provider 
+              value={{ 
+                selectedPeriod,
+                setSelectedPeriod: handleSetPeriod, 
+                startDate: selectedPeriod.from?.toISOString() || DEFAULT_START_DATE,
+                endDate: selectedPeriod.to?.toISOString() || DEFAULT_END_DATE,
+                guildId,
+                setGuildId: handleSetGuildId
+              }}
+            >
               <AnimatePresence mode="wait">
                 <Routes>
                   {/* Public routes */}
@@ -104,10 +104,10 @@ function App() {
                   </Route>
                 </Routes>
               </AnimatePresence>
-            </BrowserRouter>
-          </QueryClientProvider>
-        </DashboardContext.Provider>
-      </AuthProvider>
+            </DashboardContext.Provider>
+          </AuthProvider>
+        </BrowserRouter>
+      </QueryClientProvider>
     </ThemeProvider>
   );
 }

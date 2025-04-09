@@ -42,7 +42,7 @@ const SearchableSelect: React.FC<SearchableSelectProps> = ({ options, placeholde
           variant="outline"
           role="combobox"
           aria-expanded={open}
-          className="w-[200px] justify-between"
+          className="w-full justify-between"
           >
           {value
             ? options.find((option) => option.value === value)?.label
@@ -50,10 +50,10 @@ const SearchableSelect: React.FC<SearchableSelectProps> = ({ options, placeholde
           <ChevronsUpDown className="opacity-50" />
         </Button>
       </PopoverTrigger>
-      <PopoverContent className="w-[200px] p-0">
-        <Command>
-          <CommandInput placeholder="Search..." className="h-9" />
-          <CommandList>
+      <PopoverContent className="w-[var(--radix-popover-trigger-width)] p-0">
+        <Command className="w-full">
+          <CommandInput placeholder="Search..." className="w-full h-9" />
+          <CommandList className="w-full">
             <CommandEmpty>No options found.</CommandEmpty>
             <CommandGroup>
               {options.map((option) => (

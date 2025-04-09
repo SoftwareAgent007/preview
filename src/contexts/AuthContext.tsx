@@ -2,6 +2,8 @@ import { createContext, useContext, useState, useEffect } from 'react';
 import { authService } from '@/hooks/apiService';
 import { jwtDecode } from 'jwt-decode';
 import { useDashboardContext } from '@/common/context/queryContext';
+import { useNavigate } from 'react-router-dom';
+import { ROUTES } from '@/routes/routes.constant';
 
 interface User {
   id: string;
@@ -34,29 +36,53 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const { setGuildId } = useDashboardContext();
+  const navigate = useNavigate();
+
+  const checkTokenExpiration = (token: string) => {
+    try {
+      const decoded = jwtDecode<JWTPayload>(token);
+      if (decoded.exp * 1000 < Date.now()) {
+        localStorage.removeItem('auth_token');
+        localStorage.removeItem('user');
+        setUser(null);
+        navigate(ROUTES.LOGIN);
+        return true;
+      }
+      return false;
+    } catch {
+      localStorage.removeItem('auth_token');
+      localStorage.removeItem('user');
+      setUser(null);
+      navigate(ROUTES.LOGIN);
+      return true;
+    }
+  };
 
   useEffect(() => {
     // Check for stored user data and token on mount
     const token = localStorage.getItem('auth_token');
     if (token) {
-      try {
-        const decoded = jwtDecode<JWTPayload>(token);
-        const storedUser = localStorage.getItem('user');
-        if (storedUser) {
-          const userData = JSON.parse(storedUser);
-          setUser({
-            ...userData,
-            guildIds: decoded.guildIds
-          });
+      if (!checkTokenExpiration(token)) {
+        try {
+          const decoded = jwtDecode<JWTPayload>(token);
+          const storedUser = localStorage.getItem('user');
+          if (storedUser) {
+            const userData = JSON.parse(storedUser);
+            setUser({
+              ...userData,
+              guildIds: decoded.guildIds
+            });
+          }
+        } catch (error) {
+          console.error('Invalid token:', error);
+          localStorage.removeItem('auth_token');
+          localStorage.removeItem('user');
+          navigate(ROUTES.LOGIN);
         }
-      } catch (error) {
-        console.error('Invalid token:', error);
-        localStorage.removeItem('auth_token');
-        localStorage.removeItem('user');
       }
     }
     setIsLoading(false);
-  }, []);
+  }, [navigate]);
 
   const login = async (email: string, password: string): Promise<User> => {
     setIsLoading(true);

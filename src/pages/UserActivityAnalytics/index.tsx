@@ -41,7 +41,7 @@ interface ActivityChartsSectionProps {
   data: {
     hourlyActivity: ChartData;
     statusBreakdown: ChartData;
-    popularGames: ChartData;
+    currentlyPlayedGames: ChartData;
   };
   className?: string;
 }
@@ -69,7 +69,7 @@ interface Role {
 interface RolesSectionProps {
   roles: Role[];
 }
-const DeviceUsageTable = ({ data }: { data: { deviceType: string; percentage: number }[] }) => {
+const DeviceUsageTable = ({ data }: { data: { deviceType: string; count: number; percentage: number }[] }) => {
   const sortedData = [...data].sort((a, b) => b.percentage - a.percentage);
 
   return (
@@ -80,6 +80,7 @@ const DeviceUsageTable = ({ data }: { data: { deviceType: string; percentage: nu
           <TableRow>
             <TableHead>Device Type</TableHead>
             <TableHead className="text-right">Usage %</TableHead>
+            <TableHead className="text-right">Count</TableHead>
           </TableRow>
         </TableHeader>
         <TableBody>
@@ -87,6 +88,7 @@ const DeviceUsageTable = ({ data }: { data: { deviceType: string; percentage: nu
             <TableRow key={index} className="relative">
               <TableCell>{device.deviceType.charAt(0).toUpperCase() + device.deviceType.slice(1)}</TableCell>
               <TableCell className="text-right">{device.percentage}%</TableCell>
+              <TableCell className="text-right">{device.count}</TableCell>
               <motion.div
                 className="absolute bottom-0 left-0 h-1 bg-blue-500 rounded-full"
                 initial={{ width: 0 }}
@@ -99,7 +101,7 @@ const DeviceUsageTable = ({ data }: { data: { deviceType: string; percentage: nu
                 whileHover={{ opacity: 1 }}
                 transition={{ duration: 0.2 }}
               >
-                {device.deviceType}: {device.percentage}% of total usage
+                {device.deviceType}: {device.count} devices, {device.percentage}% of total usage
               </motion.div>
             </TableRow>
           ))}
@@ -118,7 +120,7 @@ const CardSkeleton = ({ width, height }: { width: string; height: string }) => (
 
 const UserActivityAnalytics = () => {
   // Gaming analytics data
-  const { popularGames, isLoading: gamingLoading, error: gamingError } = useGamingStats({ page: 1, limit: 10 });
+  const { currentlyPlayedGames, isLoading: gamingLoading, error: gamingError } = useGamingStats({ page: 1, limit: 10 });
   
   // Presence activity data
   const { 
@@ -194,7 +196,7 @@ const UserActivityAnalytics = () => {
     {
       title: "Active Games (Now)",
       icon: <GamepadIcon className="w-5 h-5" />,
-      value: (popularGames?.length ?? 0).toLocaleString(),
+      value: (currentlyPlayedGames?.length ?? 0).toLocaleString(),
       isPositive: true,
       tooltip: "Number of different games currently being played by server members",
     }
@@ -243,17 +245,17 @@ const UserActivityAnalytics = () => {
       label: "Offline",
     },
     activeGames: {
-      data: popularGames?.map(game => ({
+      data: currentlyPlayedGames?.map(game => ({
         date: game.gameName,
-        count: game.uniquePlayers,
+        count: game.playerCount,
       })) || [],
       color: "#8B5CF6",
       label: "Active Games",
     },
-    popularGames: {
-      data: popularGames?.map(game => ({
+    currentlyPlayedGames: {
+      data: currentlyPlayedGames?.map(game => ({
         date: game.gameName,
-        count: game.uniquePlayers,
+        count: game.playerCount,
       })) || [],
       color: "#6366F1",
       label: "Popular Games",

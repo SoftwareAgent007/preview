@@ -5,12 +5,12 @@ import { Card } from "@/components/ui/card";
 import { useActivityTrend } from "@/hooks/analytics/useDashboardData";
 import { useGameDetails, useGamingStats, useRolesDistribution } from "@/hooks/analytics/useGamingAnalytics";
 import { usePeakHours } from "@/hooks/analytics/useGamingPeakHours";
-import { motion } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
 import { useEffect, useRef, useState } from "react";
 import ContentLoader from "react-content-loader";
 import StatCard from "./components/StatCard";
 import TopGamesList from "./components/topGamesList";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import SearchableSelect from "@/components/ui/searchebleSelect";
 
 const CardSkeleton = ({ width, height }: { width: string; height: string }) => (
   <ContentLoader speed={2} width={width} height={height} viewBox={`0 0 ${width} ${height}`}>
@@ -18,8 +18,20 @@ const CardSkeleton = ({ width, height }: { width: string; height: string }) => (
   </ContentLoader>
 );
 
+interface GameData {
+  gameName: string;
+  playerCount: number;
+  percentage: number;
+}
+
+interface ProcessedGames {
+  mainGames: GameData[];
+  otherGames: GameData[];
+  otherPercentage: number;
+}
+
 const GamingAnalytics = () => {
-  const { popularGames, isLoading: statsLoading } = useGamingStats();
+  const { currentlyPlayedGames, isLoading: statsLoading } = useGamingStats();
   const [selectedGame, setSelectedGame] = useState<string>("");
   const { gameReport, isLoading: gameDetailsLoading } = useGameDetails(selectedGame);
   const { peakHours: gamePeakHours, isLoading: peakHoursLoading } = usePeakHours();
@@ -28,17 +40,18 @@ const GamingAnalytics = () => {
   const [viewType, setViewType] = useState<'daily' | 'weekly' | 'monthly' | 'yearly'>('daily');
   const [graphWidth, setGraphWidth] = useState(0);
   const { data: activityTrend, isLoading: trendLoading } = useActivityTrend('gaming', viewType);
+  const [hoveredGame, setHoveredGame] = useState<GameData | null>(null);
+  const [mousePosition, setMousePosition] = useState({ x: 0, y: 0 });
 
   useEffect(() => {
-    if (popularGames?.length > 0) {
-      const mostPopular = popularGames.reduce((prev, current) => 
-        (current.totalHours > prev.totalHours) ? current : prev
+    if (currentlyPlayedGames?.length > 0) {
+      const mostPopular = currentlyPlayedGames.reduce((prev, current) => 
+        (current.playerCount > prev.playerCount) ? current : prev
       );
       setSelectedGame(mostPopular.gameName);
     }
-  }, [popularGames]);
+  }, [currentlyPlayedGames]);
 
-  
   const {
     basicStats: {
       totalPlayers = 0,
@@ -95,14 +108,21 @@ const GamingAnalytics = () => {
     }
   };
 
+  const tooltipVariants = {
+    hidden: { opacity: 0, scale: 0.8 },
+    visible: { 
+      opacity: 1, 
+      scale: 1,
+      transition: {
+        type: "spring",
+        stiffness: 500,
+        damping: 25
+      }
+    }
+  };
+
   // Updated Stats Data with all available fields including returnRate
   const statsData = [
-    // { 
-    //   title: "Active Users", 
-    //   value: totalPlayers.toLocaleString(), 
-    //   subtitle: "Currently Online",
-    //   tooltip: "Number of unique players who played this game in the selected time period"
-    // },
     { 
       title: "Peak Party Size", 
       value: peakPartySize.toLocaleString(), 
@@ -138,6 +158,26 @@ const GamingAnalytics = () => {
     },
   ];
 
+  const colors = [
+    "#FF6B6B", "#4ECDC4", "#45B7D1", "#96CEB4", "#FFEEAD",
+    "#D4A5A5", "#9B9B9B", "#A8E6CF", "#DCEDC1", "#FFD3B6"
+  ];
+
+  const MIN_PERCENTAGE = 2;
+  const processedGames = currentlyPlayedGames?.reduce<ProcessedGames>((acc, game) => {
+    if (game.percentage >= MIN_PERCENTAGE) {
+      acc.mainGames.push(game);
+    } else {
+      acc.otherPercentage += game.percentage;
+      acc.otherGames.push(game);
+    }
+    return acc;
+  }, { mainGames: [], otherGames: [], otherPercentage: 0 });
+
+  const handleMouseMove = (e: React.MouseEvent) => {
+    setMousePosition({ x: e.clientX, y: e.clientY });
+  };
+
   return (
     <motion.div 
       ref={wrapperRef} 
@@ -145,6 +185,7 @@ const GamingAnalytics = () => {
       variants={containerVariants}
       initial="hidden"
       animate="visible"
+      onMouseMove={handleMouseMove}
     >
       <div className="mx-auto" style={{ maxWidth: `${import.meta.env.VITE_MAX_WIDTH || 1200}px` }}>
         
@@ -153,24 +194,24 @@ const GamingAnalytics = () => {
           {statsLoading ? (
             <CardSkeleton width="100%" height="40" />
           ) : (
-            <Select value={selectedGame} onValueChange={setSelectedGame}>
-            <motion.span
-            className="text-gray-500 text-lg font-medium mb-4 flex justify-between items-center"
+            <>
+              <motion.span
+                className="text-gray-500 text-lg font-medium mb-4 flex justify-between items-center"
                 variants={itemVariants}
               >
-              Selected Game  
-            </motion.span>
-              <SelectTrigger>
-                <SelectValue placeholder="Select a game" />
-              </SelectTrigger>
-              <SelectContent>
-                {popularGames?.map((game) => (
-                  <SelectItem key={game.gameName} value={game.gameName}>
-                    {game.gameName}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+                Selected Game  
+              </motion.span>
+              <SearchableSelect
+                value={selectedGame}
+                onChange={setSelectedGame}
+                options={currentlyPlayedGames?.map(game => ({
+                  value: game.gameName,
+                  label: game.gameName
+                })) || []}
+                placeholder="Select a game"
+                className="w-full"
+              />
+            </>
           )}
         </Card>
 
@@ -224,7 +265,7 @@ const GamingAnalytics = () => {
               <CardSkeleton width="100%" height="350" />
             ) : (activityTrend?.data || []).length > 0 ? (
               <UserActivityTimeline 
-                title="User Activity Timeline"
+                title="User Playing Activity Timeline"
                 activityTimeline={activityTrend?.data || []} 
                 width={graphWidth}
                 isLoading={trendLoading}
@@ -234,6 +275,96 @@ const GamingAnalytics = () => {
             ) : (
               <ErrorComponent height={300} />
             )}
+          </Card>
+        </motion.div>
+
+        {/* Games Distribution Bar */}
+        <motion.div variants={itemVariants} className="mt-6">
+          <Card className="p-6">
+            <h3 className="text-lg font-semibold mb-4">Current Games Distribution</h3>
+            <div className="relative h-8 bg-gray-200 rounded-full overflow-hidden">
+              {processedGames?.mainGames.map((game, index) => (
+                <div
+                  key={game.gameName}
+                  className="absolute h-full flex items-center justify-center text-xs text-white font-medium transition-all duration-300 hover:brightness-90 cursor-pointer"
+                  style={{
+                    left: `${processedGames.mainGames.slice(0, index).reduce((acc, g) => acc + g.percentage, 0)}%`,
+                    width: `${game.percentage}%`,
+                    backgroundColor: colors[index % colors.length]
+                  }}
+                  onMouseEnter={() => setHoveredGame(game)}
+                  onMouseLeave={() => setHoveredGame(null)}
+                >
+                  {game.percentage > 5 ? `${game.gameName} (${game.percentage.toFixed(1)}%)` : ''}
+                </div>
+              ))}
+              {processedGames?.otherPercentage > 0 && (
+                <div
+                  className="absolute h-full right-0 bg-gray-400 flex items-center justify-center text-xs text-white font-medium transition-all duration-300 hover:brightness-90 cursor-pointer"
+                  style={{
+                    width: `${processedGames.otherPercentage}%`
+                  }}
+                  onMouseEnter={() => setHoveredGame({ 
+                    gameName: 'Others', 
+                    playerCount: processedGames.otherGames.reduce((acc, game) => acc + game.playerCount, 0),
+                    percentage: processedGames.otherPercentage 
+                  })}
+                  onMouseLeave={() => setHoveredGame(null)}
+                >
+                  {processedGames.otherPercentage > 5 ? `Others (${processedGames.otherPercentage.toFixed(1)}%)` : ''}
+                </div>
+              )}
+            </div>
+            <div className="mt-4 flex flex-wrap gap-4">
+              {processedGames?.mainGames.map((game, index) => (
+                <div 
+                  key={game.gameName} 
+                  className="flex items-center gap-2"
+                  onMouseEnter={() => setHoveredGame(game)}
+                  onMouseLeave={() => setHoveredGame(null)}
+                >
+                  <div 
+                    className="w-3 h-3 rounded-full"
+                    style={{ backgroundColor: colors[index % colors.length] }}
+                  />
+                  <span className="text-sm">{game.gameName}</span>
+                </div>
+              ))}
+              {processedGames?.otherPercentage > 0 && (
+                <div 
+                  className="flex items-center gap-2"
+                  onMouseEnter={() => setHoveredGame({ 
+                    gameName: 'Others', 
+                    playerCount: processedGames.otherGames.reduce((acc, game) => acc + game.playerCount, 0),
+                    percentage: processedGames.otherPercentage 
+                  })}
+                  onMouseLeave={() => setHoveredGame(null)}
+                >
+                  <div className="w-3 h-3 rounded-full bg-gray-400" />
+                  <span className="text-sm">Others</span>
+                </div>
+              )}
+            </div>
+            <AnimatePresence>
+              {hoveredGame && (
+                <motion.div
+                  variants={tooltipVariants}
+                  initial="hidden"
+                  animate="visible"
+                  exit="hidden"
+                  className="absolute bg-white text-black p-3 rounded-lg shadow-lg z-50 border border-gray-200"
+                  style={{
+                    left: mousePosition.x + 10,
+                    top: mousePosition.y - 70,
+                    pointerEvents: 'none'
+                  }}
+                >
+                  <div className="font-semibold">{hoveredGame.gameName}</div>
+                  <div>Players: {hoveredGame.playerCount.toLocaleString()}</div>
+                  <div>Share: {hoveredGame.percentage.toFixed(1)}%</div>
+                </motion.div>
+              )}
+            </AnimatePresence>
           </Card>
         </motion.div>
       </div>

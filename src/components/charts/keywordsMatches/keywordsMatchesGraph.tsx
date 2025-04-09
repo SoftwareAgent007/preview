@@ -47,7 +47,7 @@ const transformTrendData = (data: any[]): TimelineDataDto[] => {
 const transformMatchesTimeline = (data: TimelineDataDto[] | KeywordTrendDataPoint[]): TimelineDataDto[] => {
     return data.map((item) => ({
         date: item.date,
-        count: 'matchCount' in item ? item.matchCount : item.count,
+        count: 'messageCount' in item ? item.messageCount : item.count,
     }));
 };
 
