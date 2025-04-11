@@ -212,7 +212,7 @@ export interface PopularGame {
   gameName: string;
   totalHours: number;
   uniquePlayers: number;
-  avgSessionMinutes: number;
+  medianSessionMinutes: number;
   peakHours: PeakHour[];
 }
 
@@ -224,7 +224,7 @@ export interface PeakHour {
 export interface GameStats {
   totalPlayers: number;
   totalHours: number;
-  avgSessionMinutes: number;
+  medianSessionMinutes: number;
   peakPartySize: number;
   returnRate: number;
   peakHours: PeakHour[];
@@ -258,7 +258,7 @@ export interface WeeklyTrend {
   weekStartDate: string; // ISO date string (YYYY-MM-DD)
   totalUsers: number;
   totalHours: number;
-  avgSessionMinutes: number;
+  medianSessionMinutes: number;
 }
 
 export interface TimeOfDayBreakdown {
@@ -270,7 +270,7 @@ export interface TimeOfDayBreakdown {
 /**
  * Removed fields from GamingAnalyticsResponse:
  * - activeUsers -> replaced by GameStats.totalPlayers
- * - avgSessionTime -> replaced by GameStats.avgSessionMinutes (now in minutes instead of string)
+ * - avgSessionTime -> replaced by GameStats.medianSessionMinutes (now in minutes instead of string)
  * - peakPlayers -> replaced by GameStats.peakPartySize
  * - totalGameTime -> replaced by GameStats.totalHours
  * - userActivityTimeline -> replaced by more detailed WeeklyTrend[]

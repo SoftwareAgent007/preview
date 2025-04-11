@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { motion } from "framer-motion";
 import { Card } from "@/components/ui/card";
 import { PopularGame } from "@/types/dataTypes";
@@ -144,6 +144,10 @@ const TopGamesList = () => {
     limit: pageSize,
   });
 
+  useEffect(() => {
+    console.log('popularGames',popularGames);
+  }, [popularGames]);
+
   const totalPages = Math.ceil((pagination.popularGames.total || 0) / pageSize);
 
   const containerVariants = {
@@ -201,7 +205,7 @@ const TopGamesList = () => {
           ) : error ? (
             <ErrorComponent height={350} />
           ) : (
-            popularGames.map((game, index) => (
+            popularGames?.map((game, index) => (
               <motion.li
                 key={index}
                 className="flex flex-col"

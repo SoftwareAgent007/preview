@@ -49,7 +49,7 @@ interface WeeklyTrend {
   weekStartDate: string;
   totalUsers: number;
   totalHours: number;
-  avgSessionMinutes: number;
+  medianSessionMinutes: number;
 }
 
 interface TimeOfDayBreakdown {
@@ -91,33 +91,33 @@ export const useGameDetails = (gameName: string) => {
 export const useGamingStats = (paginationParams?: PaginatedParams) => {
   const { page = 1, limit = 10 } = paginationParams || {};
 
-  const { data: popularGames, isLoading: popularGamesLoading, error: popularGamesError } = useQueryBuilder<PaginatedResponse<PopularGame[]>>(
+  const { data: popularGames = { data: [], total: 0, page, limit }, isLoading: popularGamesLoading, error: popularGamesError } = useQueryBuilder<PaginatedResponse<PopularGame[]>>(
     ['popularGames', page, limit],
     (guildId, startDate, endDate) => 
       `/games/popular?guildId=${guildId}&startDate=${startDate}&endDate=${endDate}&page=${page}&limit=${limit}`
   );
 
-  const { data: currentlyPlayedGames, isLoading: currentlyPlayedGamesLoading, error: currentlyPlayedGamesError } = useQueryBuilder<{gameName: string; playerCount: number; percentage: number}[]>(
+  const { data: currentlyPlayedGames = [], isLoading: currentlyPlayedGamesLoading, error: currentlyPlayedGamesError } = useQueryBuilder<{gameName: string; playerCount: number; percentage: number}[]>(
     ['currently-played-games'],
     (guildId) => `/games/currently-played?guildId=${guildId}`
   );
 
   const stats = useMemo(() => ({
-    currentlyPlayedGames: currentlyPlayedGames || [],
-    popularGames: popularGames?.data || [],
+    currentlyPlayedGames,
+    popularGames: popularGames.data,
     pagination: {
       currentlyPlayedGames: {
-        total: currentlyPlayedGames?.length || 0,
+        total: currentlyPlayedGames.length,
         page,
         limit,
       },
       popularGames: {
-        total: popularGames?.total || 0,
-        page: popularGames?.page || page,
-        limit: popularGames?.limit || limit,
+        total: popularGames.total,
+        page: popularGames.page,
+        limit: popularGames.limit,
       }
     }
-  }), [currentlyPlayedGames, page, limit]);
+  }), [currentlyPlayedGames, popularGames, page, limit]);
 
   return {
     ...stats,
