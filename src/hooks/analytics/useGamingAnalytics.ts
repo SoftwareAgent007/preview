@@ -27,7 +27,7 @@ interface PeakHour {
 interface BasicStats {
   totalPlayers: number;
   totalHours: number;
-  avgSessionMinutes: number;
+  medianSessionMinutes: number;
   peakPartySize: number;
   returnRate: number;
   peakHours: PeakHour[];
@@ -74,10 +74,11 @@ interface GameStatsResponse {
 }
 
 export const useGameDetails = (gameName: string) => {
-  const { data: gameReport, isLoading: reportLoading, error: reportError } = useQueryBuilder<GameStatsResponse>(
+
+  const { data: gameReport, isLoading: reportLoading, error: reportError } = useQueryBuilder<BasicStats>(
     ['gameReport', gameName],
     (guildId, startDate, endDate) => 
-      `/games/${encodeURIComponent(gameName)}/report?guildId=${guildId}&startDate=${startDate}&endDate=${endDate}`
+      `/games/${encodeURIComponent(gameName)}/basic-stats?guildId=${guildId}&startDate=${startDate}&endDate=${endDate}`
   );
 
   return {
