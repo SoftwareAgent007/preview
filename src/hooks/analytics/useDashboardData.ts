@@ -200,13 +200,13 @@ export function useActivityTrend(activityType: 'user' | 'spotify' | 'gaming' | '
 }
 export function useActivityData(date: Date) {
   const startDate = new Date(date);
-  startDate.setHours(0, 0, 0, 0);
-  
+  startDate.setUTCHours(0, 0, 0, 0); // Ensure startDate is set to the start of the day in UTC
   const endDate = new Date(date);
-  endDate.setHours(23, 59, 59, 999);
+  endDate.setUTCHours(23, 59, 59, 999); // Local end of the day
+
 
   const { data, isLoading, error } = useQueryBuilder<ActivityOverview>(
-    ['dashboard-activity', date],
+    ['dashboard-activity', startDate, endDate],
     (guildId) => `/dashboard/activity?guildId=${guildId}&startDate=${startDate.toISOString()}&endDate=${endDate.toISOString()}`
   );
 

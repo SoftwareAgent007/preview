@@ -133,6 +133,9 @@ const UserActivityAnalytics = () => {
     error: presenceError 
   } = usePresenceActivity();
 
+  const {
+    activeUsers,
+  } = useDashboardData();
 
   // Loading and error states
   const isLoading = gamingLoading || presenceLoading;
@@ -177,7 +180,7 @@ const UserActivityAnalytics = () => {
     {
       title: "Online Users", 
       icon: <UsersIcon className="w-5 h-5" />,
-      value: (overview?.activeUsers?.count ?? 0).toLocaleString(),
+      value: (activeUsers?.today.count ?? 0).toLocaleString(),
       isPositive: true,
       tooltip: "Total number of users currently online and active on the server",
     },
@@ -186,8 +189,8 @@ const UserActivityAnalytics = () => {
       icon: <ClockIcon className="w-5 h-5" />,
       value: overview?.totalPresenceTime?.hours 
         ? formatDuration(
-            Math.floor(overview.totalPresenceTime.hours / overview.activeUsers.count),
-            Math.floor((overview.totalPresenceTime.hours / overview.activeUsers.count % 1) * 60)
+            Math.floor(overview.totalPresenceTime.hours / (activeUsers?.today.count ?? 0)),
+            Math.floor((overview.totalPresenceTime.hours / (overview.activeUsers.count ?? 0)   % 1) * 60)
           )
         : "No Data",
       isPositive: true,
