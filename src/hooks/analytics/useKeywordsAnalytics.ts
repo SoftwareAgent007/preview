@@ -11,7 +11,7 @@ interface AddKeywordParams {
 
 interface KeywordActionParams {
   keyword: string;
-  guildId: string;
+  guildId?: string;
 }
 
 interface AddKeywordResponse {
@@ -79,11 +79,40 @@ export const useKeywordsAnalytics = (
     }
   );
 
-  const toggleKeywordActive = useModifyBuilder<{keyword: string}>(
+  const toggleKeywordActive = useModifyBuilder<KeywordActionParams>(
     (params) => `/keywords/${params.keyword}/toggle-active`,
     {
       method: 'PATCH',
-      onSuccess: () => {
+      onMutate: async (variables) => {
+        // Cancel any outgoing refetches
+        await queryClient.cancelQueries(['keywordsAnalytics']);
+        await queryClient.cancelQueries(['keywordTags']);
+
+        // Snapshot the previous value
+        const previousKeywords = queryClient.getQueryData<KeywordAnalyticsResponseDto>(['keywordsAnalytics', page, pageSize]);
+
+        // Optimistically update the keywords list
+        if (previousKeywords?.keywordsList) {
+          queryClient.setQueryData<KeywordAnalyticsResponseDto>(['keywordsAnalytics', page, pageSize], old => ({
+            ...old!,
+            keywordsList: old!.keywordsList.map(k => 
+              k.keyword === variables.keyword 
+                ? { ...k, active: !k.active }
+                : k
+            )
+          }));
+        }
+
+        return { previousKeywords };
+      },
+      onError: (err, variables, context) => {
+        // Rollback on error
+        if (context?.previousKeywords) {
+          queryClient.setQueryData(['keywordsAnalytics', page, pageSize], context.previousKeywords);
+        }
+      },
+      onSettled: () => {
+        // Refetch after error or success
         queryClient.invalidateQueries(['keywordTags']);
         queryClient.invalidateQueries(['keywordsAnalytics']);
         queryClient.invalidateQueries(['keywordTimeline']);
@@ -95,7 +124,25 @@ export const useKeywordsAnalytics = (
     (params) => `/keywords/${params.id}`,
     {
       method: 'DELETE',
-      onSuccess: () => {
+      onMutate: async (variables) => {
+        await queryClient.cancelQueries(['keywordsAnalytics']);
+        const previousKeywords = queryClient.getQueryData<KeywordAnalyticsResponseDto>(['keywordsAnalytics', page, pageSize]);
+
+        if (previousKeywords?.keywordsList) {
+          queryClient.setQueryData<KeywordAnalyticsResponseDto>(['keywordsAnalytics', page, pageSize], old => ({
+            ...old!,
+            keywordsList: old!.keywordsList.filter(k => k.id !== variables.id)
+          }));
+        }
+
+        return { previousKeywords };
+      },
+      onError: (err, variables, context) => {
+        if (context?.previousKeywords) {
+          queryClient.setQueryData(['keywordsAnalytics', page, pageSize], context.previousKeywords);
+        }
+      },
+      onSettled: () => {
         queryClient.invalidateQueries(['keywordTags']);
         queryClient.invalidateQueries(['keywordsAnalytics']);
         queryClient.invalidateQueries(['keywordTimeline']);
@@ -115,6 +162,7 @@ export const useKeywordsAnalytics = (
     selectedKeywordTimeline
   };
 };
+
 export const useKeywordTrend = (
   keyword?: string,
   viewType: 'day' | 'week' | 'month' | 'year' = 'day', 
@@ -147,6 +195,7 @@ export const useKeywordTrend = (
     (guildId) => 
       `/message-match/trend?guildId=${guildId}&startDate=${dates.startDate}&endDate=${dates.endDate}&viewType=${viewType}&limit=${limit}${keyword ? `&keywords[]=${keyword}` : ''}`,
   );
+  console.log('trendData',trendData?.data);
 
   return { trendData: trendData?.data ?? [], isTrendLoading };
 };

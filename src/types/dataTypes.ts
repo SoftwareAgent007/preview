@@ -102,7 +102,7 @@ export interface DashboardOverviewResponse {
 
 export interface DailyMetric {
   date: Date;
-  messageCount: number;
+  matchCount: number;
   uniqueAuthors: number;
   activeHours: number;
   peakHour: number;
@@ -111,7 +111,7 @@ export interface DailyMetric {
 
 export interface HourlyMetric {
   hour: Date;
-  messageCount: number;
+  matchCount: number;
   uniqueAuthors: number;
 } 
 

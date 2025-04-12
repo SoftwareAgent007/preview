@@ -3,7 +3,7 @@ import RolesChart from "@/components/charts/userActivityTimeline/userRolesChart"
 import ErrorComponent from "@/components/common/errorModel";
 import { Card } from "@/components/ui/card";
 import { useActivityTrend } from "@/hooks/analytics/useDashboardData";
-import { useGameDetails, useGamingStats, useRolesDistribution } from "@/hooks/analytics/useGamingAnalytics";
+import { useGameDetails, useGamingStats, useRolesDistribution, useAggregateStats } from "@/hooks/analytics/useGamingAnalytics";
 import { usePeakHours } from "@/hooks/analytics/useGamingPeakHours";
 import { motion, AnimatePresence } from "framer-motion";
 import { useEffect, useRef, useState } from "react";
@@ -32,6 +32,7 @@ interface ProcessedGames {
 
 const GamingAnalytics = () => {
   const { currentlyPlayedGames, isLoading: statsLoading } = useGamingStats();
+  const { aggregateStats, isLoading: aggregateLoading } = useAggregateStats();
   const [selectedGame, setSelectedGame] = useState<string>("");
   const { peakHours: gamePeakHours, isLoading: peakHoursLoading } = usePeakHours();
   const { rolesDistribution, isLoading: rolesLoading, error: rolesError } = useRolesDistribution();
@@ -193,6 +194,45 @@ const GamingAnalytics = () => {
     setMousePosition({ x: e.clientX, y: e.clientY });
   };
 
+  const statsCards = [
+    {
+      title: "Total Gaming Hours",
+      value: aggregateStats?.totalGamingHours ?? 0,
+      subtitle: "Across All Games",
+      trend: aggregateStats?.totalGamingHoursChange ?? 0,
+      isTrendPositive: (aggregateStats?.totalGamingHoursChange ?? 0) > 0,
+      tooltip: "Total hours spent gaming across all games",
+      index: 0
+    },
+    {
+      title: "Avg Session Length",
+      value: aggregateStats?.avgSessionMinutes ?? 0,
+      subtitle: "Minutes per Session",
+      trend: aggregateStats?.avgSessionMinutesChange ?? 0,
+      isTrendPositive: (aggregateStats?.avgSessionMinutesChange ?? 0) > 0,
+      tooltip: "Average length of gaming sessions in minutes",
+      index: 1
+    },
+    {
+      title: "Peak Players",
+      value: aggregateStats?.peakConcurrentPlayers ?? 0,
+      subtitle: "Concurrent Players",
+      trend: aggregateStats?.peakConcurrentPlayersChange ?? 0,
+      isTrendPositive: (aggregateStats?.peakConcurrentPlayersChange ?? 0) > 0,
+      tooltip: "Highest number of concurrent players",
+      index: 2
+    },
+    {
+      title: "Unique Gamers",
+      value: aggregateStats?.uniqueGamers ?? 0,
+      subtitle: "Active Players",
+      trend: 0,
+      isTrendPositive: true,
+      tooltip: "Total number of unique players",
+      index: 3
+    },
+  ];
+
   return (
     <motion.div 
       ref={wrapperRef} 
@@ -204,6 +244,21 @@ const GamingAnalytics = () => {
     >
       <div className="mx-auto" style={{ maxWidth: `${import.meta.env.VITE_MAX_WIDTH || 1200}px` }}>
         
+        {/* Stats Cards */}
+        <motion.div className="grid gap-4 md:gap-6 mb-6 grid-cols-1 md:grid-cols-2 lg:grid-cols-4">
+          {aggregateLoading ? (
+            Array(4).fill(0).map((_, i) => (
+              <Card key={i} className="flex-1 p-6 h-[160px]">
+                <CardSkeleton width="100%" height="120" />
+              </Card>
+            ))
+          ) : (
+            statsCards.map((stat) => (
+              <StatCard key={stat.title} {...stat} />
+            ))
+          )}
+        </motion.div>
+
         {/* Game Selector */}
         <Card className="p-4 mb-6" style={{boxShadow: "rgba(0, 0, 0, 0.15) 0px 2px 5px 0px"}}>
           {statsLoading ? (

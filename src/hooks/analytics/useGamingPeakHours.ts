@@ -1,6 +1,12 @@
 import { useMemo } from "react";
 import { useQueryBuilder } from './common/useQueryBuilder';
-import { PeakHour } from "@/types/dataTypes";
+
+interface PeakHour {
+  hour: number;
+  maxUsers: number;
+  minUsers: number;
+  avgUsers: number;
+}
 
 export const usePeakHours = (
   period: "day" | "week" | "month" | "year" = "year",

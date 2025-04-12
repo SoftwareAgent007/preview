@@ -56,6 +56,7 @@ const MusicMetrics = () => {
     { label: "Total Plays", value: overview.totalPlays.current, change: overview.totalPlays.change, isPositive: overview.totalPlays.isPositive },
     { label: "Unique Artists", value: overview.uniqueArtists.current, change: overview.uniqueArtists.change, isPositive: overview.uniqueArtists.isPositive },
     { label: "Active Listeners", value: overview.activeListeners.current, change: overview.activeListeners.change, isPositive: overview.activeListeners.isPositive },
+    { label: "Dual Listening", value: overview.dualListenings.current, change: overview.dualListenings.change, isPositive: overview.dualListenings.isPositive },
   ];
 
   const isHourlyDistributionEmpty = () => {
@@ -91,9 +92,9 @@ const MusicMetrics = () => {
         {/* #endregion */}
 
         {/* #region Stats Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-6">
           {isLoading ? (
-            Array(3).fill(0).map((_, i) => (
+            Array(4).fill(0).map((_, i) => (
               <Card key={i} className="p-6">
                 <CardSkeleton width="100%" height="100px" />
               </Card>

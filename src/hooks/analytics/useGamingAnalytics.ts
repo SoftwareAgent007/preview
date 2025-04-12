@@ -73,6 +73,21 @@ interface GameStatsResponse {
   peakConcurrentUsers: PeakConcurrentUsers;
 }
 
+interface AggregateStats {
+  totalGamingHours: number;
+  totalGamingHoursChange: number;
+  avgSessionMinutes: number;
+  avgSessionMinutesChange: number;
+  peakConcurrentPlayers: number;
+  peakConcurrentPlayersChange: number;
+  uniqueGamers: number;
+  topGames: {
+    gameName: string;
+    hours: number;
+    percentage: number;
+  }[];
+}
+
 export const useGameDetails = (gameName: string) => {
 
   const { data: gameReport, isLoading: reportLoading, error: reportError } = useQueryBuilder<BasicStats>(
@@ -139,6 +154,23 @@ export const useRolesDistribution = () => {
 
   return {
     rolesDistribution: rolesDistribution || [],
+    isLoading,
+    error
+  };
+};
+
+export const useAggregateStats = () => {
+  const { data: aggregateStats, isLoading, error } = useQueryBuilder<AggregateStats>(
+    ['aggregateStats'],
+    (guildId, startDate, endDate) => {
+      const formattedStartDate = new Date(startDate).toISOString().split('T')[0] + 'T00:00:00.000Z';
+      const formattedEndDate = new Date(endDate).toISOString().split('T')[0] + 'T23:59:59.999Z';
+      return `/games/aggregate-stats?guildId=${guildId}&startDate=${formattedStartDate}&endDate=${formattedEndDate}`;
+    }
+  );
+
+  return {
+    aggregateStats,
     isLoading,
     error
   };

@@ -46,6 +46,11 @@ export const useMusicData = () => {
         change: musicData?.overview?.activeListeners?.change ,
         isPositive: Boolean(musicData?.overview?.activeListeners?.change > 0)
       },
+      dualListenings: {
+        current: musicData?.overview?.dualListenings?.value || 0,
+        change: musicData?.overview?.dualListenings?.change,
+        isPositive: Boolean(musicData?.overview?.dualListenings?.change > 0)
+      },
     },
     genres: musicData?.genres || [],
     topArtists: musicData?.topArtists || [],

@@ -1,17 +1,27 @@
 import { motion } from "framer-motion";
 import { Card } from "@/components/ui/card";
 import { ClickableTooltip } from "@/components/ui/tooltip";
+import { TrendingDown, TrendingUp, Minus } from "lucide-react";
+import TrendIndicator from "@/components/common/TrendIndicator";
+
+interface TrendIndicatorProps {
+  trend: number;
+  isTrendPositive: boolean;
+  size?: "sm" | "md" | "lg";
+}
 
 interface StatCardProps {
   title: string;
   value: string | number;
   subtitle: string;
-  index: number;
+  trend?: number;
+  isTrendPositive?: boolean;
   tooltip?: string;
+  index: number;
   height?: string;
 }
 
-const StatCard = ({ title, value, subtitle, index, tooltip, height }: StatCardProps) => {
+const StatCard = ({ title, value, subtitle, trend, isTrendPositive, tooltip, index, height = "140px" }: StatCardProps) => {
   return (
     <motion.div
       initial={{ opacity: 0, y: 20 }}
@@ -24,7 +34,16 @@ const StatCard = ({ title, value, subtitle, index, tooltip, height }: StatCardPr
       }}
       className="flex-1"
     >
-      <Card className={`p-6 hover:scale-[101%] transition-all duration-150`} style={{ height }}>
+      <Card 
+        className={`p-6 hover:scale-[101%] transition-all duration-150 border-l-4 ${
+          trend !== undefined && trend !== 0
+            ? isTrendPositive
+              ? "border-l-emerald-500"
+              : "border-l-rose-500"
+            : "border-l-gray-200"
+        }`} 
+        style={{ height }}
+      >
         <motion.div 
           className="h-full flex flex-col items-left justify-between"
           whileHover={{ x: 5 }}
@@ -52,14 +71,23 @@ const StatCard = ({ title, value, subtitle, index, tooltip, height }: StatCardPr
               </ClickableTooltip>
             )}
           </div>
-          <motion.span 
-            className="text-2xl font-bold"
-            initial={{ scale: 0.8 }}
-            animate={{ scale: 1 }}
-            transition={{ delay: index * 0.1 + 0.2 }}
-          >
-            {typeof value === 'number' ? value.toLocaleString() : value}
-          </motion.span>
+          <div className="flex items-end gap-2">
+            <motion.span 
+              className="text-2xl font-bold"
+              initial={{ scale: 0.8 }}
+              animate={{ scale: 1 }}
+              transition={{ delay: index * 0.1 + 0.2 }}
+            >
+              {typeof value === 'number' ? value.toLocaleString() : value}
+            </motion.span>
+            {trend !== undefined && (
+              <TrendIndicator 
+                unit="%"
+              value={trend} 
+                isPositive={isTrendPositive ?? false} 
+              />
+            )}
+          </div>
           <span className="text-sm text-gray-500">{subtitle}</span>
         </motion.div>
       </Card>

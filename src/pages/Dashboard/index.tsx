@@ -30,6 +30,7 @@ const Dashboard = () => {
     topUsers,
     totalGameTime,
     activeListeners,
+    activeGamers,
     isLoading,
     error
   } = useDashboardData();
@@ -94,6 +95,12 @@ const Dashboard = () => {
       trend: totalUsers?.percentChange ?? 0,
       isTrendPositive: (totalUsers?.percentChange ?? 0) > 0,
       tooltipContent: "Total number of users registered during this period",
+      isExtraData: true,
+      extraInfo: {
+        netChange: totalUsers?.netChange,
+        newUsersCount: totalUsers?.newUsersCount,
+        departedUsersCount: totalUsers?.departedUsersCount,
+      },
       index: 0
     },
     {
@@ -132,45 +139,50 @@ const Dashboard = () => {
   
   const bottomStatsCards = useMemo(() => [{
       title: "Peak Activity Time", 
-      value: `${peakHour > 12 ? peakHour - 12 : peakHour}${peakHour >= 12 ? 'PM' : 'AM'}`,
+      value: Number(peakHour),
       description: `${activeUserCount.toLocaleString()} Active Users`,
       trend: trendChange,
       isTrendPositive: trendChange > 0,
-      trendUnit: "%",
       tooltipContent: "Time with the highest user activity",
       index: 1,
     },
     {
       title: "Total Game Time",
-      value: `${Math.floor(totalGameTime?.hours ?? 0).toLocaleString()}h`,
+      value: Math.floor(totalGameTime?.hours ?? 0),
       description: "Hours Played", 
       trend: parseInt(totalGameTime?.hourChange ?? "0"),
       isTrendPositive: totalGameTime?.hourChange?.startsWith('+') ?? false,
-      trendUnit: "h",
       tooltipContent: "Total time spent playing games",
       index: 2,
     },
     {
       title: "Active Listeners",
-      value: (activeListeners?.count ?? 0).toLocaleString(),
+      value: Number(activeListeners?.count ?? 0),
       description: "during selected period",
       trend: activeListeners?.percentChange ?? 0,
       isTrendPositive: (activeListeners?.percentChange ?? 0) > 0,
-      trendUnit: "%",
       tooltipContent: "Count of users listening during selected period",
       index: 3,
     },
     {
-      title: "Keywords",
-      value: (topKeywords?.length ?? 0).toLocaleString(),
-      description: `${(topKeywords?.length ?? 0).toLocaleString()} Active`,
-      trend: 0,
-      isTrendPositive: true,
-      trendUnit: "%",
-      tooltipContent: "Active keywords mentioned in the guild within the timerange",
+      title: "Active Gamers",
+      value: Number(activeGamers?.count ?? 0),
+      description: "during selected period",
+      trend: activeGamers?.percentChange ?? 0,
+      isTrendPositive: (activeGamers?.percentChange ?? 0) > 0,
+      tooltipContent: "Count of users playing games during selected period",
       index: 4,
     },
-  ], [hourlyActivity, totalGameTime, activeListeners, topKeywords]);
+    {
+      title: "Keywords",
+      value: Number(topKeywords?.length ?? 0),
+      description: `${topKeywords?.length ?? 0} Active`,
+      trend: 0,
+      isTrendPositive: true,
+      tooltipContent: "Total number of keywords in the system",
+      index: 5,
+    },
+  ], [hourlyActivity, totalGameTime, activeListeners, activeGamers, topKeywords]);
 
   return (
     <LayoutGroup> 
