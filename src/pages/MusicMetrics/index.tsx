@@ -135,7 +135,7 @@ const MusicMetrics = () => {
             ))
           ) : (
             <>
-              <TopPlayedArtistsCard artists={topArtists.map(artist => ({ ...artist, plays: artist.playCount || 0 }))} />
+              <TopPlayedArtistsCard artists={topArtists.map(artist => ({ ...artist, plays: artist.plays || 0 }))} />
               
               <GenrePreferencesCard data={genres} />
             </>
