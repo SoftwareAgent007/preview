@@ -3,7 +3,7 @@ import BreadcrumbsNavigation from "@/components/common/BreadcrumbsNavigation";
 import ErrorComponent from "@/components/common/errorModel";
 import { Card } from "@/components/ui/card";
 import { ClickableTooltip } from "@/components/ui/tooltip";
-import { useMusicData } from "@/hooks/analytics/useMusicMetrics";
+import { useOverviewMetrics, useGenrePreferences, useTopArtists, usePeakHours, useAverageSession, usePopularTracks } from "@/hooks/analytics/useMusicMetrics";
 import { BREADCRUMB_PATHS, ROUTES } from "@/routes/routes.constant";
 import { motion } from "framer-motion";
 import ContentLoader from "react-content-loader";
@@ -21,7 +21,15 @@ const CardSkeleton = ({ width, height }: { width: string; height: string }) => (
 );
 
 const MusicMetrics = () => {
-  const { overview, genres, topArtists, peakHours, avgSession, popularTracks, isLoading, error } = useMusicData();
+  const { overview, isLoading: overviewLoading, error: overviewError } = useOverviewMetrics();
+  const { genres, isLoading: genresLoading, error: genresError } = useGenrePreferences();
+  const { topArtists, isLoading: artistsLoading, error: artistsError } = useTopArtists();
+  const { peakHours, isLoading: peakHoursLoading, error: peakHoursError } = usePeakHours();
+  const { avgSession, isLoading: sessionLoading, error: sessionError } = useAverageSession();
+  const { popularTracks, isLoading: tracksLoading, error: tracksError } = usePopularTracks(3);
+
+  const isLoading = overviewLoading || genresLoading || artistsLoading || peakHoursLoading || sessionLoading || tracksLoading;
+  const error = overviewError || genresError || artistsError || peakHoursError || sessionError || tracksError;
 
   // #region Animation Variants
   const container = {
@@ -56,7 +64,6 @@ const MusicMetrics = () => {
     { label: "Total Plays", value: overview.totalPlays.current, change: overview.totalPlays.change, isPositive: overview.totalPlays.isPositive },
     { label: "Unique Artists", value: overview.uniqueArtists.current, change: overview.uniqueArtists.change, isPositive: overview.uniqueArtists.isPositive },
     { label: "Active Listeners", value: overview.activeListeners.current, change: overview.activeListeners.change, isPositive: overview.activeListeners.isPositive },
-    { label: "Dual Listening", value: overview.dualListenings.current, change: overview.dualListenings.change, isPositive: overview.dualListenings.isPositive },
   ];
 
   const isHourlyDistributionEmpty = () => {
@@ -92,9 +99,9 @@ const MusicMetrics = () => {
         {/* #endregion */}
 
         {/* #region Stats Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-6">
-          {isLoading ? (
-            Array(4).fill(0).map((_, i) => (
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
+          {overviewLoading ? (
+            Array(3).fill(0).map((_, i) => (
               <Card key={i} className="p-6">
                 <CardSkeleton width="100%" height="100px" />
               </Card>
@@ -106,7 +113,7 @@ const MusicMetrics = () => {
                   index={index}
                   label={stat.label}
                   value={stat.value}
-                  change={stat.change}
+                  change={stat.change || 0}
                   isPositive={stat.isPositive}
                   tooltipContent={`Statistics for ${stat.label.toLowerCase()}`}
                 />
@@ -120,7 +127,7 @@ const MusicMetrics = () => {
           className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6"
           variants={container}
         >
-          {isLoading ? (
+          {artistsLoading || genresLoading ? (
             Array(2).fill(0).map((_, i) => (
               <Card key={i} className="p-6">
                 <CardSkeleton width="100%" height="200px" />
@@ -128,7 +135,7 @@ const MusicMetrics = () => {
             ))
           ) : (
             <>
-              <TopPlayedArtistsCard artists={topArtists} />
+              <TopPlayedArtistsCard artists={topArtists.map(artist => ({ ...artist, plays: artist.playCount || 0 }))} />
               
               <GenrePreferencesCard data={genres} />
             </>
@@ -141,7 +148,7 @@ const MusicMetrics = () => {
           className="grid grid-cols-1 md:grid-cols-2 gap-6"
           variants={container}
         >
-          {isLoading ? (
+          {peakHoursLoading || sessionLoading || tracksLoading ? (
             Array(2).fill(0).map((_, i) => (
               <Card key={i} className="p-6">
                 <CardSkeleton width="100%" height="200px" />
@@ -151,7 +158,7 @@ const MusicMetrics = () => {
             <>
               <BaseCard>
                 <div className="title">
-                  <span className="text-gray-500 text-lg font-bold mr-5">Peak Listening Hours</span>
+                  <span className="text-gray-500 text-lg font-bold">Peak Listening Hours</span> <span className="text-gray-500 text-lg mr-5">(in %)</span>
                   <ClickableTooltip content={<p><strong>Peak Listening Hours:</strong> Shows statistics for the most active hours of the day.</p>}>
                     <span className="bg-gray-300 bg-opacity-25 text-gray-600 px-[7px] rounded-full cursor-help">?</span>
                   </ClickableTooltip>
@@ -170,7 +177,7 @@ const MusicMetrics = () => {
                 {!avgSession?.current ? (
                   <ErrorComponent />
                 ) : avgSession ? (
-                    <TopTracksList tracks={popularTracks} isLoading={isLoading} error={error} />
+                    <TopTracksList tracks={popularTracks} isLoading={tracksLoading} error={tracksError} />
                 ) : (
                   <div className="flex items-center justify-center h-[200px] text-gray-500">
                     No session data available
