@@ -2,15 +2,16 @@ import UserActivityTimeline from "@/components/charts/userActivityTimeline/userA
 import RolesChart from "@/components/charts/userActivityTimeline/userRolesChart";
 import ErrorComponent from "@/components/common/errorModel";
 import { Card } from "@/components/ui/card";
+import SearchableSelect from "@/components/ui/searchebleSelect";
 import { useActivityTrend } from "@/hooks/analytics/useDashboardData";
-import { useGameDetails, useGamingStats, useRolesDistribution, useAggregateStats } from "@/hooks/analytics/useGamingAnalytics";
+import { useAggregateStats, useGameDetails, useGamingStats, useRolesDistribution } from "@/hooks/analytics/useGamingAnalytics";
 import { usePeakHours } from "@/hooks/analytics/useGamingPeakHours";
-import { motion, AnimatePresence } from "framer-motion";
+import StatGamingCard from "@/pages/UsersDetailedActivityAnalytics/GamingAnalytics/components/StatGamingCard";
+import { AnimatePresence, motion } from "framer-motion";
 import { useEffect, useRef, useState } from "react";
 import ContentLoader from "react-content-loader";
 import StatCard from "./components/StatCard";
 import TopGamesList from "./components/topGamesList";
-import SearchableSelect from "@/components/ui/searchebleSelect";
 
 const CardSkeleton = ({ width, height }: { width: string; height: string }) => (
   <ContentLoader speed={2} width={width} height={height} viewBox={`0 0 ${width} ${height}`}>
@@ -141,20 +142,20 @@ const GamingAnalytics = () => {
   const statsData = [
     { 
       title: "Peak Party Size", 
-      value: basicStats?.peakPartySize.toLocaleString(), 
+      value: basicStats?.peakPartySize, 
       subtitle: "In a single party",
       tooltip: "Maximum number of players in a single party"
     },
     { 
       title: "Total Players", 
-      value: basicStats?.totalPlayers.toLocaleString(), 
+      value: basicStats?.totalPlayers, 
       subtitle: "Lifetime Unique Players", 
       unit: "players",
       tooltip: "Total number of unique players who have played this game"
     },
     { 
       title: "Return Rate", 
-      value: `${basicStats?.returnRate.toFixed(2).toLocaleString()}%`, 
+      value: basicStats?.returnRate, 
       subtitle: "Daily Return Percentage", 
       unit: "%",
       tooltip: "How many players from the previous day returned to play the same game"
@@ -167,7 +168,7 @@ const GamingAnalytics = () => {
     },
     { 
       title: "Total Game Time", 
-      value: basicStats.totalHours.toLocaleString(), 
+      value: basicStats.totalHours, 
       subtitle: "Cumulative Hours Played", 
       unit: "hrs",
       tooltip: "Total cumulative hours spent playing this game"
@@ -194,44 +195,51 @@ const GamingAnalytics = () => {
     setMousePosition({ x: e.clientX, y: e.clientY });
   };
 
-  const statsCards = [
-    {
-      title: "Total Gaming Hours",
-      value: aggregateStats?.totalGamingHours ?? 0,
-      subtitle: "Across All Games",
-      trend: aggregateStats?.totalGamingHoursChange ?? 0,
-      isTrendPositive: (aggregateStats?.totalGamingHoursChange ?? 0) > 0,
-      tooltip: "Total hours spent gaming across all games",
-      index: 0
-    },
-    {
-      title: "Avg Session Length",
-      value: aggregateStats?.avgSessionMinutes ?? 0,
-      subtitle: "Minutes per Session",
-      trend: aggregateStats?.avgSessionMinutesChange ?? 0,
-      isTrendPositive: (aggregateStats?.avgSessionMinutesChange ?? 0) > 0,
-      tooltip: "Average length of gaming sessions in minutes",
-      index: 1
-    },
-    {
-      title: "Peak Players",
-      value: aggregateStats?.peakConcurrentPlayers ?? 0,
-      subtitle: "Concurrent Players",
-      trend: aggregateStats?.peakConcurrentPlayersChange ?? 0,
-      isTrendPositive: (aggregateStats?.peakConcurrentPlayersChange ?? 0) > 0,
-      tooltip: "Highest number of concurrent players",
-      index: 2
-    },
-    {
-      title: "Unique Gamers",
-      value: aggregateStats?.uniqueGamers ?? 0,
-      subtitle: "Active Players",
-      trend: 0,
-      isTrendPositive: true,
-      tooltip: "Total number of unique players",
-      index: 3
-    },
-  ];
+  
+  const getStatsCards = () => {
+    const totalGamingHours = aggregateStats?.totalGamingHours || 0;
+    const avgSessionMinutes = aggregateStats?.avgSessionMinutes || 0;
+    const peakConcurrentPlayers = aggregateStats?.peakConcurrentPlayers || 0;
+    const uniqueGamers = aggregateStats?.uniqueGamers || 0;
+    const totalGamingHoursChange = aggregateStats?.totalGamingHoursChange || 0;
+    const avgSessionMinutesChange = aggregateStats?.avgSessionMinutesChange || 0;
+    const peakConcurrentPlayersChange = aggregateStats?.peakConcurrentPlayersChange || 0;
+
+    return [
+      {
+        title: "Total Gaming Hours",
+        value: totalGamingHours > 1000 ? Number(totalGamingHours.toFixed(0)).toLocaleString() : totalGamingHours.toLocaleString(),
+        subtitle: totalGamingHoursChange,
+        isTrendPositive: totalGamingHoursChange > 0,
+        tooltip: "Total hours spent gaming across all games",
+        index: 0
+      },
+      {
+        title: "Medium Session Length",
+        value: avgSessionMinutes > 1000 ? Number(avgSessionMinutes.toFixed(0)).toLocaleString() : avgSessionMinutes.toLocaleString(),
+        subtitle: avgSessionMinutesChange,
+        isTrendPositive: avgSessionMinutesChange > 0,
+        tooltip: "Average length of gaming sessions in minutes",
+        index: 1
+      },
+      {
+        title: "Peak Players",
+        value: peakConcurrentPlayers > 1000 ? Number(peakConcurrentPlayers.toFixed(0)).toLocaleString() : peakConcurrentPlayers.toLocaleString(),
+        subtitle: peakConcurrentPlayersChange,
+        isTrendPositive: peakConcurrentPlayersChange > 0,
+        tooltip: "Highest number of concurrent players",
+        index: 2
+      },
+      {
+        title: "Unique Gamers",
+        value: uniqueGamers > 1000 ? Number(uniqueGamers.toFixed(0)).toLocaleString() : uniqueGamers.toLocaleString(),
+        tooltip: "Total number of unique players",
+        index: 3
+      },
+    ];
+  };
+
+  const statsCards = getStatsCards();
 
   return (
     <motion.div 
@@ -245,7 +253,7 @@ const GamingAnalytics = () => {
       <div className="mx-auto" style={{ maxWidth: `${import.meta.env.VITE_MAX_WIDTH || 1200}px` }}>
         
         {/* Stats Cards */}
-        <motion.div className="grid gap-4 md:gap-6 mb-6 grid-cols-1 md:grid-cols-2 lg:grid-cols-4">
+        <motion.div className="grid gap-4 md:gap-6 mb-6 grid-cols-1  md:grid-cols-2 xl:grid-cols-4">
           {aggregateLoading ? (
             Array(4).fill(0).map((_, i) => (
               <Card key={i} className="flex-1 p-6 h-[160px]">
@@ -254,7 +262,15 @@ const GamingAnalytics = () => {
             ))
           ) : (
             statsCards.map((stat) => (
-              <StatCard key={stat.title} {...stat} />
+              <StatGamingCard 
+                key={stat.index} 
+                title={stat.title || ''}
+                value={stat.value || ''}
+                trend={stat.subtitle || 0}
+                isTrendPositive={stat.isTrendPositive || false}
+                tooltip={stat.tooltip || ''}
+                index={stat.index}
+              />
             ))
           )}
         </motion.div>

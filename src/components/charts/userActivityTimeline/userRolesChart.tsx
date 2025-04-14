@@ -11,6 +11,7 @@ const RolesChart = ({ width, data }: { width?: number, data: { roleName: string,
     const [chartWidth, setChartWidth] = useState(width || 400);
     const [chartHeight, setChartHeight] = useState(300);
     const [isModalOpen, setIsModalOpen] = useState(false);
+    const [processedData, setProcessedData] = useState<{ roleName: string, count: number, percentage: number, color: string }[]>([]);
 
     const MIN_CHART_SIZE = 300;
     const MAX_CHART_SIZE = 800;
@@ -28,6 +29,34 @@ const RolesChart = ({ width, data }: { width?: number, data: { roleName: string,
             setChartHeight(newHeight);
         }
     };
+
+    useEffect(() => {
+        const processedData = data.reduce((acc, item) => {
+            if (item.percentage < 2) {
+                const other = acc.find(d => d.roleName === "Other");
+                if (other) {
+                    other.count += item.count;
+                    other.percentage += item.percentage;
+                } else {
+                    acc.push({ roleName: "Other", count: item.count, percentage: item.percentage, color: "#CCCCCC" });
+                }
+            } else {
+                acc.push(item);
+            }
+            return acc;
+        }, [] as { roleName: string, count: number, percentage: number, color: string }[]);
+
+        const totalPercentage = data.reduce((sum, item) => sum + item.percentage, 0);
+        const noRolePercentage = 100 - totalPercentage;
+
+        if (noRolePercentage > 0) {
+            const highestCount = Math.max(...processedData.map(item => item.count));
+            const highestPercentage = Math.max(...processedData.map(item => item.percentage));
+            const noRoleCount = Math.round((highestCount / highestPercentage) * noRolePercentage);
+            processedData.push({ roleName: "No Role", count: noRoleCount, percentage: noRolePercentage, color: "#E0E0E0" });
+        }
+        setProcessedData(processedData);
+    }, [data])
 
     useEffect(() => {
         updateChartDimensions();
@@ -127,7 +156,7 @@ const RolesChart = ({ width, data }: { width?: number, data: { roleName: string,
                             <CircleRoleChart 
                                 width={chartWidth} 
                                 height={chartHeight} 
-                                data={data} 
+                                data={processedData} 
                             />
                         </div>
                     </motion.div>
@@ -138,7 +167,7 @@ const RolesChart = ({ width, data }: { width?: number, data: { roleName: string,
                 {isModalOpen && (
                     <Modal 
                         closeModal={() => setIsModalOpen(false)} 
-                        data={data}
+                        data={processedData}
                         width={chartWidth * 1.5}
                         height={chartHeight * 1.5}
                     />
@@ -150,7 +179,7 @@ const RolesChart = ({ width, data }: { width?: number, data: { roleName: string,
 
 interface ModalProps {
     closeModal: () => void;
-    data: any[];
+    data: { roleName: string, count: number, percentage: number, color: string }[];
     width: number;
     height: number;
 }
@@ -216,7 +245,7 @@ const Modal: React.FC<ModalProps> = ({ closeModal, data, width, height }) => {
                         className="flex flex-col items-center"
                     >
                         <CircleRoleChart 
-                            data={data} 
+                            data={processedData} 
                             width={width} 
                             height={height}
                         />
