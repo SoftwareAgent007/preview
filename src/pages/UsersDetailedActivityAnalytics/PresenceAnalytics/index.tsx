@@ -4,7 +4,7 @@ import { useRef, useMemo, useState, useEffect } from "react";
 import ActiveStatusChart from "./components/ActiveStatusChart";
 import PeakActivityHours from "./components/PeakActivityHours";
 import StatCard from "./components/StatCard";
-import { usePresenceActivity } from "@/hooks/analytics/usePresenceAnalytics";
+import { useActivityOverview, useStatusBreakdown, usePeakHours, useHourlyActivity } from "@/hooks/analytics/usePresenceAnalytics";
 import ErrorComponent from "@/components/common/errorModel";
 import ContentLoader from "react-content-loader";
 import { Info, Loader2 } from "lucide-react";
@@ -21,15 +21,13 @@ const CardSkeleton = ({ width, height }: { width: string; height: string }) => (
 );
 
 const PresenceAnalytics = () => {
-  const { 
-    overview, 
-    statusBreakdown,
-    peakHours,
-    deviceUsage,
-    roleDistribution, 
-    isLoading, 
-    error 
-  } = usePresenceActivity("week");
+  const { data: overview, isLoading: overviewLoading, error: overviewError } = useActivityOverview("week");
+  const { data: statusBreakdown, isLoading: statusLoading } = useStatusBreakdown("week");
+  const { data: peakHours, isLoading: peakLoading } = usePeakHours("week");
+  const { data: hourlyActivity, isLoading: hourlyLoading } = useHourlyActivity("week");
+
+  const error = overviewError;
+
   const wrapperRef = useRef<HTMLDivElement | null>(null);
   const presenceChartRef = useRef<HTMLDivElement | null>(null);
   const peakHoursRef = useRef<HTMLDivElement | null>(null);
@@ -85,7 +83,7 @@ const PresenceAnalytics = () => {
   }, [peakHoursRef.current]);
 
   const {
-    hourlyActivity,
+    hourlyActivity: activityData,
     isLoading: isHourlyLoading,
     error: isHourlyError  
   } = useActivityData(activityHourlyDate);
@@ -111,7 +109,7 @@ const PresenceAnalytics = () => {
       formatValue: (val?: number) => val?.toLocaleString() || '0'
     },
     { 
-      title: "Avg. Session Time", 
+      title: "Medium Session Time", 
       subtitle: overview?.avgSessionTime?.label || "Average session duration",
       tooltip: "Average time users spend active in a single session",
       formatValue: (minutes?: number) => {
@@ -151,7 +149,7 @@ const PresenceAnalytics = () => {
     switch (stat.title) {
       case "Active Users":
         return stat.formatValue(overview.activeUsers?.count);
-      case "Avg. Session Time":
+      case "Medium Session Time":
         return stat.formatValue(overview.avgSessionTime?.minutes);
       case "Peak Users":
         return stat.formatValue(overview.peakUsers?.count);
@@ -162,7 +160,7 @@ const PresenceAnalytics = () => {
     }
   };
 
-  if (hasErrors && !isLoading) {
+  if (hasErrors && !overviewLoading) {
     return (
       <div className="w-full bg-gray-50 p-4 md:p-6">
         <div className="mx-auto" style={{ maxWidth: `${import.meta.env.VITE_MAX_WIDTH || 1200}px` }}>
@@ -208,7 +206,7 @@ const PresenceAnalytics = () => {
                     </ClickableTooltip>
                   </div>
                 }
-                value={isLoading ? <CardSkeleton width="100%" height="24" /> : value} 
+                value={overviewLoading ? <CardSkeleton width="100%" height="24" /> : value} 
                 subtitle={stat.subtitle} 
                 index={index} 
               />
@@ -217,7 +215,7 @@ const PresenceAnalytics = () => {
         </motion.div>
         <div className={`grid grid-cols-1 ${wrapperRef.current && wrapperRef.current.offsetWidth >= 800 ? 'lg:grid-cols-2' : ''} gap-6 mb-6`}>
           <motion.div variants={itemVariants} ref={presenceChartRef}>
-              {isLoading || isHourlyLoading ? (
+              {hourlyLoading ? (
               <Card className="p-6">
                 <CardSkeleton width="100%" height="470" />
               </Card>
@@ -229,7 +227,7 @@ const PresenceAnalytics = () => {
           </motion.div>
 
           <motion.div variants={itemVariants}>
-              {isLoading ? (
+              {statusLoading ? (
               <Card className="p-6">
                 <CardSkeleton width="100%" height="470" />
               </Card>
@@ -241,7 +239,7 @@ const PresenceAnalytics = () => {
           </motion.div>
 
           <motion.div variants={itemVariants} ref={peakHoursRef}>
-              {isLoading ? (
+              {peakLoading ? (
               <Card className="p-6">
                 <CardSkeleton width="100%" height="470" />
               </Card>
@@ -253,13 +251,13 @@ const PresenceAnalytics = () => {
           </motion.div>
 
           <ChartCard
-            title={isLoading ? "" : "Hourly Activity"}
+            title={isHourlyLoading ? "" : "Hourly Activity"}
             tooltipContent="Displays the number of users at different hours of the day"
             index={0}
             className="flex-1"              
             setRef={(ref) => horizontalChartRef.current = ref}
           >
-            {isLoading ? (
+            {isHourlyLoading ? (
               <CardSkeleton width="100%" height="470" />
             ) : (
               <HorizontalBarChart
