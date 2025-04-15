@@ -7,13 +7,13 @@ export interface WeeklyTrend {
   weekStartDate: string;
   totalUsers: number;
   totalHours: number;
-  avgSessionMinutes: number;
+  medianSessionMinutes: number;
 }
 
 export interface GameStats {
   totalPlayers: number;
   totalHours: number;
-  avgSessionMinutes: number;
+  medianSessionMinutes: number;
   peakPartySize: number;
   returnRate: number;
   peakHours: PeakHour[];
@@ -29,7 +29,7 @@ export interface PopularGame {
   gameName: string;
   totalHours: number;
   uniquePlayers: number;
-  avgSessionMinutes: number;
+  medianSessionMinutes: number;
   peakHours: PeakHour[];
 }
 

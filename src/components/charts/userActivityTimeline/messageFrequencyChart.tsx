@@ -17,7 +17,7 @@ import {
 
 interface MessageMetric {
   date: string;
-  matchCount: number;
+  messageCount: number;
 }
 
 interface MessageFrequencyChartProps {
@@ -85,7 +85,7 @@ const MessageFrequencyChart: React.FC<MessageFrequencyChartProps> = ({
     const transformData = (messageFrequency: MessageMetric[]): TimelineDataDto[] => {
         return messageFrequency.map(metric => ({
             date: metric.date,
-            count: metric.matchCount
+            count: metric.messageCount
         }));
     };
 

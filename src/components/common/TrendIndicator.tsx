@@ -1,7 +1,7 @@
 import { ArrowUpIcon, ArrowDownIcon } from "lucide-react";
 
 interface TrendIndicatorProps {
-  value: number;
+  value: number | string;
   unit?: string;
   isPositive?: boolean;
 }

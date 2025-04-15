@@ -15,15 +15,14 @@ interface TrendIndicatorProps {
 interface StatCardProps {
   title: string;
   value: string | number;
-  subtitle: string;
-  trend?: string;
+  trend?: number;
   isTrendPositive?: boolean;
   tooltip?: string;
   index: number;
   height?: string;
 }
 
-const StatCard = ({ title, value, subtitle, trend, isTrendPositive, tooltip, index, height = "140px" }: StatCardProps) => {
+const StatCard = ({ title, value, trend, isTrendPositive, tooltip, index, height = "140px" }: StatCardProps) => {
   const dashboardContext = useContext(DashboardContext);
   const periodDays = dashboardContext?.selectedPeriod?.from ? 
     Math.round((dashboardContext.selectedPeriod.to!.getTime() - dashboardContext.selectedPeriod.from.getTime()) / (1000 * 60 * 60 * 24)) : 30;
@@ -92,15 +91,14 @@ const StatCard = ({ title, value, subtitle, trend, isTrendPositive, tooltip, ind
             >
               {typeof value === 'number' ? value.toLocaleString() : value}
             </motion.span>
-            {trend !== undefined && (
+          </div>
+          <span className="text-sm text-gray-500">{trend !== undefined && (
               <TrendIndicator 
                 value={trend} 
                 unit={`% from last ${selectedPeriod.count} ${selectedPeriod.type}`}
                 isPositive={isTrendPositive ?? false} 
               />
-            )}
-          </div>
-          <span className="text-sm text-gray-500">{subtitle}</span>
+            )}</span>
         </motion.div>
       </Card>
     </motion.div>

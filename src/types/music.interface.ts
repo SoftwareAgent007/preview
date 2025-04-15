@@ -39,9 +39,7 @@ export interface Artist {
 
 export interface TopArtist {
   artist: Artist;
-  _count: {
-    songName: number;
-  };
+  plays: number;
 }
 
 export interface PeakHoursResponse {

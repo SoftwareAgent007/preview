@@ -25,7 +25,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { Trash2, Loader2, ToggleLeft, ToggleRight } from "lucide-react";
+import { Trash2, Loader2, ToggleLeft, ToggleRight, Search } from "lucide-react";
 import { Badge } from "../ui/badge";
 import { KeywordListItemDto } from "@/types/dataTypes";
 import {
@@ -38,7 +38,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-
+import { motion, AnimatePresence } from "framer-motion";
 
 function debounce<T extends (...args: any[]) => void>(func: T, wait: number) {
   let timeout: NodeJS.Timeout;
@@ -60,50 +60,56 @@ const globalFilterFn: FilterFn<KeywordListItemDto> = (row, columnId, filterValue
   return value ? String(value).toLowerCase().includes(String(filterValue).toLowerCase()) : false;
 };
 
-const KeywordsDataTableComponent = ({
-  displayedKeywords = [],
-  defaultKeywords = [],
-  searchTerm,
-  setSearchTerm,
-  currentPage,
-  setCurrentPage,
-  totalPages,
-  totalKeywords,
-  onPageSizeChange,
-  pageSize,
-  isLoading,
-  onToggleActive,
-  onDelete,
-}: {
+interface KeywordsDataTableProps {
   displayedKeywords: KeywordListItemDto[];
   defaultKeywords: KeywordListItemDto[];
   searchTerm: string;
   setSearchTerm: (term: string) => void;
   currentPage: number;
   setCurrentPage: (page: number) => void;
-  totalPages: number;
   totalKeywords: number;
-  onPageSizeChange: (size: number) => void;
+  totalPages: number;
   pageSize: number;
+  onPageSizeChange: (size: number) => void;
+  onToggleActive: (keyword: KeywordListItemDto) => void;
+  onDelete: (id: number) => void;
   isLoading: boolean;
-  onToggleActive: (keyword: KeywordListItemDto) => Promise<void>;
-  onDelete: (id: number) => Promise<void>;
-}) => {
+  getKeywordState: (keyword: KeywordListItemDto) => { isLoading: boolean; active: boolean };
+}
+
+const KeywordsDataTable = ({
+  displayedKeywords,
+  defaultKeywords,
+  searchTerm,
+  setSearchTerm,
+  currentPage,
+  setCurrentPage,
+  totalKeywords,
+  totalPages,
+  pageSize,
+  onPageSizeChange,
+  onToggleActive,
+  onDelete,
+  isLoading,
+  getKeywordState
+}: KeywordsDataTableProps) => {
   const [globalFilter, setGlobalFilter] = React.useState(searchTerm);
   const [keywordToDelete, setKeywordToDelete] = React.useState<KeywordListItemDto | null>(null);
+  const [debounceTimeout, setDebounceTimeout] = React.useState<NodeJS.Timeout | null>(null);
 
-  const debouncedSearch = React.useMemo(
-    () => debounce((term: string) => {
-      setSearchTerm(term);
-    }, 1000), // Changed to 2000ms (2 seconds)
-    [setSearchTerm]
-  );
+  const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = e.target.value;
+    
+    if (debounceTimeout) {
+      clearTimeout(debounceTimeout);
+    }
 
-  React.useEffect(() => {
-    return () => {
-      debouncedSearch.cancel();
-    };
-  }, [debouncedSearch]);
+    const timeout = setTimeout(() => {
+      setSearchTerm(value);
+    }, 300);
+
+    setDebounceTimeout(timeout);
+  };
 
   const tableData = React.useMemo(() => {
     return globalFilter ? displayedKeywords : defaultKeywords;
@@ -146,35 +152,44 @@ const KeywordsDataTableComponent = ({
       header: ({ column }) => (
         <div className="text-left font-bold">Actions</div>
       ),
-      cell: ({ row }) => (
-        <div className="flex items-center gap-2">
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={() => onToggleActive(row.original)}
-            className="text-gray-500 hover:text-blue-500"
-          >
-            {row.original.active ? 
-              <ToggleRight className="w-5 h-5" /> : 
-              <ToggleLeft className="w-5 h-5" />
-            }
-          </Button>
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={() => setKeywordToDelete(row.original)}
-            className="text-gray-500 hover:text-red-500"
-          >
-            <Trash2 className="w-5 h-5" />
-          </Button>
-        </div>
-      ),
+      cell: ({ row }) => {
+        const { isLoading: isKeywordLoading, active } = getKeywordState(row.original);
+        
+        return (
+          <div className="flex items-center gap-2">
+            <div className="relative">
+              {isKeywordLoading && (
+                <div className="absolute mr-2 -right-6 top-1/2 -translate-y-1/2">
+                  <Loader2 className="w-4 h-4 animate-spin text-blue-500" />
+                </div>
+              )}
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => onToggleActive(row.original)}
+                disabled={isKeywordLoading}
+                className={`text-gray-500 hover:text-blue-500 transition-opacity ${isKeywordLoading ? 'opacity-50' : ''}`}
+              >
+                {active ? 
+                  <ToggleRight className="w-5 h-5" /> : 
+                  <ToggleLeft className="w-5 h-5" />
+                }
+              </Button>
+            </div>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => setKeywordToDelete(row.original)}
+              disabled={isKeywordLoading}
+              className="text-gray-500 ml-2 hover:text-red-500"
+            >
+              <Trash2 className="w-5 h-5" />
+            </Button>
+          </div>
+        );
+      },
     },
   ];
-
-  React.useEffect(() => {
-    setSearchTerm(globalFilter);
-  }, [globalFilter, setSearchTerm]);
 
   const table = useReactTable({
     data: tableData,
@@ -254,17 +269,15 @@ const KeywordsDataTableComponent = ({
         </div>
       </div>
       
-      <Input
-        type="text"
-        placeholder="Search keywords..."
-        value={globalFilter ?? ''}
-        onChange={(e) => {
-          const value = e.target.value;
-          setGlobalFilter(value);
-          debouncedSearch(value);
-        }}
-        className="mb-4"
-      />
+      <div className="relative">
+        <Input
+          placeholder="Search keywords..."
+          value={globalFilter}
+          onChange={handleSearchChange}
+          className="pl-10"
+        />
+        <Search className="absolute left-3 top-2.5 h-5 w-5 text-gray-400" />
+      </div>
       
       <div className="rounded-md border min-h-[400px] relative">
         {isLoading && (
@@ -293,26 +306,42 @@ const KeywordsDataTableComponent = ({
             ))}
           </TableHeader>
           <TableBody>
-            {table.getRowModel().rows.length ? (
-              table.getRowModel().rows.map((row) => (
-                <TableRow key={row.id} data-state={row.getIsSelected() && "selected"}>
-                  {row.getVisibleCells().map((cell) => (
-                    <TableCell key={cell.id}>
-                      {flexRender(
-                        cell.column.columnDef.cell,
-                        cell.getContext()
-                      )}
-                    </TableCell>
-                  ))}
+            <AnimatePresence mode="popLayout">
+              {isLoading ? (
+                <TableRow>
+                  <TableCell colSpan={columns.length} className="text-center py-8">
+                    <div className="flex justify-center items-center">
+                      <Loader2 className="h-6 w-6 animate-spin text-gray-500" />
+                    </div>
+                  </TableCell>
                 </TableRow>
-              ))
-            ) : (
-              <TableRow>
-                <TableCell colSpan={columns.length} className="h-24 text-center">
-                  No results.
-                </TableCell>
-              </TableRow>
-            )}
+              ) : table.getRowModel().rows.length ? (
+                table.getRowModel().rows.map((row) => (
+                  <motion.tr
+                    key={row.id}
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, y: -20 }}
+                    className="border-b"
+                  >
+                    {row.getVisibleCells().map((cell) => (
+                      <TableCell key={cell.id}>
+                        {flexRender(
+                          cell.column.columnDef.cell,
+                          cell.getContext()
+                        )}
+                      </TableCell>
+                    ))}
+                  </motion.tr>
+                ))
+              ) : (
+                <TableRow>
+                  <TableCell colSpan={columns.length} className="h-24 text-center">
+                    No results.
+                  </TableCell>
+                </TableRow>
+              )}
+            </AnimatePresence>
           </TableBody>
         </Table>
       </div>
@@ -378,4 +407,4 @@ const KeywordsDataTableComponent = ({
   );
 };
 
-export default KeywordsDataTableComponent;
+export default KeywordsDataTable;

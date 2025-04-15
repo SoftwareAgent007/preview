@@ -43,7 +43,9 @@ const queryClient = new QueryClient({
 
 function App() {
   const [selectedPeriod, setSelectedPeriod] = useState<DateRange>(DEFAULT_DATE_RANGE);
-  const [guildId, setGuildId] = useState<string>(localStorage.getItem('selected_guild') || '1306748279903621142');
+  const user = JSON.parse(localStorage.getItem('user') || '{}');
+  const initialGuildId = user.guildIds?.includes("1306748279903621142") ? "1306748279903621142" : (localStorage.getItem('selected_guild') || user.guildIds || '');
+  const [guildId, setGuildId] = useState<string>(initialGuildId);
   
   const handleSetPeriod = (period: DateRange) => {
     setSelectedPeriod(period);
@@ -60,19 +62,19 @@ function App() {
 
   return (
     <ThemeProvider defaultTheme="light" storageKey="vite-ui-theme">
-      <AuthProvider>
-        <DashboardContext.Provider 
-          value={{ 
-            selectedPeriod,
-            setSelectedPeriod: handleSetPeriod, 
-            startDate: selectedPeriod.from?.toISOString() || DEFAULT_START_DATE,
-            endDate: selectedPeriod.to?.toISOString() || DEFAULT_END_DATE,
-            guildId,
-            setGuildId: handleSetGuildId
-          }}
-        >
-          <QueryClientProvider client={queryClient}>
-            <BrowserRouter>
+      <QueryClientProvider client={queryClient}>
+        <BrowserRouter>
+          <AuthProvider>
+            <DashboardContext.Provider 
+              value={{ 
+                selectedPeriod,
+                setSelectedPeriod: handleSetPeriod, 
+                startDate: selectedPeriod.from?.toISOString() || DEFAULT_START_DATE,
+                endDate: selectedPeriod.to?.toISOString() || DEFAULT_END_DATE,
+                guildId,
+                setGuildId: handleSetGuildId
+              }}
+            >
               <AnimatePresence mode="wait">
                 <Routes>
                   {/* Public routes */}
@@ -104,10 +106,10 @@ function App() {
                   </Route>
                 </Routes>
               </AnimatePresence>
-            </BrowserRouter>
-          </QueryClientProvider>
-        </DashboardContext.Provider>
-      </AuthProvider>
+            </DashboardContext.Provider>
+          </AuthProvider>
+        </BrowserRouter>
+      </QueryClientProvider>
     </ThemeProvider>
   );
 }

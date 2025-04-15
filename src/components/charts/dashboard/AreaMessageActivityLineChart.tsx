@@ -380,7 +380,7 @@ const AreaMessageActivityLineChart: React.FC<AreaMessageActivityLineChartProps> 
               style={{ backgroundColor: graphColor }}
             ></div>
             <span className="font-semibold" style={{ color: graphColor }}>
-              {hoveredData.count.toLocaleString()}
+              {hoveredData?.count?.toLocaleString()}
             </span>
           </div>
         </motion.div>

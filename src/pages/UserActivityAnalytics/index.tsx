@@ -3,7 +3,7 @@ import ErrorComponent from "@/components/common/errorModel";
 import { Card } from "@/components/ui/card";
 import { useDashboardData } from "@/hooks/analytics/useDashboardData";
 import { useGamingStats } from "@/hooks/analytics/useGamingAnalytics";
-import { usePresenceActivity } from "@/hooks/analytics/usePresenceAnalytics";
+import { useActivityOverview, useHourlyActivity, usePeakHours, useDeviceUsage, useRoleDistribution } from "@/hooks/analytics/usePresenceAnalytics";
 import { BREADCRUMB_PATHS, ROUTES } from "@/routes/routes.constant";
 import { motion } from "framer-motion";
 import ContentLoader from "react-content-loader";
@@ -41,7 +41,7 @@ interface ActivityChartsSectionProps {
   data: {
     hourlyActivity: ChartData;
     statusBreakdown: ChartData;
-    popularGames: ChartData;
+    currentlyPlayedGames: ChartData;
   };
   className?: string;
 }
@@ -69,7 +69,7 @@ interface Role {
 interface RolesSectionProps {
   roles: Role[];
 }
-const DeviceUsageTable = ({ data }: { data: { deviceType: string; percentage: number }[] }) => {
+const DeviceUsageTable = ({ data }: { data: { deviceType: string; count: number; percentage: number }[] }) => {
   const sortedData = [...data].sort((a, b) => b.percentage - a.percentage);
 
   return (
@@ -80,6 +80,7 @@ const DeviceUsageTable = ({ data }: { data: { deviceType: string; percentage: nu
           <TableRow>
             <TableHead>Device Type</TableHead>
             <TableHead className="text-right">Usage %</TableHead>
+            <TableHead className="text-right">Count</TableHead>
           </TableRow>
         </TableHeader>
         <TableBody>
@@ -87,6 +88,7 @@ const DeviceUsageTable = ({ data }: { data: { deviceType: string; percentage: nu
             <TableRow key={index} className="relative">
               <TableCell>{device.deviceType.charAt(0).toUpperCase() + device.deviceType.slice(1)}</TableCell>
               <TableCell className="text-right">{device.percentage}%</TableCell>
+              <TableCell className="text-right">{device.count}</TableCell>
               <motion.div
                 className="absolute bottom-0 left-0 h-1 bg-blue-500 rounded-full"
                 initial={{ width: 0 }}
@@ -99,7 +101,7 @@ const DeviceUsageTable = ({ data }: { data: { deviceType: string; percentage: nu
                 whileHover={{ opacity: 1 }}
                 transition={{ duration: 0.2 }}
               >
-                {device.deviceType}: {device.percentage}% of total usage
+                {device.deviceType}: {device.count} devices, {device.percentage}% of total usage
               </motion.div>
             </TableRow>
           ))}
@@ -118,23 +120,22 @@ const CardSkeleton = ({ width, height }: { width: string; height: string }) => (
 
 const UserActivityAnalytics = () => {
   // Gaming analytics data
-  const { popularGames, isLoading: gamingLoading, error: gamingError } = useGamingStats({ page: 1, limit: 10 });
+  const { currentlyPlayedGames, isLoading: gamingLoading, error: gamingError } = useGamingStats({ page: 1, limit: 10 });
   
   // Presence activity data
-  const { 
-    overview, 
-    hourlyActivity,
-    peakHours,
-    deviceUsage,
-    roleDistribution,
-    isLoading: presenceLoading, 
-    error: presenceError 
-  } = usePresenceActivity();
+  const { data: overview, isLoading: overviewLoading, error: overviewError } = useActivityOverview();
+  const { data: hourlyActivity, isLoading: hourlyLoading } = useHourlyActivity();
+  const { data: peakHours, isLoading: peakLoading } = usePeakHours();
+  const { data: deviceUsage, isLoading: deviceLoading } = useDeviceUsage();
+  const { data: roleDistribution, isLoading: rolesLoading } = useRoleDistribution();
 
+  const {
+    activeUsers,
+  } = useDashboardData();
 
   // Loading and error states
-  const isLoading = gamingLoading || presenceLoading;
-  const error = gamingError || presenceError;
+  const isLoading = gamingLoading || overviewLoading || hourlyLoading || peakLoading || deviceLoading || rolesLoading;
+  const error = gamingError || overviewError;
 
   // Data validation
   const hasValidData = overview && Object.keys(overview).length > 0;
@@ -175,17 +176,17 @@ const UserActivityAnalytics = () => {
     {
       title: "Online Users", 
       icon: <UsersIcon className="w-5 h-5" />,
-      value: (overview?.activeUsers?.count ?? 0).toLocaleString(),
+      value: (activeUsers?.today.count ?? 0).toLocaleString(),
       isPositive: true,
       tooltip: "Total number of users currently online and active on the server",
     },
     {
-      title: "Avg Session Time",
+      title: "Medium Session Time",
       icon: <ClockIcon className="w-5 h-5" />,
       value: overview?.totalPresenceTime?.hours 
         ? formatDuration(
-            Math.floor(overview.totalPresenceTime.hours / overview.activeUsers.count),
-            Math.floor((overview.totalPresenceTime.hours / overview.activeUsers.count % 1) * 60)
+            Math.floor(overview.totalPresenceTime.hours / (activeUsers?.today.count ?? 0)),
+            Math.floor((overview.totalPresenceTime.hours / (overview.activeUsers.count ?? 0)   % 1) * 60)
           )
         : "No Data",
       isPositive: true,
@@ -194,71 +195,11 @@ const UserActivityAnalytics = () => {
     {
       title: "Active Games (Now)",
       icon: <GamepadIcon className="w-5 h-5" />,
-      value: (popularGames?.length ?? 0).toLocaleString(),
+      value: (currentlyPlayedGames?.length ?? 0).toLocaleString(),
       isPositive: true,
       tooltip: "Number of different games currently being played by server members",
     }
   ] : [];
-
-  // Transform data for charts
-  const chartData = {
-    totalUsers: {
-      data: hourlyActivity?.hourlyDistribution?.map((count, hour) => ({
-        date: `${String(hour).padStart(2, '0')}:00`,
-        count,
-      })) || [],
-      color: "#4F46E5",
-      label: "Total Users",
-    },
-    onlineUsers: {
-      data: hourlyActivity?.statusDistribution?.online?.map((count, hour) => ({
-        date: `${String(hour).padStart(2, '0')}:00`,
-        count,
-      })) || [],
-      color: "#10B981",
-      label: "Online",
-    },
-    idleUsers: {
-      data: hourlyActivity?.statusDistribution?.idle?.map((count, hour) => ({
-        date: `${String(hour).padStart(2, '0')}:00`,
-        count,
-      })) || [],
-      color: "#F59E0B",
-      label: "Idle",
-    },
-    dndUsers: {
-      data: hourlyActivity?.statusDistribution?.dnd?.map((count, hour) => ({
-        date: `${String(hour).padStart(2, '0')}:00`,
-        count,
-      })) || [],
-      color: "#EF4444",
-      label: "Do Not Disturb",
-    },
-    offlineUsers: {
-      data: hourlyActivity?.statusDistribution?.offline?.map((count, hour) => ({
-        date: `${String(hour).padStart(2, '0')}:00`,
-        count,
-      })) || [],
-      color: "#6B7280",
-      label: "Offline",
-    },
-    activeGames: {
-      data: popularGames?.map(game => ({
-        date: game.gameName,
-        count: game.uniquePlayers,
-      })) || [],
-      color: "#8B5CF6",
-      label: "Active Games",
-    },
-    popularGames: {
-      data: popularGames?.map(game => ({
-        date: game.gameName,
-        count: game.uniquePlayers,
-      })) || [],
-      color: "#6366F1",
-      label: "Popular Games",
-    },
-  };
 
   // Transform roles data
   const roles = roleDistribution ? {
@@ -304,25 +245,14 @@ const UserActivityAnalytics = () => {
         </motion.div>
 
         {/* Activity Charts Section */}
-        {isLoading ? (
-          <Card className="p-6 w-full h-[466px] mb-10">
-            <CardSkeleton width="100%" height="100%" />
-          </Card>
-        ) : hasValidData ? (
-        <ActivityChartsSection
-          className="mb-6" 
+          <ActivityChartsSection
+            className="mb-6" 
         />
-        ) : (
-          <ErrorComponent 
-            title="Activity Data Error" 
-            message={(error as ErrorType)?.message || "Failed to load activity data"}
-          />
-        )}
         <div className="flex flex-col lg:flex-row gap-4 mb-6">
           {/* Stats Grid */}
           <div className="flex flex-col gap-4 md:gap-6 flex-1">          
             <div className="mb-4">
-              {presenceLoading ? (
+              {deviceLoading ? (
                 <Card className="p-4">
                   <CardSkeleton width="100%" height="200px" />
                 </Card>
@@ -362,7 +292,7 @@ const UserActivityAnalytics = () => {
           </div>
 
           <div className="flex-1">
-            {isLoading ? (
+            {rolesLoading ? (
               <Card className="p-6 h-full">
                 <CardSkeleton width="100%" height="100%" />
               </Card>
@@ -382,4 +312,3 @@ const UserActivityAnalytics = () => {
 };
 
 export default UserActivityAnalytics;
-

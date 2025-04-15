@@ -1,4 +1,5 @@
 import { DateRange } from "react-day-picker";
+import { jwtDecode } from 'jwt-decode';
 
 type ApiService<T> = {
   getData: (endpoint: string) => Promise<T>;
@@ -21,10 +22,29 @@ const IS_DEV = import.meta.env.VITE_MODE === 'development';
 
 const getAuthToken = () => localStorage.getItem('auth_token');
 const setAuthToken = (token: string) => localStorage.setItem('auth_token', token);
-const removeAuthToken = () => localStorage.removeItem('auth_token');
+const removeAuthToken = () => {
+  localStorage.removeItem('auth_token');
+  localStorage.removeItem('user');
+  window.location.href = '/login';
+};
+
+const isTokenExpired = (token: string) => {
+  try {
+    const decoded = jwtDecode<{exp: number}>(token);
+    return decoded.exp * 1000 < Date.now();
+  } catch {
+    return true;
+  }
+};
 
 const requestInterceptor = (url: string, options: RequestInit) => {
   const token = getAuthToken();
+  
+  if (token && isTokenExpired(token)) {
+    removeAuthToken();
+    throw new Error('Token expired');
+  }
+  
   const headers = {
     ...options.headers,
     'Content-Type': 'application/json',
@@ -46,6 +66,10 @@ const requestInterceptor = (url: string, options: RequestInit) => {
 const responseInterceptor = async (response: Response) => {
   if (!response.ok) {
     const errorData = await response.json().catch(() => null);
+    if (response.status === 401) {
+      removeAuthToken();
+      throw new Error('Session expired');
+    }
     throw new Error(errorData?.message || `API Error: ${response.statusText}`);
   }
   const data = await response.json();

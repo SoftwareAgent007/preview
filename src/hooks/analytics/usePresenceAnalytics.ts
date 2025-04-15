@@ -29,17 +29,8 @@ const formatHours = (hours: number): string => {
   return `${hours}h`;
 };
 
-const formatDuration = (hours?: number, minutes?: number): string => {
-  if (hours === undefined && minutes === undefined) return 'N/A';
-  if (hours === 0 && minutes === 0) return '0m';
-  if (hours === 0) return `${minutes}m`;
-  if (minutes === 0) return formatHours(hours || 0);
-  return `${formatHours(hours || 0)} ${minutes}m`;
-};
-
-export function usePresenceActivity(period: 'day' | 'week' | 'month' | 'year' = 'week') {
-  // Calculate time range based on period
-  const timeRange = useMemo<TimeRange>(() => {
+const useTimeRange = (period: 'day' | 'week' | 'month' | 'year' = 'week') => {
+  return useMemo<TimeRange>(() => {
     const now = new Date();
     let startDate: Date;
     
@@ -63,22 +54,19 @@ export function usePresenceActivity(period: 'day' | 'week' | 'month' | 'year' = 
       endDate: new Date().toISOString()
     };
   }, [period]);
+};
 
-  // Activity Overview
-  const {
-    data: overview,
-    isLoading: overviewLoading,
-    error: overviewError
-  } = useQueryBuilder<ActivityOverviewResponse>(
+export function useActivityOverview(period: 'day' | 'week' | 'month' | 'year' = 'week') {
+  const timeRange = useTimeRange(period);
+  return useQueryBuilder<ActivityOverviewResponse>(
     ['activityOverview', timeRange],
     (guildId) => `/presence-activity/overview?guildId=${guildId}&startDate=${timeRange.startDate}&endDate=${timeRange.endDate}`
   );
+}
 
-  const {
-    data: statusBreakdown,
-    isLoading: statusLoading,
-    error: statusError
-  } = useQueryBuilder<StatusBreakdown[]>(
+export function useStatusBreakdown(period: 'day' | 'week' | 'month' | 'year' = 'week') {
+  const timeRange = useTimeRange(period);
+  return useQueryBuilder<StatusBreakdown[]>(
     ['statusBreakdown', timeRange],
     (guildId) => `/presence-activity/status-breakdown?guildId=${guildId}&startDate=${timeRange.startDate}&endDate=${timeRange.endDate}`,
     {
@@ -91,55 +79,36 @@ export function usePresenceActivity(period: 'day' | 'week' | 'month' | 'year' = 
       }))
     }
   );
+}
 
-  // Hourly Activity
-  const {
-    data: hourlyActivity,
-    isLoading: hourlyLoading,
-    error: hourlyError
-  } = useQueryBuilder<HourlyActivityResponse>(
+export function useHourlyActivity(period: 'day' | 'week' | 'month' | 'year' = 'week') {
+  const timeRange = useTimeRange(period);
+  return useQueryBuilder<HourlyActivityResponse>(
     ['hourlyActivity', timeRange],
     (guildId) => `/presence-activity/hourly-activity?guildId=${guildId}&startDate=${timeRange.startDate}&endDate=${timeRange.endDate}`
   );
+}
 
-  // Peak Hours
-  const {
-    data: peakHours,
-    isLoading: peakLoading,
-    error: peakError
-  } = useQueryBuilder<PeakHour[]>(
+export function usePeakHours(period: 'day' | 'week' | 'month' | 'year' = 'week') {
+  const timeRange = useTimeRange(period);
+  return useQueryBuilder<PeakHour[]>(
     ['peakHours', timeRange],
     (guildId) => `/presence-activity/peak-hours?guildId=${guildId}&startDate=${timeRange.startDate}&endDate=${timeRange.endDate}`
   );
+}
 
-  // Device Usage
-  const {
-    data: deviceUsage,
-    isLoading: deviceLoading,
-    error: deviceError
-  } = useQueryBuilder<DeviceUsage[]>(
+export function useDeviceUsage(period: 'day' | 'week' | 'month' | 'year' = 'week') {
+  const timeRange = useTimeRange(period);
+  return useQueryBuilder<DeviceUsage[]>(
     ['deviceUsage', timeRange],
     (guildId) => `/presence-activity/device-usage?guildId=${guildId}&startDate=${timeRange.startDate}&endDate=${timeRange.endDate}`
   );
+}
 
-  // Role Distribution
-  const {
-    data: roleDistribution,
-    isLoading: roleLoading,
-    error: roleError
-  } = useQueryBuilder<RoleDistribution>(
+export function useRoleDistribution(period: 'day' | 'week' | 'month' | 'year' = 'week') {
+  const timeRange = useTimeRange(period);
+  return useQueryBuilder<RoleDistribution>(
     ['roleDistribution', timeRange],
     (guildId) => `/presence-activity/role-distribution?guildId=${guildId}&startDate=${timeRange.startDate}&endDate=${timeRange.endDate}`
   );
-
-  return {
-    overview: overview || {} as ActivityOverviewResponse,
-    statusBreakdown: statusBreakdown || [] as StatusBreakdown[],
-    hourlyActivity: hourlyActivity || {} as HourlyActivityResponse,
-    peakHours: peakHours || [] as PeakHour[],
-    deviceUsage: deviceUsage || [] as DeviceUsage[],
-    roleDistribution: roleDistribution || {} as RoleDistribution,
-    isLoading: overviewLoading || statusLoading || hourlyLoading || peakLoading || deviceLoading || roleLoading,
-    error: overviewError || statusError || hourlyError || peakError || deviceError || roleError
-  };
 }

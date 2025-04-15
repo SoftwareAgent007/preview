@@ -1,62 +1,57 @@
-import { motion } from "framer-motion";
 import { Card } from "@/components/ui/card";
-import HorizontalTopHoursChart from "@/components/charts/hourActivity/HorisontalTopHoursChart";
-import { useEffect, useRef, useState } from "react";
-import { PeakHour } from "../interfaces/presence-activirt.interfaces";
+import { motion } from "framer-motion";
+
+interface PeakHour {
+  hour: number;
+  maxUsers: number;
+  minUsers: number;
+  avgUsers: number;
+}
 
 interface PeakActivityHoursProps {
   hourlyActivity: PeakHour[];
-  width: number;
+  width?: number;
 }
 
-const PeakActivityHours = ({ hourlyActivity, width }: PeakActivityHoursProps) => {
-  const chartRef = useRef<HTMLDivElement>(null);
-  const [chartDimensions, setChartDimensions] = useState({ width: 0, height: 0 });
-
-  useEffect(() => {
-    const updateDimensions = () => {
-      if (chartRef.current) {
-        const width = chartRef.current.offsetWidth - 48;
-        const height = Math.min(400, window.innerHeight * 0.5);
-        setChartDimensions({ width, height });
-      }
-    };
-
-    updateDimensions();
-    window.addEventListener('resize', updateDimensions);
-    return () => window.removeEventListener('resize', updateDimensions);
-  }, []);
+const PeakActivityHours = ({ hourlyActivity, width = 500 }: PeakActivityHoursProps) => {
+  const maxValue = Math.max(...hourlyActivity.map(hour => hour.maxUsers));
 
   return (
-    <motion.div
-      initial={{ opacity: 0, y: 20 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ type: "spring", stiffness: 300, damping: 30 }}
-      className="w-full h-full"
-    >
-      <Card className="p-4 md:p-6 hover:scale-[101%] transition-all duration-150 h-full">
-        <motion.div 
-          className="flex flex-col"
-          whileHover={{ x: 5 }}
-          ref={chartRef}
-        >
-          <span className="text-gray-500 text-base md:text-lg font-bold mb-2 md:mb-4">Peak Activity Hours</span>
-          <span className="text-gray-500 text-xs md:text-sm mb-2">User activity distribution throughout the day</span>
+    <Card className="p-6">
+      <h3 className="text-lg font-semibold mb-4">Peak Activity Hours</h3>
+      <div className="space-y-4">
+        {hourlyActivity.map((hour, index) => (
           <motion.div
-            initial={{ opacity: 0, scale: 0.95 }}
-            animate={{ opacity: 1, scale: 1 }}
-            transition={{ delay: 0.2 }}
-            className="w-full overflow-hidden"
+            key={hour.hour}
+            initial={{ opacity: 0, x: -20 }}
+            animate={{ opacity: 1, x: 0 }}
+            transition={{ delay: index * 0.1 }}
+            className="relative"
           >
-            <HorizontalTopHoursChart 
-              data={hourlyActivity} 
-              width={width} 
-              height={chartDimensions.height}
-            />
+            <div className="flex items-center justify-between mb-1">
+              <span className="text-sm font-medium">
+                {String(hour.hour).padStart(2, '0')}:00
+              </span>
+              <span className="text-sm text-gray-600">
+                {hour.maxUsers} users
+              </span>
+            </div>
+            <div className="relative h-2 bg-gray-200 rounded-full overflow-hidden">
+              <motion.div
+                className="absolute h-full bg-blue-500 rounded-full"
+                initial={{ width: 0 }}
+                animate={{ width: `${(hour.maxUsers / maxValue) * 100}%` }}
+                transition={{ duration: 0.5, delay: index * 0.1 }}
+              />
+            </div>
+            <div className="flex justify-between text-xs text-gray-500 mt-1">
+              <span>Min: {hour.minUsers}</span>
+              <span>Avg: {Math.round(hour.avgUsers)}</span>
+            </div>
           </motion.div>
-        </motion.div>
-      </Card>
-    </motion.div>
+        ))}
+      </div>
+    </Card>
   );
 };
 

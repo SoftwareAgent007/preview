@@ -1,7 +1,12 @@
 import { useMemo } from "react";
-import { useQuery } from "react-query";
-import { apiService } from "../apiService";
-import { PeakHour } from "@/types/dataTypes";
+import { useQueryBuilder } from './common/useQueryBuilder';
+
+interface PeakHour {
+  hour: number;
+  maxUsers: number;
+  minUsers: number;
+  avgUsers: number;
+}
 
 export const usePeakHours = (
   period: "day" | "week" | "month" | "year" = "year",
@@ -22,22 +27,10 @@ export const usePeakHours = (
     }
   }, [period]);
 
-  const requestParams = {
-    startDate: getPeriodStart,
-    endDate: new Date().toISOString(),
-    limit,
-  };
-
-  const {
-    data: peakHours,
-    isLoading,
-    error,
-  } = useQuery<PeakHour[]>(
+  const { data: peakHours, isLoading, error } = useQueryBuilder<PeakHour[]>(
     ["peakHours", period, limit],
     (guildId) =>
-      apiService.getData(
-        `/presence-activity/peak-hours?guildId=${guildId}&startDate=${requestParams.startDate}&endDate=${requestParams.endDate}&limit=${limit}`
-      ),
+      `/presence-activity/peak-hours?guildId=${guildId}&startDate=${getPeriodStart}&endDate=${new Date().toISOString()}&limit=${limit}`,
     {
       staleTime: 1000 * 60 * 30,
       cacheTime: 1000 * 60 * 30,
@@ -46,7 +39,7 @@ export const usePeakHours = (
   );
 
   return {
-    peakHours: peakHours,
+    peakHours,
     isLoading,
     error,
   };
