@@ -76,8 +76,8 @@ interface GameStatsResponse {
 interface AggregateStats {
   totalGamingHours: number;
   totalGamingHoursChange: number;
-  avgSessionMinutes: number;
-  avgSessionMinutesChange: number;
+  medianSessionMinutes: number;
+  medianSessionMinutesChange: number;
   peakConcurrentPlayers: number;
   peakConcurrentPlayersChange: number;
   uniqueGamers: number;

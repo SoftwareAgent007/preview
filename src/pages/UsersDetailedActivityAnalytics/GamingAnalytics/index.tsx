@@ -198,11 +198,11 @@ const GamingAnalytics = () => {
   
   const getStatsCards = () => {
     const totalGamingHours = aggregateStats?.totalGamingHours || 0;
-    const avgSessionMinutes = aggregateStats?.avgSessionMinutes || 0;
+    const medianSessionMinutes = aggregateStats?.medianSessionMinutes || 0;
     const peakConcurrentPlayers = aggregateStats?.peakConcurrentPlayers || 0;
     const uniqueGamers = aggregateStats?.uniqueGamers || 0;
     const totalGamingHoursChange = aggregateStats?.totalGamingHoursChange || 0;
-    const avgSessionMinutesChange = aggregateStats?.avgSessionMinutesChange || 0;
+    const medianSessionMinutesChange = aggregateStats?.medianSessionMinutesChange || 0;
     const peakConcurrentPlayersChange = aggregateStats?.peakConcurrentPlayersChange || 0;
 
     return [
@@ -216,9 +216,9 @@ const GamingAnalytics = () => {
       },
       {
         title: "Medium Session Length",
-        value: avgSessionMinutes > 1000 ? Number(avgSessionMinutes.toFixed(0)).toLocaleString() : avgSessionMinutes.toLocaleString(),
-        subtitle: avgSessionMinutesChange,
-        isTrendPositive: avgSessionMinutesChange > 0,
+        value: medianSessionMinutes > 1000 ? Number(medianSessionMinutes.toFixed(0)).toLocaleString() : medianSessionMinutes.toLocaleString(),
+        subtitle: medianSessionMinutesChange,
+        isTrendPositive: medianSessionMinutesChange > 0,
         tooltip: "Average length of gaming sessions in minutes",
         index: 1
       },
