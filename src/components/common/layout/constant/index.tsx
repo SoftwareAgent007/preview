@@ -52,9 +52,9 @@ export const menuCategories: MenuCategories = {
   Community: [
     { icon: <Building2 />, label: "Assign Guild", path: ROUTES.ASSIGN_GUILD },
     { icon: <Settings />, label: "Admin", path: ROUTES.ADMIN },
-    { icon: <ClipboardList />, label: "Audit Logs", path: "/audit-logs" },
-    { icon: <Briefcase />, label: "Agency Partner Dashboard", path: "/agency-partner-dashboard" },
-    { icon: <UserCog />, label: "Client Dashboard", path: "/client-dashboard" },
+    { icon: <ClipboardList />, label: "Audit Logs", path: ROUTES.AUDIT_LOGS },
+    { icon: <Briefcase />, label: "Agency Partner Dashboard", path: ROUTES.AGENCY_PARTNER_DASHBOARD },
+    { icon: <UserCog />, label: "Client Dashboard", path: ROUTES.CLIENT_DASHBOARD },
   //   { icon: <UserCircle />, label: "Members", path: "/members" },
   //   { icon: <Calendar />, label: "Scheduled posts", path: "/scheduled" },
   //   { icon: <ArrowUpDown />, label: "Levelling", path: "/levelling" },
