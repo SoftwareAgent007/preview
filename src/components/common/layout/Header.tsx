@@ -103,6 +103,7 @@ const Header = ({ isSidebarOpen, setIsSidebarOpen }: {
               <DatePickerWithRange 
                 value={selectedPeriod || DEFAULT_DATE_RANGE}
                 onClose={handleDatePickerClose}
+                width="300"
                 onChange={(period) => {
                   setSelectedPeriod && period && setSelectedPeriod(period);
                 }}
@@ -166,6 +167,7 @@ const Header = ({ isSidebarOpen, setIsSidebarOpen }: {
             <DatePickerWithRange 
               value={selectedPeriod || DEFAULT_DATE_RANGE}
               onClose={handleDatePickerClose}
+              width="300"
               onChange={(period) => {
                 setSelectedPeriod && period && setSelectedPeriod(period);
               }}

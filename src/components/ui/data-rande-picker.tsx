@@ -18,6 +18,7 @@ interface DatePickerWithRangeProps {
   onChange?: (date: DateRange) => void
   className?: string
   onClose?: () => void
+  width?: string
   disabledDays?: any
 }
 
@@ -27,6 +28,7 @@ export function DatePickerWithRange({
   onChange,
   onClose,
   disabledDays,
+  width,
 }: DatePickerWithRangeProps) {
   const [date, setDate] = React.useState<DateRange>(value)
   const queryClient = useQueryClient()
@@ -52,7 +54,8 @@ export function DatePickerWithRange({
             id="date"
             variant={"outline"}
             className={cn(
-              "w-[300px] justify-start text-left font-normal",
+              width ? `w-[${width}-px]` : "w-full",
+              "justify-start text-left font-normal",
               !date && "text-muted-foreground"
             )}
           >

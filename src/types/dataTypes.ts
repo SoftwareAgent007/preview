@@ -345,12 +345,15 @@ export interface Keyword {
 }
 
 // Generic user model
-export interface User {
+export interface UserType {
   id: bigint;
-  username: string;
-  geoLocation?: string;
-  firstSeenAt: Date;
-  lastActiveAt: Date;
+  name: string;
+  email: string;
+  avatar?: string;
+  role: string;
+  group: string;
+  organization: string;
+  status: string;
 }
 
 // Message match model
@@ -365,7 +368,7 @@ export interface MessageMatch {
   postContext?: string;
   matchedAt: Date;
   keyword: Keyword;
-  author: User;
+  author: UserType;
 }
 
 // Chart data types

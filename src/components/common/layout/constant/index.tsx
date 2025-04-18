@@ -11,7 +11,11 @@ import {
   GamepadIcon,
   ShoppingCart,
   Activity,
-  Building2
+  Building2,
+  Settings,
+  ClipboardList,
+  Briefcase,
+  UserCog
 } from "lucide-react";
 
 interface MenuItem {
@@ -44,15 +48,18 @@ export const menuCategories: MenuCategories = {
       ]
     },
     { icon: <Music2 />, label: "Music Metrics", path: ROUTES.MUSIC_METRICS, beta: true },
-    // { icon: <MessageSquare />, label: "Message Reactions", path: ROUTES.MESSAGE_REACTIONS },
-    { icon: <Building2 />, label: "Assign Guild", path: ROUTES.ASSIGN_GUILD },
   ],
-  // Community: [
+  Community: [
+    { icon: <Building2 />, label: "Assign Guild", path: ROUTES.ASSIGN_GUILD },
+    { icon: <Settings />, label: "Admin", path: ROUTES.ADMIN },
+    { icon: <ClipboardList />, label: "Audit Logs", path: "/audit-logs" },
+    { icon: <Briefcase />, label: "Agency Partner Dashboard", path: "/agency-partner-dashboard" },
+    { icon: <UserCog />, label: "Client Dashboard", path: "/client-dashboard" },
   //   { icon: <UserCircle />, label: "Members", path: "/members" },
   //   { icon: <Calendar />, label: "Scheduled posts", path: "/scheduled" },
   //   { icon: <ArrowUpDown />, label: "Levelling", path: "/levelling" },
   //   { icon: <MessageSquare />, label: "UGC", path: "/ugc" },
-  // ],
+  ],
   // Integrations: [
   //   { icon: <Music2 />, label: "Streaming", path: "/streaming" },
   //   { icon: <GamepadIcon />, label: "Gaming", path: "/gaming" },
