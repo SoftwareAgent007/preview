@@ -1,10 +1,11 @@
 import React from 'react';
-import { motion, AnimatePresence } from "framer-motion";
+import { motion } from "framer-motion";
+import { DragDropContext, Droppable, Draggable } from 'react-beautiful-dnd';
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
-import { Plus, ChevronDown, ChevronRight, Edit, Trash2, X, Check } from "lucide-react";
+import { Plus, ChevronDown, ChevronRight, Edit, Trash2, X, Check, GripVertical } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
 import {
   Dialog,
@@ -16,156 +17,96 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog";
 import { cn } from '@/lib/utils';
+import { Agency, Guild, User } from '@/types/dataTypes';
 
-interface SubOrganization {
-  id: string;
-  name: string;
-  members: number;
-}
-
-interface Organization {
-  id: string;
-  name: string;
-  members: number;
-  expanded: boolean;
-  subOrganizations: SubOrganization[];
-}
-
-interface OrganizationStructureProps {
-  organizations: Organization[];
+interface AgencyStructureProps {
+  agencies: Agency[];
   className?: string;
   isLoading: boolean;
+  onAddAgency: (agency: Omit<Agency, 'id'>) => void;
+  onUpdateAgency: (agency: Agency) => void;
+  onDeleteAgency: (agencyId: string) => Promise<boolean>;
+  onAssignGuild: (agencyId: string, guildId: string) => void;
+  onRemoveGuild: (agencyId: string, guildId: string) => void;
+  onAssignUser: (agencyId: string, userId: string) => void;
+  onRemoveUser: (userId: string, agencyId: string) => void;
 }
 
-const OrganizationStructure = ({ organizations: initialOrganizations, isLoading, className }: OrganizationStructureProps) => {
-  const [organizations, setOrganizations] = React.useState<Organization[]>(initialOrganizations || []);
-  const [editingOrgId, setEditingOrgId] = React.useState<string | null>(null);
-  const [editingSubOrgId, setEditingSubOrgId] = React.useState<string | null>(null);
-  const [newOrgName, setNewOrgName] = React.useState("");
-  const [newSubOrgName, setNewSubOrgName] = React.useState("");
-  const [isAddOrgModalOpen, setIsAddOrgModalOpen] = React.useState(false);
-  const [selectedOrgForSubOrg, setSelectedOrgForSubOrg] = React.useState<string | null>(null);
-  const [newOrgData, setNewOrgData] = React.useState({ name: "", members: 0 });
-  const [newSubOrgData, setNewSubOrgData] = React.useState({ name: "", members: 0 });
+const AgencyStructure = ({
+  agencies,
+  isLoading,
+  className,
+  onAddAgency,
+  onUpdateAgency,
+  onDeleteAgency,
+  onAssignGuild,
+  onRemoveGuild,
+  onAssignUser,
+  onRemoveUser
+}: AgencyStructureProps) => {
+  const [editingAgencyId, setEditingAgencyId] = React.useState<string | null>(null);
+  const [newAgencyName, setNewAgencyName] = React.useState("");
+  const [isAddAgencyModalOpen, setIsAddAgencyModalOpen] = React.useState(false);
+  const [newAgencyData, setNewAgencyData] = React.useState({ name: "" });
+  const [deleteError, setDeleteError] = React.useState<string>("");
 
-  const toggleOrgExpansion = (orgId: string) => {
-    setOrganizations(orgs => orgs.map(org => 
-      org.id === orgId ? { ...org, expanded: !org.expanded } : org
-    ));
-  };
-
-  const handleAddOrg = () => {
-    const newOrg: Organization = {
-      id: Date.now().toString(),
-      name: newOrgData.name,
-      members: newOrgData.members,
-      expanded: true,
-      subOrganizations: []
-    };
-    setOrganizations(prev => [...prev, newOrg]);
-    setIsAddOrgModalOpen(false);
-    setNewOrgData({ name: "", members: 0 });
+  const handleAddAgency = () => {
+    onAddAgency({
+      name: newAgencyData.name,
+      members: [],
+      guilds: [],
+      users: []
+    });
+    setIsAddAgencyModalOpen(false);
+    setNewAgencyData({ name: "" });
     toast({
-      title: "Organization added",
-      description: `Successfully added ${newOrgData.name}`,
+      title: "Agency added",
+      description: `Successfully added ${newAgencyData.name}`,
     });
   };
 
-  const handleAddSubOrg = (orgId: string) => {
-    const newSubOrg: SubOrganization = {
-      id: Date.now().toString(),
-      name: newSubOrgData.name,
-      members: newSubOrgData.members
-    };
-    setOrganizations(orgs => orgs.map(org => {
-      if (org.id === orgId) {
-        return {
-          ...org,
-          subOrganizations: [...org.subOrganizations, newSubOrg],
-          expanded: true
-        };
+  const handleEditAgency = (agencyId: string, newName: string) => {
+    const agency = agencies.find(a => a.id === agencyId);
+    if (!agency) return;
+
+    onUpdateAgency({ ...agency, name: newName });
+    setEditingAgencyId(null);
+    setNewAgencyName("");
+    toast({
+      title: "Agency updated",
+      description: "Successfully updated agency name",
+    });
+  };
+
+  const handleDeleteAgency = async (agencyId: string) => {
+    try {
+      const success = await onDeleteAgency(agencyId);
+      if (success) {
+        toast({
+          title: "Agency deleted",
+          description: "Successfully deleted agency",
+        });
       }
-      return org;
-    }));
-    setSelectedOrgForSubOrg(null);
-    setNewSubOrgData({ name: "", members: 0 });
-    toast({
-      title: "Sub-organization added",
-      description: `Successfully added ${newSubOrgData.name}`,
-    });
-  };
-
-  const handleEditOrg = (orgId: string, newName: string) => {
-    setOrganizations(orgs => orgs.map(org => 
-      org.id === orgId ? { ...org, name: newName } : org
-    ));
-    setEditingOrgId(null);
-    setNewOrgName("");
-    toast({
-      title: "Organization updated",
-      description: `Successfully updated organization name`,
-    });
-  };
-
-  const handleEditSubOrg = (orgId: string, subOrgId: string, newName: string) => {
-    setOrganizations(orgs => orgs.map(org => {
-      if (org.id === orgId) {
-        return {
-          ...org,
-          subOrganizations: org.subOrganizations.map(subOrg =>
-            subOrg.id === subOrgId ? { ...subOrg, name: newName } : subOrg
-          )
-        };
-      }
-      return org;
-    }));
-    setEditingSubOrgId(null);
-    setNewSubOrgName("");
-    toast({
-      title: "Sub-organization updated",
-      description: `Successfully updated sub-organization name`,
-    });
-  };
-
-  const handleDeleteOrg = (orgId: string) => {
-    setOrganizations(orgs => orgs.filter(org => org.id !== orgId));
-    toast({
-      title: "Organization deleted",
-      description: "Successfully deleted organization",
-    });
-  };
-
-  const handleDeleteSubOrg = (orgId: string, subOrgId: string) => {
-    setOrganizations(orgs => orgs.map(org => {
-      if (org.id === orgId) {
-        return {
-          ...org,
-          subOrganizations: org.subOrganizations.filter(subOrg => subOrg.id !== subOrgId)
-        };
-      }
-      return org;
-    }));
-    toast({
-      title: "Sub-organization deleted",
-      description: "Successfully deleted sub-organization",
-    });
+    } catch (error) {
+      setDeleteError("Cannot delete agency - it has active users or guilds");
+    }
   };
 
   return (
     <Card className={cn("p-6", className)}>
       <div className="flex justify-between items-center mb-4">
-        <h3 className="text-xl font-semibold">Organization Structure</h3>
-        <Dialog open={isAddOrgModalOpen} onOpenChange={setIsAddOrgModalOpen}>
+        <h3 className="text-xl font-semibold">Agency Structure</h3>
+        <Dialog open={isAddAgencyModalOpen} onOpenChange={setIsAddAgencyModalOpen}>
           <DialogTrigger asChild>
             <Button variant="outline" size="sm">
-              <Plus className="mr-2 h-4 w-4" /> Add Organization
+              <Plus className="mr-2 h-4 w-4" /> Add Agency
             </Button>
           </DialogTrigger>
           <DialogContent>
             <DialogHeader>
-              <DialogTitle>Add New Organization</DialogTitle>
+              <DialogTitle>Add New Agency</DialogTitle>
               <DialogDescription>
-                Create a new organization to manage sub-organizations.
+                Create a new agency to manage guilds and users.
               </DialogDescription>
             </DialogHeader>
             <div className="grid gap-4 py-4">
@@ -175,83 +116,66 @@ const OrganizationStructure = ({ organizations: initialOrganizations, isLoading,
                 </label>
                 <Input
                   id="name"
-                  value={newOrgData.name}
-                  onChange={(e) => setNewOrgData({ ...newOrgData, name: e.target.value })}
-                  className="col-span-3"
-                />
-              </div>
-              <div className="grid grid-cols-4 items-center gap-4">
-                <label htmlFor="members" className="text-right">
-                  Members
-                </label>
-                <Input
-                  id="members"
-                  type="number"
-                  value={newOrgData.members}
-                  onChange={(e) => setNewOrgData({ ...newOrgData, members: parseInt(e.target.value) })}
+                  value={newAgencyData.name}
+                  onChange={(e) => setNewAgencyData({ ...newAgencyData, name: e.target.value })}
                   className="col-span-3"
                 />
               </div>
             </div>
             <DialogFooter>
-              <Button type="submit" onClick={handleAddOrg}>Add Organization</Button>
+              <Button type="submit" onClick={handleAddAgency}>Add Agency</Button>
             </DialogFooter>
           </DialogContent>
         </Dialog>
       </div>
 
       <div className="space-y-4">
-        {organizations.map(org => (
-          <motion.div key={org.id} className="p-4">
-            <div className="flex items-center justify-between mb-2">
+        {agencies.map(agency => (
+          <motion.div 
+            key={agency.id} 
+            className="p-4 bg-gray-50 rounded-lg"
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -20 }}
+          >
+            <div className="flex items-center justify-between mb-4">
               <div className="flex items-center gap-2">
-                <button onClick={() => toggleOrgExpansion(org.id)}>
-                  {org.expanded ? <ChevronDown size={20} /> : <ChevronRight size={20} />}
-                </button>
-                {editingOrgId === org.id ? (
+                {editingAgencyId === agency.id ? (
                   <div className="flex items-center gap-2">
                     <Input
-                      value={newOrgName}
-                      onChange={(e) => setNewOrgName(e.target.value)}
+                      value={newAgencyName}
+                      onChange={(e) => setNewAgencyName(e.target.value)}
                       className="w-[200px]"
                     />
                     <Button
                       variant="ghost"
                       size="sm"
-                      onClick={() => handleEditOrg(org.id, newOrgName)}
+                      onClick={() => handleEditAgency(agency.id, newAgencyName)}
                     >
                       <Check className="h-4 w-4" />
                     </Button>
                     <Button
                       variant="ghost"
                       size="sm"
-                      onClick={() => setEditingOrgId(null)}
+                      onClick={() => setEditingAgencyId(null)}
                     >
                       <X className="h-4 w-4" />
                     </Button>
                   </div>
                 ) : (
-                  <span className="font-semibold">{org.name}</span>
+                  <>
+                    <span className="font-semibold">{agency.name}</span>
+                    <Badge variant="secondary">{agency.users.length} members</Badge>
+                  </>
                 )}
-                <Badge variant="secondary">{org.members} members</Badge>
               </div>
               <div className="flex items-center gap-2">
                 <Button
                   variant="ghost"
                   size="sm"
                   onClick={() => {
-                    setSelectedOrgForSubOrg(org.id);
-                    setNewSubOrgData({ name: "", members: 0 });
-                  }}
-                >
-                  <Plus className="h-4 w-4" />
-                </Button>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => {
-                    setEditingOrgId(org.id);
-                    setNewOrgName(org.name);
+                    setEditingAgencyId(agency.id);
+                    setNewAgencyName(agency.name);
                   }}
                 >
                   <Edit className="h-4 w-4" />
@@ -264,14 +188,20 @@ const OrganizationStructure = ({ organizations: initialOrganizations, isLoading,
                   </DialogTrigger>
                   <DialogContent>
                     <DialogHeader>
-                      <DialogTitle>Delete Organization</DialogTitle>
+                      <DialogTitle>Delete Agency</DialogTitle>
                       <DialogDescription>
-                        Are you sure you want to delete this organization? This action cannot be undone.
+                        Are you sure you want to delete this agency? This action cannot be undone.
+                        All associated users and guilds will be affected.
+                        {deleteError && (
+                          <div className="mt-2 text-red-500">
+                            {deleteError}
+                          </div>
+                        )}
                       </DialogDescription>
                     </DialogHeader>
                     <DialogFooter>
                       <Button variant="outline" onClick={() => {}}>Cancel</Button>
-                      <Button variant="destructive" onClick={() => handleDeleteOrg(org.id)}>
+                      <Button variant="destructive" onClick={() => handleDeleteAgency(agency.id)}>
                         Delete
                       </Button>
                     </DialogFooter>
@@ -280,107 +210,101 @@ const OrganizationStructure = ({ organizations: initialOrganizations, isLoading,
               </div>
             </div>
 
-            <AnimatePresence>
-              {org.expanded && (
-                <motion.div
-                  initial={{ height: 0, opacity: 0 }}
-                  animate={{ height: "auto", opacity: 1 }}
-                  exit={{ height: 0, opacity: 0 }}
-                  transition={{ duration: 0.2 }}
-                  className="pl-6 mt-2 space-y-2"
-                >
-                  {org.subOrganizations.map(subOrg => (
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <h4 className="font-medium">Guilds</h4>
+                <Droppable droppableId={`agency-guilds-${agency.id}`} type="guild">
+                  {(provided, snapshot) => (
                     <div
-                      key={subOrg.id}
-                      className="flex items-center justify-between p-2 bg-gray-50 rounded-lg"
-                    >
-                      {editingSubOrgId === subOrg.id ? (
-                        <div className="flex items-center gap-2">
-                          <Input
-                            value={newSubOrgName}
-                            onChange={(e) => setNewSubOrgName(e.target.value)}
-                            className="w-[200px]"
-                          />
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => handleEditSubOrg(org.id, subOrg.id, newSubOrgName)}
-                          >
-                            <Check className="h-4 w-4" />
-                          </Button>
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => setEditingSubOrgId(null)}
-                          >
-                            <X className="h-4 w-4" />
-                          </Button>
-                        </div>
-                      ) : (
-                        <div className="flex items-center gap-2">
-                          <span>{subOrg.name}</span>
-                          <Badge variant="secondary">{subOrg.members} members</Badge>
-                        </div>
+                      ref={provided.innerRef}
+                      {...provided.droppableProps}
+                      className={cn(
+                        "min-h-[100px] p-2 rounded transition-colors",
+                        snapshot.isDraggingOver ? "bg-gray-100 border-2 border-dashed border-gray-300" : "bg-white"
                       )}
-                      <div className="flex items-center gap-2">
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => {
-                            setEditingSubOrgId(subOrg.id);
-                            setNewSubOrgName(subOrg.name);
-                          }}
-                        >
-                          <Edit className="h-4 w-4" />
-                        </Button>
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => handleDeleteSubOrg(org.id, subOrg.id)}
-                        >
-                          <Trash2 className="h-4 w-4" />
-                        </Button>
-                      </div>
-                    </div>
-                  ))}
-
-                  {selectedOrgForSubOrg === org.id && (
-                    <motion.div
-                      initial={{ opacity: 0 }}
-                      animate={{ opacity: 1 }}
-                      exit={{ opacity: 0 }}
-                      className="p-4 bg-gray-50 rounded-lg"
                     >
-                      <div className="grid gap-4">
-                        <div className="grid grid-cols-6 gap-4">
-                          <Input
-                            className="col-span-4"
-                            placeholder="Sub-organization name"
-                            value={newSubOrgData.name}
-                            onChange={(e) => setNewSubOrgData({ ...newSubOrgData, name: e.target.value })}
-                          />
-                          <Button
-                            className="col-span-1"
-                            variant="outline"
-                            size="sm"
-                            onClick={() => setSelectedOrgForSubOrg(null)}
-                          >
-                            Cancel
-                          </Button>
-                          <Button
-                            className="col-span-1"
-                            size="sm"
-                            onClick={() => handleAddSubOrg(org.id)}
-                          >
-                            Add
-                          </Button>
-                        </div>
-                      </div>
-                    </motion.div>
+                      {agency.guilds.map((guild, index) => (
+                        <Draggable key={guild.id} draggableId={guild.id} index={index}>
+                          {(provided, snapshot) => (
+                            <div
+                              ref={provided.innerRef}
+                              {...provided.draggableProps}
+                              className={cn(
+                                "flex items-center justify-between p-2 mb-2 bg-white rounded border transition-shadow",
+                                snapshot.isDragging && "shadow-lg"
+                              )}
+                            >
+                              <div className="flex items-center gap-2">
+                                <div {...provided.dragHandleProps}>
+                                  <GripVertical className="h-4 w-4 text-gray-400" />
+                                </div>
+                                <span>{guild.name}</span>
+                              </div>
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => onRemoveGuild(agency.id, guild.id)}
+                              >
+                                <X className="h-4 w-4" />
+                              </Button>
+                            </div>
+                          )}
+                        </Draggable>
+                      ))}
+                      {provided.placeholder}
+                    </div>
                   )}
-                </motion.div>
-              )}
-            </AnimatePresence>
+                </Droppable>
+              </div>
+
+              <div className="space-y-2">
+                <h4 className="font-medium">Users</h4>
+                <Droppable droppableId={`agency-users-${agency.id}`} type="user">
+                  {(provided, snapshot) => (
+                    <div
+                      ref={provided.innerRef}
+                      {...provided.droppableProps}
+                      className={cn(
+                        "min-h-[100px] p-2 rounded transition-colors",
+                        snapshot.isDraggingOver ? "bg-gray-100 border-2 border-dashed border-gray-300" : "bg-white"
+                      )}
+                    >
+                      {agency.users.map((user, index) => (
+                        <Draggable key={user.id} draggableId={`${user.id}-${user.name}`} index={index}>
+                          {(provided, snapshot) => (
+                            <div
+                              ref={provided.innerRef}
+                              {...provided.draggableProps}
+                              className={cn(
+                                "flex items-center justify-between p-2 mb-2 bg-white rounded border transition-shadow",
+                                snapshot.isDragging && "shadow-lg"
+                              )}
+                            >
+                              <div className="flex items-center gap-2">
+                                <div {...provided.dragHandleProps}>
+                                  <GripVertical className="h-4 w-4 text-gray-400" />
+                                </div>
+                                <span>{user.name}</span>
+                                <Badge variant="outline" className="ml-2">{user.role}</Badge>
+                              </div>
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => onRemoveUser(user.id, agency.id)}
+                                disabled={user.role === 'Admin'}
+                              >
+                                <X className="h-4 w-4" />
+                              </Button>
+                            </div>
+                          )}
+                        </Draggable>
+                      ))}
+                      {provided.placeholder}
+                    </div>
+                  )}
+                </Droppable>
+              </div>
+            </div>
           </motion.div>
         ))}
       </div>
@@ -388,4 +312,4 @@ const OrganizationStructure = ({ organizations: initialOrganizations, isLoading,
   );
 };
 
-export default OrganizationStructure; 
+export default AgencyStructure;

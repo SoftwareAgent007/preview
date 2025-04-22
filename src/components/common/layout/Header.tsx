@@ -1,6 +1,6 @@
-import { useState, useContext, useEffect } from "react";
-import { motion } from "framer-motion";
+import { useDashboardContext } from "@/common/context/queryContext";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
@@ -15,14 +15,16 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { LogOut, Search, SwitchCamera, Menu } from "lucide-react";
+import { useAuth } from "@/contexts/AuthContext";
+import { DEFAULT_DATE_RANGE } from "@/hooks/apiService";
+import { useGuildsData } from "@/hooks/useGuildsData";
+import { BREADCRUMB_PATHS, ROUTES } from "@/routes/routes.constant";
+import { motion } from "framer-motion";
+import { LogOut, Menu, Search } from "lucide-react";
+import { useEffect, useState } from "react";
+import { useQueryClient } from "react-query";
 import { useLocation, useNavigate } from "react-router-dom";
 import { DatePickerWithRange } from "../../ui/data-rande-picker";
-import { BREADCRUMB_PATHS, ROUTES } from "@/routes/routes.constant";
-import { useAuth } from "@/contexts/AuthContext";
-import { useDashboardContext } from "@/common/context/queryContext";
-import { DEFAULT_DATE_RANGE } from "@/hooks/apiService";
-import { useQueryClient } from "react-query";
 
 const Header = ({ isSidebarOpen, setIsSidebarOpen }: { 
   isSidebarOpen: boolean;
@@ -34,6 +36,7 @@ const Header = ({ isSidebarOpen, setIsSidebarOpen }: {
   const [isUserMenuOpen, setIsUserMenuOpen] = useState(false);
   const { selectedPeriod, guildId, setSelectedPeriod, setGuildId } = useDashboardContext();
   const queryClient = useQueryClient();
+  const { guilds, isLoading: isLoadingGuilds } = useGuildsData(user?.guildIds);
 
   useEffect(() => {
     if (!guildId && user?.guildIds && user.guildIds.length > 0) {
@@ -73,6 +76,34 @@ const Header = ({ isSidebarOpen, setIsSidebarOpen }: {
     ? user.name.split(' ').map(n => n[0]).join('').toUpperCase()
     : 'U';
 
+  const renderGuildSelect = () => {
+    if (!isMoreThenOneGuild) return null;
+
+    if (isLoadingGuilds) {
+      return 
+    }
+
+    return (
+      <Select value={guildId} onValueChange={(id) => setGuildId && setGuildId(id)}>
+        <SelectTrigger className="w-[220px]">
+          <SelectValue placeholder="Select Guild">
+            {guilds?.find(g => g.id === guildId)?.name || 'Select Guild'}
+          </SelectValue>
+        </SelectTrigger>
+        <SelectContent className="bg-white">
+          {guilds?.map((guild) => (
+            <SelectItem key={guild.id} value={guild.id}>
+              <div className="flex items-center gap-2">
+                {guild.name}
+                {!guild.active && <Badge variant="outline">Inactive</Badge>}
+              </div>
+            </SelectItem>
+          ))}
+        </SelectContent>
+      </Select>
+    );
+  };
+
   return (
     <motion.header
       className="w-full border-b backdrop-blur bg-white"
@@ -110,22 +141,7 @@ const Header = ({ isSidebarOpen, setIsSidebarOpen }: {
                 disabledDays={{ after: new Date() }}
               />
               
-              {isMoreThenOneGuild && (
-                <Select value={guildId} onValueChange={(id) => setGuildId && setGuildId(id)}>
-                  <SelectTrigger className="w-[220px]">
-                    <SelectValue placeholder="Select Guild" />
-                </SelectTrigger>
-                <SelectContent className="bg-white">
-                  {user?.guildIds?.map((id) => (
-                    <SelectItem key={id} value={id}>
-                      <div>
-                        Guild {id}
-                      </div>
-                    </SelectItem>
-                  ))}
-                  </SelectContent>
-                </Select>
-              )}
+              {renderGuildSelect()}
             </div>
           </div>
 
@@ -173,22 +189,7 @@ const Header = ({ isSidebarOpen, setIsSidebarOpen }: {
               }}
               disabledDays={{ after: new Date() }}
             />
-            {isMoreThenOneGuild && (
-              <Select value={guildId} onValueChange={(id) => setGuildId && setGuildId(id)}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Select Guild" />
-                </SelectTrigger>
-                <SelectContent>
-                  {user?.guildIds?.map((id) => (
-                    <SelectItem key={id} value={id}>
-                      <div>
-                        Guild {id}
-                      </div>
-                    </SelectItem>
-                  ))}
-                  </SelectContent>
-              </Select>
-            )}
+            {renderGuildSelect()}
           </div>
           <div className="relative">
             <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />

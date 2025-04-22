@@ -391,3 +391,48 @@ export interface KeywordTrendDataPoint {
 export interface KeywordTrendResponse {
   data: KeywordTrendDataPoint[];
 }
+
+export type UserRole = 'Admin' | 'AgencyPartner' | 'Client';
+
+export interface User {
+  id: string;
+  name: string;
+  email: string;
+  role: UserRole;
+  isActive: boolean;
+}
+
+export interface Agency {
+  id: string;
+  name: string;
+  members: User[];
+  guilds: Guild[];
+  users: User[];
+}
+
+export interface Guild {
+  id: string;
+  name: string;
+  members: User[];
+  agencyId?: string;
+}
+
+export interface AgencyPartner extends User {
+  agencyId?: string;
+  restrictedGuildIds?: string[]; // If empty, has access to all agency guilds
+}
+
+export interface Client extends User {
+  guildId: string; // Client can only have one guild
+}
+
+export interface AdminUser extends User {
+  // Admin has access to everything by default
+}
+
+export interface PaginationDto {
+  currentPage: number;
+  totalPages: number;
+  totalItems: number;
+  itemsPerPage: number;
+}

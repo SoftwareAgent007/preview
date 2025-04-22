@@ -3,6 +3,7 @@ import { ReactNode, useState } from "react";
 import { Outlet } from "react-router-dom";
 import Header from "./Header";
 import Sidebar from "./Sidebar";
+import { Toaster } from "@/components/ui/toaster";
 
 interface DashboardLayoutProps {
   children: ReactNode;
@@ -15,7 +16,7 @@ const DashboardLayout = ({ children }: DashboardLayoutProps) => {
 
   return (
     <div className="flex h-screen overflow-hidden">
-
+      <Toaster />
       {/* Sidebar with Animation */}
       <AnimatePresence mode="wait">
         {isSidebarOpen && (

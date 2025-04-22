@@ -25,6 +25,8 @@ import { DEFAULT_DATE_RANGE, DEFAULT_START_DATE, DEFAULT_END_DATE } from "./hook
 import AssignGuild from "./pages/Auth/AssignGuild.tsx";
 import Admin from "./pages/Admin/index.tsx";
 import AuditLogs from "./pages/AuditLogs/index.tsx";
+import AgencyPartnerDashboard from "./pages/AgencyManage/AgencyPartnerDashboard.tsx";
+import ClientDashboard from "./pages/AgencyManage/ClientDashboard.tsx";
 
 const queryClient = new QueryClient({
   defaultOptions: { 
@@ -105,6 +107,8 @@ function App() {
                       <Route path="music-metrics" element={<MusicMetrics />} />
                       <Route path="message-reactions" element={<MessageReactionsAnalytics />} />
                       <Route path="admin" element={<Admin />} />
+                      <Route path="agency-partner-dashboard" element={<AgencyPartnerDashboard />} />
+                      <Route path="client-dashboard" element={<ClientDashboard />} />
                       <Route path="audit-logs" element={<AuditLogs />} />
                     </Route>
                   </Route>

@@ -89,8 +89,6 @@ const AuditLogs = () => {
       animate={{ opacity: 1 }}
     >
       <div className="mx-auto" style={{ maxWidth: `${import.meta.env.VITE_MAX_WIDTH || 1200}px` }}>
-        <h2 className="text-2xl font-bold mb-4">Audit Logs</h2>
-
         <Card className="p-6 mb-6">
           <div className="grid grid-cols-4 gap-4">
             <Input
