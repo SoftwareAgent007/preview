@@ -114,7 +114,7 @@ export const useUserActivityAnalytics = (
     sessionError,
     joinsError,
     leavesError,
-  ].filter(Boolean).map((e: Error) => e.message).join(", ");
+  ].filter(Boolean).map((e: unknown) => (e as Error).message).join(", ");
 
   return {
     activityOverview: activityOverview ?? null,

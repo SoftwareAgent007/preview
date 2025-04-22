@@ -1,3 +1,4 @@
+// copy of component which set up due api
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -49,6 +50,7 @@ const AdminPanel = () => {
 
 	const [mockUsers, setMockUsers] = useState<User[]>(MOCK_USERS);
 	const [agencies, setAgencies] = useState<Agency[]>(MOCK_AGENCIES);
+	const [guilds, setGuilds] = useState<Guild[]>(MOCK_GUILDS);
 
 	const roleOptions = ["All Roles", "Admin", "AgencyPartner", "Client"];
 

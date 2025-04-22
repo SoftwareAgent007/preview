@@ -4,17 +4,15 @@ import { useQueryClient } from 'react-query';
 import {
   Owner,
   Guild,
-  UpdateOwnerRolePayload,
-  AssignGuildPayload,
-  ToggleGuildStatePayload,
   SuccessResponse,
   OwnerGuild,
-  ApiError,
-  // --- New Agency Types (Define these based on actual API structure) ---
   Agency,
   CreateAgencyDto,
   UpdateAgencyDto,
   AssignAgencyGuildDto,
+  UpdateOwnerRoleDto,
+  AssignGuildDto,
+  ToggleGuildStateDto,
 } from './admin.types';
 
 const ADMIN_QUERY_KEYS = {
@@ -24,6 +22,8 @@ const ADMIN_QUERY_KEYS = {
   agencies: ['admin', 'agencies'],
   agencyById: (agencyId: string) => ['admin', 'agencies', agencyId],
   agencyGuilds: (agencyId: string) => ['admin', 'agencies', agencyId, 'guilds'],
+  users: ['admin', 'users'],
+  groups: ['admin', 'groups'],
 };
 
 // --- Owner Management Hooks ---
@@ -35,42 +35,46 @@ export const useGetAllOwners = () => {
   );
 };
 
-type UpdateOwnerRoleVariables = { ownerId: string; payload: UpdateOwnerRolePayload };
+export type UpdateOwnerRoleVariables = {
+  id: string;
+  email: string;
+  password: string;
+  name: string | null;
+  createdAt: Date;
+  updatedAt: Date;
+};
 export const useUpdateOwnerRole = () => {
   const queryClient = useQueryClient();
-  // Note: If lint errors persist, the generic order or definition of useModifyBuilder might need review.
-  // It's expected to be <TResponse, TVariables>
   return useModifyBuilder<Owner, UpdateOwnerRoleVariables>(
     ({ ownerId }) => `/admin/owners/${ownerId}/role`,
     {
       method: 'PATCH',
       onSuccess: (updatedOwner, variables) => {
-        // Optimistic update or specific item invalidation could be better
         queryClient.invalidateQueries(ADMIN_QUERY_KEYS.owners);
-        // Maybe update the specific owner query if one exists
-        // queryClient.setQueryData(ADMIN_QUERY_KEYS.ownerById(variables.ownerId), updatedOwner);
       },
     }
   );
 };
 
-type AssignGuildVariables = { ownerId: string; payload: AssignGuildPayload };
+export type AssignGuildVariables = { ownerId: string; payload: {
+  ownerId: string;
+  guildId: string;
+  assignedAt: Date;
+} };
 export const useAssignGuildToOwner = () => {
   const queryClient = useQueryClient();
-  return useModifyBuilder<OwnerGuild, AssignGuildVariables>( // Assuming OwnerGuild is the response type for assigning
+  return useModifyBuilder<OwnerGuild, AssignGuildVariables>(
     ({ ownerId }) => `/admin/owners/${ownerId}/guilds`,
     {
       method: 'POST',
       onSuccess: (_, variables) => {
         queryClient.invalidateQueries(ADMIN_QUERY_KEYS.ownerGuilds(variables.ownerId));
-        // Consider invalidating the specific owner's details if it includes guild list
-        // queryClient.invalidateQueries(['admin', 'owners', variables.ownerId]);
       },
     }
   );
 };
 
-type RemoveGuildVariables = { ownerId: string; guildId: string };
+export type RemoveGuildVariables = { ownerId: string; guildId: string };
 export const useRemoveGuildFromOwner = () => {
   const queryClient = useQueryClient();
   return useModifyBuilder<SuccessResponse, RemoveGuildVariables>(
@@ -79,19 +83,7 @@ export const useRemoveGuildFromOwner = () => {
       method: 'DELETE',
       onSuccess: (_, variables) => {
         queryClient.invalidateQueries(ADMIN_QUERY_KEYS.ownerGuilds(variables.ownerId));
-        // Consider invalidating the specific owner's details
-        // queryClient.invalidateQueries(['admin', 'owners', variables.ownerId]);
-
-        // Optimistic update example (remove guild from cache):
-        // queryClient.setQueryData<Guild[] | undefined>(
-        //   ADMIN_QUERY_KEYS.ownerGuilds(variables.ownerId),
-        //   (oldData) => oldData?.filter(guild => guild.id !== variables.guildId)
-        // );
       },
-      // onError: (error, variables, context) => {
-      //   // Rollback optimistic update if needed
-      //   queryClient.invalidateQueries(ADMIN_QUERY_KEYS.ownerGuilds(variables.ownerId));
-      // }
     }
   );
 };
@@ -107,25 +99,21 @@ export const useGetAllGuilds = () => {
 
 export const useGetGuildsForOwner = (ownerId: string | null | undefined) => {
   return useQueryBuilder<Guild[]>(
-    ADMIN_QUERY_KEYS.ownerGuilds(ownerId!), // Non-null assertion ok due to enabled flag
+    ADMIN_QUERY_KEYS.ownerGuilds(ownerId!),
     () => `/admin/owners/${ownerId}/guilds`,
-    { enabled: !!ownerId } // Only run query if ownerId is provided
+    { enabled: !!ownerId }
   );
 };
 
-type ToggleGuildVariables = { guildId: string; payload: ToggleGuildStatePayload };
+export type ToggleGuildVariables = { guildId: string; payload: ToggleGuildStatePayload };
 export const useToggleGuildActivityState = () => {
   const queryClient = useQueryClient();
-  return useModifyBuilder<Guild, ToggleGuildVariables>( // Assuming the updated Guild is returned
+  return useModifyBuilder<Guild, ToggleGuildVariables>(
     ({ guildId }) => `/admin/guilds/${guildId}/active`,
     {
       method: 'PATCH',
       onSuccess: (updatedGuild, variables) => {
         queryClient.invalidateQueries(ADMIN_QUERY_KEYS.guilds);
-        // Also invalidate any specific guild queries if they exist
-        // queryClient.invalidateQueries(['admin', 'guilds', variables.guildId]);
-
-        // Update cache directly for faster UI response
         queryClient.setQueryData<Guild[] | undefined>(ADMIN_QUERY_KEYS.guilds, (oldData) =>
           oldData?.map(guild => guild.id === variables.guildId ? updatedGuild : guild)
         );
@@ -133,12 +121,6 @@ export const useToggleGuildActivityState = () => {
     }
   );
 };
-
-
-
-
-
-
 
 // --- Agency Management Hooks ---
 
@@ -157,7 +139,7 @@ export const useGetAgencyById = (agencyId: string | null | undefined) => {
   );
 };
 
-type CreateAgencyVariables = { payload: CreateAgencyDto };
+export type CreateAgencyVariables = { payload: CreateAgencyDto };
 export const useCreateAgency = () => {
   const queryClient = useQueryClient();
   return useModifyBuilder<Agency, CreateAgencyVariables>(
@@ -171,7 +153,7 @@ export const useCreateAgency = () => {
   );
 };
 
-type UpdateAgencyVariables = { agencyId: string; payload: UpdateAgencyDto };
+export type UpdateAgencyVariables = { agencyId: string; payload: UpdateAgencyDto };
 export const useUpdateAgency = () => {
   const queryClient = useQueryClient();
   return useModifyBuilder<Agency, UpdateAgencyVariables>(
@@ -181,7 +163,6 @@ export const useUpdateAgency = () => {
       onSuccess: (updatedAgency, variables) => {
         queryClient.invalidateQueries(ADMIN_QUERY_KEYS.agencies);
         queryClient.invalidateQueries(ADMIN_QUERY_KEYS.agencyById(variables.agencyId));
-        // Optimistic update
         queryClient.setQueryData(ADMIN_QUERY_KEYS.agencyById(variables.agencyId), updatedAgency);
         queryClient.setQueryData<Agency[] | undefined>(ADMIN_QUERY_KEYS.agencies, (oldData) =>
           oldData?.map(agency => agency.id === variables.agencyId ? updatedAgency : agency)
@@ -191,7 +172,7 @@ export const useUpdateAgency = () => {
   );
 };
 
-type DeleteAgencyVariables = { agencyId: string };
+export type DeleteAgencyVariables = { agencyId: string };
 export const useDeleteAgency = () => {
   const queryClient = useQueryClient();
   return useModifyBuilder<SuccessResponse, DeleteAgencyVariables>(
@@ -201,7 +182,6 @@ export const useDeleteAgency = () => {
       onSuccess: (_, variables) => {
         queryClient.invalidateQueries(ADMIN_QUERY_KEYS.agencies);
         queryClient.invalidateQueries(ADMIN_QUERY_KEYS.agencyById(variables.agencyId));
-        // Remove from cache
         queryClient.removeQueries(ADMIN_QUERY_KEYS.agencyById(variables.agencyId));
         queryClient.setQueryData<Agency[] | undefined>(ADMIN_QUERY_KEYS.agencies, (oldData) =>
           oldData?.filter(agency => agency.id !== variables.agencyId)
@@ -221,24 +201,21 @@ export const useGetGuildsForAgency = (agencyId: string | null | undefined) => {
   );
 };
 
-type AssignGuildToAgencyVariables = { agencyId: string; payload: AssignAgencyGuildDto };
+export type AssignGuildToAgencyVariables = { agencyId: string; payload: AssignAgencyGuildDto };
 export const useAssignGuildToAgency = () => {
   const queryClient = useQueryClient();
-  // Assuming response is SuccessResponse or the updated Agency/Guild list
   return useModifyBuilder<SuccessResponse, AssignGuildToAgencyVariables>(
     ({ agencyId }) => `/admin/agencies/${agencyId}/guilds`,
     {
       method: 'POST',
       onSuccess: (_, variables) => {
         queryClient.invalidateQueries(ADMIN_QUERY_KEYS.agencyGuilds(variables.agencyId));
-        // Maybe invalidate agency details if it includes guilds
-        // queryClient.invalidateQueries(ADMIN_QUERY_KEYS.agencyById(variables.agencyId));
       },
     }
   );
 };
 
-type RemoveGuildFromAgencyVariables = { agencyId: string; guildId: string };
+export type RemoveGuildFromAgencyVariables = { agencyId: string; guildId: string };
 export const useRemoveGuildFromAgency = () => {
   const queryClient = useQueryClient();
   return useModifyBuilder<SuccessResponse, RemoveGuildFromAgencyVariables>(
@@ -247,7 +224,6 @@ export const useRemoveGuildFromAgency = () => {
       method: 'DELETE',
       onSuccess: (_, variables) => {
         queryClient.invalidateQueries(ADMIN_QUERY_KEYS.agencyGuilds(variables.agencyId));
-        // queryClient.invalidateQueries(ADMIN_QUERY_KEYS.agencyById(variables.agencyId));
       },
     }
   );
@@ -255,20 +231,15 @@ export const useRemoveGuildFromAgency = () => {
 
 // --- Agency-Owner Relationship Hooks ---
 
-type AssignOwnerToAgencyVariables = { ownerId: string; agencyId: string };
+export type AssignOwnerToAgencyVariables = { ownerId: string; agencyId: string };
 export const useAssignOwnerToAgency = () => {
   const queryClient = useQueryClient();
-  // Assuming response is the updated Owner or SuccessResponse
   return useModifyBuilder<Owner, AssignOwnerToAgencyVariables>(
     ({ ownerId, agencyId }) => `/admin/owners/${ownerId}/agency/${agencyId}`,
     {
       method: 'POST',
       onSuccess: (updatedOwner, variables) => {
-        // Invalidate the specific owner and the list of all owners
         queryClient.invalidateQueries(ADMIN_QUERY_KEYS.owners);
-        // If you have a query for a single owner:
-        // queryClient.invalidateQueries(['admin', 'owners', variables.ownerId]);
-        // Update owner cache
         queryClient.setQueryData<Owner[] | undefined>(ADMIN_QUERY_KEYS.owners, (oldData) =>
           oldData?.map(owner => owner.id === variables.ownerId ? updatedOwner : owner)
         );
@@ -277,19 +248,159 @@ export const useAssignOwnerToAgency = () => {
   );
 };
 
-type RemoveOwnerFromAgencyVariables = { ownerId: string };
+export type RemoveOwnerFromAgencyVariables = { ownerId: string };
 export const useRemoveOwnerFromAgency = () => {
   const queryClient = useQueryClient();
-  // Assuming response is the updated Owner (without agency) or SuccessResponse
   return useModifyBuilder<Owner, RemoveOwnerFromAgencyVariables>(
     ({ ownerId }) => `/admin/owners/${ownerId}/agency`,
     {
       method: 'DELETE',
       onSuccess: (updatedOwner, variables) => {
         queryClient.invalidateQueries(ADMIN_QUERY_KEYS.owners);
-        // queryClient.invalidateQueries(['admin', 'owners', variables.ownerId]);
-         queryClient.setQueryData<Owner[] | undefined>(ADMIN_QUERY_KEYS.owners, (oldData) =>
+        queryClient.setQueryData<Owner[] | undefined>(ADMIN_QUERY_KEYS.owners, (oldData) =>
           oldData?.map(owner => owner.id === variables.ownerId ? updatedOwner : owner)
+        );
+      },
+    }
+  );
+};
+
+// --- User Management Hooks ---
+
+export type UpdateUserVariables = { userId: string; payload: Partial<User> };
+export const useUpdateUserMutation = () => {
+  const queryClient = useQueryClient();
+  return useModifyBuilder<User, UpdateUserVariables>(
+    ({ userId }) => `/admin/users/${userId}`,
+    {
+      method: 'PATCH',
+      onSuccess: (updatedUser, variables) => {
+        queryClient.invalidateQueries(ADMIN_QUERY_KEYS.users);
+        queryClient.setQueryData<User[] | undefined>(ADMIN_QUERY_KEYS.users, (oldData) =>
+          oldData?.map(user => user.id === variables.userId ? updatedUser : user)
+        );
+      },
+    }
+  );
+};
+
+export type DeleteUserVariables = { userId: string };
+export const useDeleteUserMutation = () => {
+  const queryClient = useQueryClient();
+  return useModifyBuilder<SuccessResponse, DeleteUserVariables>(
+    ({ userId }) => `/admin/users/${userId}`,
+    {
+      method: 'DELETE',
+      onSuccess: (_, variables) => {
+        queryClient.invalidateQueries(ADMIN_QUERY_KEYS.users);
+        queryClient.setQueryData<User[] | undefined>(ADMIN_QUERY_KEYS.users, (oldData) =>
+          oldData?.filter(user => user.id !== variables.userId)
+        );
+      },
+    }
+  );
+};
+
+// --- Group Management Hooks ---
+
+export const useGetAllGroups = () => {
+  return useQueryBuilder<Group[]>(
+    ADMIN_QUERY_KEYS.groups,
+    () => '/admin/groups'
+  );
+};
+
+export type UpdateGroupVariables = { groupId: string; payload: Partial<Group> };
+export const useUpdateGroupMutation = () => {
+  const queryClient = useQueryClient();
+  return useModifyBuilder<Group, UpdateGroupVariables>(
+    ({ groupId }) => `/admin/groups/${groupId}`,
+    {
+      method: 'PATCH',
+      onSuccess: (updatedGroup, variables) => {
+        queryClient.invalidateQueries(ADMIN_QUERY_KEYS.groups);
+        queryClient.setQueryData<Group[] | undefined>(ADMIN_QUERY_KEYS.groups, (oldData) =>
+          oldData?.map(group => group.id === variables.groupId ? updatedGroup : group)
+        );
+      },
+    }
+  );
+};
+
+export type DeleteGroupVariables = { groupId: string };
+export const useDeleteGroupMutation = () => {
+  const queryClient = useQueryClient();
+  return useModifyBuilder<SuccessResponse, DeleteGroupVariables>(
+    ({ groupId }) => `/admin/groups/${groupId}`,
+    {
+      method: 'DELETE',
+      onSuccess: (_, variables) => {
+        queryClient.invalidateQueries(ADMIN_QUERY_KEYS.groups);
+        queryClient.setQueryData<Group[] | undefined>(ADMIN_QUERY_KEYS.groups, (oldData) =>
+          oldData?.filter(group => group.id !== variables.groupId)
+        );
+      },
+    }
+  );
+};
+
+export type AddGroupVariables = { payload: Partial<Group> };
+export const useAddGroupMutation = () => {
+  const queryClient = useQueryClient();
+  return useModifyBuilder<Group, AddGroupVariables>(
+    () => '/admin/groups',
+    {
+      method: 'POST',
+      onSuccess: () => {
+        queryClient.invalidateQueries(ADMIN_QUERY_KEYS.groups);
+      },
+    }
+  );
+};
+
+export type MoveGuildVariables = { guildId: string; groupId: string };
+export const useMoveGuildMutation = () => {
+  const queryClient = useQueryClient();
+  return useModifyBuilder<SuccessResponse, MoveGuildVariables>(
+    ({ guildId, groupId }) => `/admin/guilds/${guildId}/group/${groupId}`,
+    {
+      method: 'PATCH',
+      onSuccess: () => {
+        queryClient.invalidateQueries(ADMIN_QUERY_KEYS.guilds);
+        queryClient.invalidateQueries(ADMIN_QUERY_KEYS.groups);
+      },
+    }
+  );
+};
+
+export type UpdateGuildVariables = { guildId: string; payload: Partial<Guild> };
+export const useUpdateGuildMutation = () => {
+  const queryClient = useQueryClient();
+  return useModifyBuilder<Guild, UpdateGuildVariables>(
+    ({ guildId }) => `/admin/guilds/${guildId}`,
+    {
+      method: 'PATCH',
+      onSuccess: (updatedGuild, variables) => {
+        queryClient.invalidateQueries(ADMIN_QUERY_KEYS.guilds);
+        queryClient.setQueryData<Guild[] | undefined>(ADMIN_QUERY_KEYS.guilds, (oldData) =>
+          oldData?.map(guild => guild.id === variables.guildId ? updatedGuild : guild)
+        );
+      },
+    }
+  );
+};
+
+export type DeleteGuildVariables = { guildId: string };
+export const useDeleteGuildMutation = () => {
+  const queryClient = useQueryClient();
+  return useModifyBuilder<SuccessResponse, DeleteGuildVariables>(
+    ({ guildId }) => `/admin/guilds/${guildId}`,
+    {
+      method: 'DELETE',
+      onSuccess: (_, variables) => {
+        queryClient.invalidateQueries(ADMIN_QUERY_KEYS.guilds);
+        queryClient.setQueryData<Guild[] | undefined>(ADMIN_QUERY_KEYS.guilds, (oldData) =>
+          oldData?.filter(guild => guild.id !== variables.guildId)
         );
       },
     }

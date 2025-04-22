@@ -22,23 +22,28 @@ export interface Agency {
 export interface Guild {
   id: string;
   name: string;
+  joinedAt: Date;
+  memberCount: number;
+  assignedPodName: string | null;
+  shardId: number;
+  eventsPerSecond: number;
   active: boolean;
   // Add other guild fields if needed
 }
 
 export interface OwnerGuild {
   guildId: string;
-  assignedAt: string; // Assuming ISO date string
+  assignedAt: Date; // Updated to Date type
   guild: Guild;
 }
 
 export interface Owner {
   id: string;
   email: string;
-  name: string;
+  name: string | null; // Updated to allow null
   role: OwnerRole;
-  createdAt: string; // Assuming ISO date string
-  updatedAt: string; // Assuming ISO date string
+  createdAt: Date; // Updated to Date type
+  updatedAt: Date; // Updated to Date type
   agencyId?: string | null;
   agency?: Agency | null;
   ownerGuilds?: OwnerGuild[];
@@ -47,7 +52,7 @@ export interface Owner {
 // --- Payload/DTO Types ---
 
 // Owner/User related
-export interface UpdateOwnerRolePayload {
+export interface UpdateOwnerRoleDto { // Updated to match controller import
   role: OwnerRole;
   agencyId?: string; // Optional, but might be required depending on role change logic
 }
@@ -55,17 +60,17 @@ export interface UpdateOwnerRolePayload {
 export interface RegisterDto {
   email: string;
   password: string; // Note: Password shouldn't typically be part of the Owner interface returned by API
-  name?: string;
+  name?: string | null; // Updated to allow null
   agencyId?: string; // UUID string
   role?: OwnerRole; // Use the enum
 }
 
 // Guild related
-export interface AssignGuildPayload { // For assigning guild to OWNER
+export interface AssignGuildDto { // Updated to match controller import
   guildId: string;
 }
 
-export interface ToggleGuildStatePayload {
+export interface ToggleGuildStateDto { // Updated to match controller import
   active: boolean;
 }
 
@@ -83,7 +88,6 @@ export interface UpdateAgencyDto {
 export interface AssignAgencyGuildDto { // For assigning guild to AGENCY
   guildId: string;
 }
-
 
 // --- Response Types ---
 

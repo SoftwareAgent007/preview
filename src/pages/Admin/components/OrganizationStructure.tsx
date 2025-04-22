@@ -98,7 +98,7 @@ const AgencyStructure = ({
         <h3 className="text-xl font-semibold">Agency Structure</h3>
         <Dialog open={isAddAgencyModalOpen} onOpenChange={setIsAddAgencyModalOpen}>
           <DialogTrigger asChild>
-            <Button variant="outline" size="sm">
+            <Button className="bg-blue-500 hover:bg-blue-600 hover:text-white text-white text-sm font-normal" variant="outline" size="sm">
               <Plus className="mr-2 h-4 w-4" /> Add Agency
             </Button>
           </DialogTrigger>
@@ -123,14 +123,14 @@ const AgencyStructure = ({
               </div>
             </div>
             <DialogFooter>
-              <Button type="submit" onClick={handleAddAgency}>Add Agency</Button>
+              <Button className="bg-blue-500 hover:bg-blue-600 text-white text-sm font-normal" type="submit" onClick={handleAddAgency}>Add Agency</Button>
             </DialogFooter>
           </DialogContent>
         </Dialog>
       </div>
 
       <div className="space-y-4">
-        {agencies.map(agency => (
+        {agencies?.map(agency => (
           <motion.div 
             key={agency.id} 
             className="p-4 bg-gray-50 rounded-lg"
@@ -223,8 +223,8 @@ const AgencyStructure = ({
                         snapshot.isDraggingOver ? "bg-gray-100 border-2 border-dashed border-gray-300" : "bg-white"
                       )}
                     >
-                      {agency.guilds.map((guild, index) => (
-                        <Draggable key={guild.id} draggableId={guild.id} index={index}>
+                      {agency.guilds?.map((guild, index) => (
+                        <Draggable key={guild.id}  draggableId={`${guild.id}-${guild.name}`} index={index}>
                           {(provided, snapshot) => (
                             <div
                               ref={provided.innerRef}
@@ -269,7 +269,7 @@ const AgencyStructure = ({
                         snapshot.isDraggingOver ? "bg-gray-100 border-2 border-dashed border-gray-300" : "bg-white"
                       )}
                     >
-                      {agency.users.map((user, index) => (
+                      {agency.users?.map((user, index) => (
                         <Draggable key={user.id} draggableId={`${user.id}-${user.name}`} index={index}>
                           {(provided, snapshot) => (
                             <div
