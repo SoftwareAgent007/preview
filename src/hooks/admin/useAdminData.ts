@@ -13,7 +13,10 @@ import {
   UpdateOwnerRoleDto,
   AssignGuildDto,
   ToggleGuildStateDto,
+  OwnerRole,
 } from './admin.types';
+import { Agency as AgencyDto } from "@/types/dataTypes";
+
 
 const ADMIN_QUERY_KEYS = {
   owners: ['admin', 'owners'],
@@ -36,18 +39,23 @@ export const useGetAllOwners = () => {
 };
 
 export type UpdateOwnerRoleVariables = {
-  ownerId: string;
-  payload: UpdateOwnerRoleDto;
+  id: string;
+  payload: {
+    role: OwnerRole;
+    agencyId?: string;
+  };
 };
 export const useUpdateOwnerRole = () => {
   const queryClient = useQueryClient();
-  return useModifyBuilder<Owner, UpdateOwnerRoleVariables>(
-    ({ ownerId }) => `/admin/owners/${ownerId}/role`,
+  return useModifyBuilder<UpdateOwnerRoleVariables>(
+    ({ id }) => `/admin/owners/${id}/role`,
     {
       method: 'PATCH',
       includeGuildId: false,
+      body: (variables) => variables.payload, // Use only the payload for the request body
       onSuccess: (updatedOwner, variables) => {
         queryClient.invalidateQueries(ADMIN_QUERY_KEYS.owners);
+        queryClient.invalidateQueries(ADMIN_QUERY_KEYS.agencies);
       },
     }
   );
@@ -172,10 +180,50 @@ export const useMoveGuildMutation = () => {
 
 // --- Agency Management Hooks ---
 
+
+// Define the structure the API actually returns based on your JSON example
+interface RawAgencyGuild {
+  agencyId: string;
+  guildId: string;
+  assignedAt: any; // Adjust type as needed (e.g., string, Date)
+  guild: Guild; // The nested guild object
+}
+
+interface RawAgencyData extends Omit<Agency, 'agencyGuilds'> {
+  agencyGuilds: RawAgencyGuild[];
+}
+
 export const useGetAllAgencies = () => {
-  return useQueryBuilder<Agency[]>(
+  // Fetch RawAgencyData[], transform into Agency[] using the select option
+  return useQueryBuilder<AgencyDto[]>(
     ADMIN_QUERY_KEYS.agencies,
-    () => '/admin/agencies'
+    () => '/admin/agencies',
+    {
+      select: (data) => {
+        // Ensure data is an array before processing
+        if (!Array.isArray(data)) {
+          console.warn("useGetAllAgencies received non-array data:", data);
+          return []; // Return empty array or handle error appropriately
+        }
+        // Map each agency in the raw data to the desired Agency structure
+        return data.map(agency => {
+           // Basic check for valid agency object
+           if (!agency || typeof agency !== 'object') {
+             console.warn("Invalid agency object found in data:", agency);
+             return null; // Skip this invalid entry
+           }
+           return {
+             ...agency,
+             // Transform agencyGuilds: extract the nested 'guild' object from each item
+             agencyGuilds: Array.isArray(agency.agencyGuilds)
+               ? agency.agencyGuilds
+                   .map(ag => ag?.guild) // Safely access the nested guild object
+                   .filter((g): g is Guild => !!g) // Filter out any null/undefined guilds and assert type
+               : [], // Default to an empty array if agencyGuilds isn't a valid array
+           };
+        }).filter((a): a is Agency => !!a); // Filter out any nulls resulting from invalid entries
+      },
+    }
   );
 };
 
@@ -205,11 +253,12 @@ export const useCreateAgency = () => {
 export type UpdateAgencyVariables = { agencyId: string; payload: UpdateAgencyDto };
 export const useUpdateAgency = () => {
   const queryClient = useQueryClient();
-  return useModifyBuilder<Agency, UpdateAgencyVariables>(
+  return useModifyBuilder<UpdateAgencyVariables>(
     ({ agencyId }) => `/admin/agencies/${agencyId}`,
     {
       method: 'PATCH',
       includeGuildId: false,
+      body: (variables) => variables.payload, // Use only the payload for the request body
       onSuccess: (updatedAgency, variables) => {
         queryClient.invalidateQueries(ADMIN_QUERY_KEYS.agencies);
         queryClient.invalidateQueries(ADMIN_QUERY_KEYS.agencyById(variables.agencyId));
@@ -252,7 +301,7 @@ export const useGetGuildsForAgency = (agencyId: string | null | undefined) => {
   );
 };
 
-export type AssignGuildToAgencyVariables = { agencyId: string; payload: { guildId: string } };
+export type AssignGuildToAgencyVariables = { agencyId: string; guildId: string };
 export const useAssignGuildToAgency = () => {
   const queryClient = useQueryClient();
   return useModifyBuilder<SuccessResponse, AssignGuildToAgencyVariables>(
@@ -260,6 +309,7 @@ export const useAssignGuildToAgency = () => {
     {
       method: 'POST',
       includeGuildId: false,
+      body: ({ guildId }) => ({ guildId }),
       onSuccess: (_, variables) => {
         queryClient.invalidateQueries(ADMIN_QUERY_KEYS.agencyGuilds(variables.agencyId));
       },
@@ -287,7 +337,7 @@ export const useRemoveGuildFromAgency = () => {
 export type AssignOwnerToAgencyVariables = { ownerId: string; agencyId: string };
 export const useAssignOwnerToAgency = () => {
   const queryClient = useQueryClient();
-  return useModifyBuilder<Owner, AssignOwnerToAgencyVariables>(
+  return useModifyBuilder<AssignOwnerToAgencyVariables>(
     ({ ownerId, agencyId }) => `/admin/agencies/owners/${ownerId}/agency/${agencyId}`,
     {
       method: 'POST',
@@ -305,7 +355,7 @@ export const useAssignOwnerToAgency = () => {
 export type RemoveOwnerFromAgencyVariables = { ownerId: string };
 export const useRemoveOwnerFromAgency = () => {
   const queryClient = useQueryClient();
-  return useModifyBuilder<Owner, RemoveOwnerFromAgencyVariables>(
+  return useModifyBuilder<RemoveOwnerFromAgencyVariables>(
     ({ ownerId }) => `/admin/agencies/owners/${ownerId}/agency`,
     {
       method: 'DELETE',

@@ -403,7 +403,7 @@ export interface User {
   role: UserRole;
   createdAt: Date;
   updatedAt: Date;
-  agencyId: string | null;
+  agencyId: string;
   agency: Agency | null;
   ownerGuilds: OwnerGuild[];
 }
@@ -426,7 +426,7 @@ export interface Guild {
   id: string;
   name: string;
   members: User[];
-  agencyId?: string;
+  agencyIds?: string[]; // Changed from single agencyId to array of agencyIds
 }
 
 export interface AgencyPartner extends User {

@@ -3,7 +3,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { useGetAllOwners, useGetAllGuilds, useUpdateOwnerRole, useAssignGuildToOwner, useRemoveGuildFromOwner, useToggleGuildActivityState, useGetAllAgencies, useCreateAgency, useUpdateAgency, useDeleteAgency, useAssignGuildToAgency, useRemoveGuildFromAgency } from "@/hooks/admin/useAdminData";
+import { useGetAllOwners, useGetAllGuilds, useUpdateOwnerRole, useAssignGuildToOwner, useRemoveGuildFromOwner, useToggleGuildActivityState, useGetAllAgencies, useCreateAgency, useUpdateAgency, useDeleteAgency, useAssignGuildToAgency, useRemoveGuildFromAgency, useAssignOwnerToAgency, useRemoveOwnerFromAgency } from "@/hooks/admin/useAdminData";
 import { toast } from "@/hooks/use-toast";
 import { Owner, Guild, User, Agency } from "@/types/dataTypes";
 import { motion } from "framer-motion";
@@ -18,6 +18,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
 import { nanoid } from 'nanoid';
+import { OwnerRole } from "@/hooks/admin/admin.types";
 
 const CLONE_SUFFIX = () => nanoid(6); // Generates a unique suffix
 
@@ -55,6 +56,8 @@ const AdminPanel = () => {
 	const { data: agenciesData, isLoading: isLoadingAgencies } = useGetAllAgencies();
 	const updateOwnerRole = useUpdateOwnerRole();
 	const assignGuildToOwner = useAssignGuildToOwner();
+	const assignUserToAgency = useAssignOwnerToAgency();
+	const removeOwnerFromAgency = useRemoveOwnerFromAgency();
 	const removeGuildFromOwner = useRemoveGuildFromOwner();
 	const toggleGuildActivityState = useToggleGuildActivityState();
 	const createAgencyMutation = useCreateAgency();
@@ -78,7 +81,7 @@ const AdminPanel = () => {
 
 	useEffect(() => {
 		if (agenciesData) {
-			setAgencies(agenciesData as Agency[]);
+			setAgencies(agenciesData);
 		}
 	}, [agenciesData]);
 
@@ -156,23 +159,23 @@ const AdminPanel = () => {
 
 	}, [users, agencies, guilds]);
 
-	const handleUserUpdate = (updatedUser: User) => {
-		updateOwnerRole.mutate(updatedUser, {
-			onSuccess: () => {
-				setUsers(prev => prev.map(user =>
-					user.id === updatedUser.id ? updatedUser : user
-				));
-				setAgencies(prev => prev.map(agency => ({
-					...agency,
-					users: agency.owners.map(u => u.id === updatedUser.id ? updatedUser : u)
-				})));
-				toast({
-					title: "User updated",
-					description: `Successfully updated user ${updatedUser.name}`,
-				});
-			}
-		});
-	};
+const handleUserUpdate = (updatedUser: User) => {
+	updateOwnerRole.mutate({ id: updatedUser.id, payload: { role: updatedUser.role as OwnerRole, agencyId: updatedUser.agencyId}}, {
+		onSuccess: () => {
+			setUsers(prev => prev.map(user =>
+				user.id === updatedUser.id ? updatedUser : user
+			));
+			setAgencies(prev => prev.map(agency => ({
+				...agency,
+				users: agency.owners.map(u => u.id === updatedUser.id ? updatedUser : u)
+			})));
+			toast({
+				title: "User updated",
+				description: `Successfully updated user ${updatedUser.name}`,
+			});
+		}
+	});
+};
 
 	const handleUserDelete = async (userId: string): Promise<boolean> => {
 		const user = allManageableUsers.find(u => u.id === userId);
@@ -224,10 +227,10 @@ const AdminPanel = () => {
 	};
 
 	const handleUpdateAgency = (updatedAgency: Agency) => {
-		updateAgencyMutation.mutate(updatedAgency, {
+		updateAgencyMutation.mutate({ agencyId: updatedAgency.id, payload: { name: updatedAgency.name, description: updatedAgency.description } }, {
 			onSuccess: () => {
 				setAgencies(prev => prev.map(agency =>
-					agency.id === updatedAgency.id ? updatedAgency : agency
+					agency.name === updatedAgency.name ? updatedAgency : agency
 				));
 				toast({ title: "Agency Updated", description: `Agency "${updatedAgency.name}" updated.` });
 			}
@@ -268,7 +271,7 @@ const AdminPanel = () => {
 				// Only add the guild to the target agency without removing from others
 				setAgencies(prev => prev.map(agency => {
 					if (agency.id === agencyId) {
-						if (!agency.agencyGuilds.some(g => g.id === guildId)) {
+						if (!agency.agencyGuilds.some(g => g.name === guild.name)) {
 							return { ...agency, agencyGuilds: [...agency.agencyGuilds, { ...guild, agencyId }] };
 						}
 					}
@@ -323,39 +326,43 @@ const AdminPanel = () => {
 		});
 	};
 
-	const handleAssignUserToAgency = (userId: string, agencyId: string) => {
-		const user = allManageableUsers.find(u => u.id === userId);
-		if (!user || user.role === 'Admin' || user.role === 'Client') {
-			toast({ title: "Assignment Restricted", description: "Only Agency Partners can be assigned to agencies.", variant: "destructive" });
-			return;
-		}
+const handleAssignUserToAgency = (userId: string, agencyId: string) => {
+	const user = allManageableUsers.find(u => u.id === userId);
+	if (!user || user.role !== 'AgencyPartner') {
+		toast({ title: "Assignment Restricted", description: "Only Agency Partners can be assigned to agencies.", variant: "destructive" });
+		return;
+	}
 
-		const targetAgency = agencies.find(a => a.id === agencyId);
-		if (!targetAgency) return;
+	const targetAgency = agencies.find(a => a.id === agencyId);
+	if (!targetAgency) return;
 
-		const currentAgencyId = (user as any).agencyId;
-		if (currentAgencyId && currentAgencyId !== agencyId) {
+	assignUserToAgency.mutate({ ownerId: userId, agencyId }, {
+		onSuccess: () => {
+			const currentAgencyId = (user as any).agencyId;
+			if (currentAgencyId && currentAgencyId !== agencyId) {
+				setAgencies(prev => prev.map(agency => {
+					if (agency.id === currentAgencyId) {
+						return { ...agency, users: agency.owners.filter(u => u.id !== userId) };
+					}
+					return agency;
+				}));
+			}
+
+			setUsers(prev => prev.filter(u => u.id !== userId));
+
 			setAgencies(prev => prev.map(agency => {
-				if (agency.id === currentAgencyId) {
-					return { ...agency, users: agency.owners.filter(u => u.id !== userId) };
+				if (agency.id === agencyId) {
+					if (!agency.owners.some(u => u.id === userId)) {
+						return { ...agency, users: [...agency.owners, { ...user, agencyId: agencyId, restrictedGuildIds: undefined }] };
+					}
 				}
 				return agency;
 			}));
+
+			toast({ title: "User Assigned", description: `User "${user.name}" assigned to agency "${targetAgency.name}".` });
 		}
-
-		setUsers(prev => prev.filter(u => u.id !== userId));
-
-		setAgencies(prev => prev.map(agency => {
-			if (agency.id === agencyId) {
-				if (!agency.owners.some(u => u.id === userId)) {
-					return { ...agency, users: [...agency.owners, { ...user, agencyId: agencyId, restrictedGuildIds: undefined }] };
-				}
-			}
-			return agency;
-		}));
-
-		toast({ title: "User Assigned", description: `User "${user.name}" assigned to agency "${targetAgency.name}".` });
-	};
+	});
+};
 
 	const handleAssignAgencyToUser = (userId: string, agencyId: string) => {
 		setUsers(prev => prev.map(u =>
@@ -374,24 +381,28 @@ const AdminPanel = () => {
 		const user = agency.owners.find(u => u.id === userId);
 		if (!user) return;
 
-		setUsers(prev => {
-			if (prev.some(u => u.id === userId)) {
-				return prev.map(u => u.id === userId ? { ...user, agencyId: undefined, restrictedGuildIds: undefined } : u);
-			}
-			const updatedUsers = [...prev, { ...user, agencyId: undefined, restrictedGuildIds: undefined }];
-			return updatedUsers.sort((a, b) => a.name?.localeCompare(b.name));
-		});
+		removeOwnerFromAgency.mutate({ ownerId: userId }, {
+			onSuccess: () => {
+				setUsers(prev => {
+					if (prev.some(u => u.id === userId)) {
+						return prev.map(u => u.id === userId ? { ...user, agencyId: undefined, restrictedGuildIds: undefined } : u);
+					}
+					const updatedUsers = [...prev, { ...user, agencyId: undefined, restrictedGuildIds: undefined }];
+					return updatedUsers.sort((a, b) => a.name?.localeCompare(b.name));
+				});
 
-		setAgencies(prev => prev.map(a => {
-			if (a.id === agencyId) {
-				return { ...a, users: a.owners?.filter(u => u.id !== userId) };
-			}
-			return a;
-		}));
+				setAgencies(prev => prev.map(a => {
+					if (a.id === agencyId) {
+						return { ...a, users: a.owners?.filter(u => u.id !== userId) };
+					}
+					return a;
+				}));
 
-		toast({
-			title: "User Removed",
-			description: `Successfully removed user "${user.name}" from agency "${agency.name}".`,
+				toast({
+					title: "User Removed",
+					description: `Successfully removed user "${user.name}" from agency "${agency.name}".`,
+				});
+			}
 		});
 	};
 
@@ -448,6 +459,29 @@ const AdminPanel = () => {
 				toast({ title: "Guild Updated", description: `Guild "${updatedGuild.name}" updated.` });
 			}
 		});
+	};
+
+	const handleAgencyAssignment = (user: Omit<User, 'agency' | 'ownerGuilds' | 'createdAt' | 'updatedAt'>, targetAgencyId: string) => {
+		if (user.role !== 'AgencyPartner') {
+			updateOwnerRole.mutate({ id: user.id, payload: { role: OwnerRole.AGENCY_PARTNER } }, {
+				onSuccess: () => {
+					handleAssignUserToAgency(user.id, targetAgencyId);
+					toast({
+						title: "Role Updated & User Assigned",
+						description: `User "${user.name}" role updated to Agency Partner and assigned to agency.`,
+					});
+				},
+				onError: () => {
+					toast({
+						title: "Role Update Failed",
+						description: `Failed to update user "${user.name}" to Agency Partner role.`,
+						variant: "destructive",
+					});
+				}
+			});
+		} else {
+			handleAssignUserToAgency(user.id, targetAgencyId);
+		}
 	};
 
 	const handleGuildDelete = async (guildId: string): Promise<boolean> => {
@@ -507,178 +541,193 @@ const AdminPanel = () => {
 		return true;
 	};
 
-	const handleDragEnd = (result: DropResult) => {
-		const { source, destination, draggableId, type } = result;
-		
-		// If no destination, the item was dropped outside a valid droppable
-		if (!destination) return;
+const handleDragEnd = (result: DropResult) => {
+	const { source, destination, draggableId, type } = result;
 
-		// If the item was dropped back into its original position
-		if (source.droppableId === destination.droppableId && 
-			source.index === destination.index) return;
+	if (!destination) return;
 
-		const srcId = source.droppableId;
-		const dstId = destination.droppableId;
+	if (source.droppableId === destination.droppableId && source.index === destination.index) return;
 
-		// Handle guild dragging
-		if (type === 'guild') {
-			// Extract the base guild ID without any drag suffixes
-			const guildId = baseGuildId(draggableId);
-			const guild = guilds.find(g => g.id === guildId);
+	const srcId = source.droppableId;
+	const dstId = destination.droppableId;
+
+	if (type === 'guild') {
+		const guildId = baseGuildId(draggableId);
+		const guild = guilds.find(g => g.id === guildId);
+
+		if (!guild) return;
+
+		if (srcId === 'guilds-table' && dstId.startsWith('agency-guilds-')) {
+			const agencyId = dstId.replace('agency-guilds-', '');
+			const targetAgency = agencies.find(a => a.id === agencyId);
+
+			// Check if guild already exists in the target agency
+			const guildAlreadyExists = targetAgency?.agencyGuilds.some(g => baseGuildId(g.id) === guildId);
+			if (guildAlreadyExists) {
+				toast({
+					title: "Guild already assigned",
+					description: `This guild is already assigned to this agency`,
+					variant: "destructive"
+				});
+				return;
+			}
+
+			// Create a copy with the new agencyId added to the agencyIds array
+			const guildCopy = { 
+				...guild, 
+				agencyIds: [...(guild.agencyIds || []), agencyId],
+				id: `${guildId}-${Date.now()}` 
+			};
+
+			setAgencies(prev => prev.map(a =>
+				a.id === agencyId
+					? { ...a, agencyGuilds: [...a.agencyGuilds, guildCopy] }
+					: a
+			));
+
+			// Update the original guild in the guilds list to include the new agencyId
+			setGuilds(prev => prev.map(g => 
+				g.id === guildId 
+					? { ...g, agencyIds: [...(g.agencyIds || []), agencyId] }
+					: g
+			));
+
+			toast({
+				title: "Guild assigned",
+				description: `Successfully assigned guild to agency`,
+			});
+
+			handleAssignGuildToAgency(agencyId, guildId);
+		} else if (srcId.startsWith('agency-guilds-') && dstId === 'guilds-table') {
+			const agencyId = srcId.replace('agency-guilds-', '');
+
+			// Remove the guild from the agency's agencyGuilds list
+			setAgencies(prev => prev.map(a =>
+				a.id === agencyId
+					? { ...a, agencyGuilds: a.agencyGuilds.filter(g => g.id !== draggableId) }
+					: a
+			));
+
+			// Update the original guild in the guilds list to remove this agencyId
+			setGuilds(prev => prev.map(g => {
+				if (g.id === guildId && g.agencyIds) {
+					const updatedAgencyIds = g.agencyIds.filter(id => id !== agencyId);
+					return { 
+						...g, 
+						agencyIds: updatedAgencyIds.length ? updatedAgencyIds : undefined 
+					};
+				}
+				return g;
+			}));
+
+			toast({
+				title: "Guild removed",
+				description: `Successfully removed guild from agency`,
+			});
+
+			handleRemoveGuildFromAgency(agencyId, guildId);
+		} else if (srcId.startsWith('agency-guilds-') && dstId.startsWith('agency-guilds-')) {
+			const sourceAgencyId = srcId.replace('agency-guilds-', '');
+			const destAgencyId = dstId.replace('agency-guilds-', '');
+
+			if (sourceAgencyId === destAgencyId) return;
+
+			const targetAgency = agencies.find(a => a.id === destAgencyId);
 			
-			if (!guild) return;
-
-			// Case 1: Dragging from guilds table (source) to an agency (consumer)
-			if (srcId === 'guilds-table' && dstId.startsWith('agency-guilds-')) {
-				const agencyId = dstId.replace('agency-guilds-', '');
-				const targetAgency = agencies.find(a => a.id === agencyId);
-				console.log("targetAgency", targetAgency);
-				console.log("agencyId", agencyId);
-				// Check if the guild is already assigned to this agency
-				if (targetAgency && targetAgency.agencyGuilds.some(g => g.id === guildId)) {
-					toast({
-						title: "Guild already assigned",
-						description: `This guild is already assigned to this agency`,
-						variant: "destructive"
-					});
-					return;
-				}
-
-				// Create a copy of the guild with the new agency ID
-				const guildCopy = { ...guild, agencyId };
-
-				// Update the agency's guilds
-				setAgencies(prev => prev.map(a => 
-					a.id === agencyId 
-						? { ...a, agencyGuilds: [...a.agencyGuilds, guildCopy] } 
-						: a
-				));
-
-				// The original guild remains in the guilds list unchanged
-				// We're no longer updating the original guild's agencyId
-
+			// Check if guild already exists in the target agency by comparing base guild IDs
+			const guildAlreadyExists = targetAgency?.agencyGuilds.some(g => baseGuildId(g.id) === guildId);
+			if (guildAlreadyExists) {
 				toast({
-					title: "Guild assigned",
-					description: `Successfully assigned guild to agency`,
+					title: "Guild already assigned",
+					description: `This guild is already assigned to this agency`,
+					variant: "destructive"
 				});
-
-				// Call the API to persist the change
-				handleAssignGuildToAgency(agencyId, guildId);
+				return;
 			}
 
-			// Case 2: Dragging from an agency (consumer) back to guilds table (source)
-			else if (srcId.startsWith('agency-guilds-') && dstId === 'guilds-table') {
+			// Create a copy with the correct agencyIds for the destination agency
+			const currentAgencyIds = guild.agencyIds || [];
+			const guildCopy = { 
+				...guild, 
+				agencyIds: [...currentAgencyIds.filter(id => id !== sourceAgencyId), destAgencyId],
+				id: `${guildId}-${Date.now()}` 
+			};
+
+			setAgencies(prev => prev.map(a => {
+				if (a.id === sourceAgencyId) {
+					return { ...a, agencyGuilds: a.agencyGuilds.filter(g => g.id !== draggableId) };
+				}
+				if (a.id === destAgencyId) {
+					return { ...a, agencyGuilds: [...a.agencyGuilds, guildCopy] };
+				}
+				return a;
+			}));
+
+			// Update the original guild in the guilds list to include the new agencyId
+			// and remove the old one if needed
+			setGuilds(prev => prev.map(g => {
+				if (g.id === guildId) {
+					const existingAgencyIds = g.agencyIds || [];
+					const updatedAgencyIds = [...existingAgencyIds.filter(id => id !== sourceAgencyId), destAgencyId];
+					return { ...g, agencyIds: [...new Set(updatedAgencyIds)] }; // Remove duplicates
+				}
+				return g;
+			}));
+
+			toast({
+				title: "Guild moved",
+				description: `Successfully moved guild between agencies`,
+			});
+
+			handleRemoveGuildFromAgency(sourceAgencyId, guildId);
+			handleAssignGuildToAgency(destAgencyId, guildId);
+		} else if (srcId === dstId) {
+			if (srcId === 'guilds-table') {
+				const newGuilds = Array.from(guilds);
+				const [removed] = newGuilds.splice(source.index, 1);
+				newGuilds.splice(destination.index, 0, removed);
+				setGuilds(newGuilds);
+			} else if (srcId.startsWith('agency-guilds-')) {
 				const agencyId = srcId.replace('agency-guilds-', '');
-				
-				// Remove the guild from the agency
-				setAgencies(prev => prev.map(a => 
-					a.id === agencyId 
-						? { ...a, agencyGuilds: a.agencyGuilds.filter(g => g.id !== guildId) } 
-						: a
-				));
-
-				toast({
-					title: "Guild removed",
-					description: `Successfully removed guild from agency`,
-				});
-
-				// Call the API to persist the change
-				handleRemoveGuildFromAgency(agencyId, guildId);
-			}
-
-			// Case 3: Moving guild between agencies
-			else if (srcId.startsWith('agency-guilds-') && dstId.startsWith('agency-guilds-')) {
-				const sourceAgencyId = srcId.replace('agency-guilds-', '');
-				const destAgencyId = dstId.replace('agency-guilds-', '');
-				
-				// Don't allow dragging to the same agency
-				if (sourceAgencyId === destAgencyId) return;
-
-				const targetAgency = agencies.find(a => a.id === destAgencyId);
-				console.log("targetAgency", targetAgency);
-				console.log("destAgencyId", destAgencyId);
-				// Check if the guild is already assigned to the destination agency
-				if (targetAgency && targetAgency.agencyGuilds.some(g => g.id === guildId)) {
-					toast({
-						title: "Guild already assigned",
-						description: `This guild is already assigned to this agency`,
-						variant: "destructive"
-					});
-					return;
-				}
-
-				// Create a copy of the guild with the new agency ID
-				const guildCopy = { ...guild, agencyId: destAgencyId };
-
-				// Remove from source agency and add to destination agency
 				setAgencies(prev => prev.map(a => {
-					if (a.id === sourceAgencyId) {
-						return { ...a, agencyGuilds: a.agencyGuilds.filter(g => g.id !== guildId) };
-					}
-					if (a.id === destAgencyId) {
-						return { ...a, agencyGuilds: [...a.agencyGuilds, guildCopy] };
+					if (a.id === agencyId) {
+						const newGuilds = Array.from(a.agencyGuilds);
+						const [removed] = newGuilds.splice(source.index, 1);
+						newGuilds.splice(destination.index, 0, removed);
+						return { ...a, agencyGuilds: newGuilds };
 					}
 					return a;
 				}));
-
-				toast({
-					title: "Guild moved",
-					description: `Successfully moved guild between agencies`,
-				});
-
-				// Call the API to persist the changes
-				handleRemoveGuildFromAgency(sourceAgencyId, guildId);
-				handleAssignGuildToAgency(destAgencyId, guildId);
-			}
-
-			// Case 4: Reordering within a container (guilds table or an agency)
-			else if (srcId === dstId) {
-				// If we're reordering within the guilds table
-				if (srcId === 'guilds-table') {
-					const newGuilds = Array.from(guilds);
-					const [removed] = newGuilds.splice(source.index, 1);
-					newGuilds.splice(destination.index, 0, removed);
-					setGuilds(newGuilds);
-				}
-				// If we're reordering within an agency
-				else if (srcId.startsWith('agency-guilds-')) {
-					const agencyId = srcId.replace('agency-guilds-', '');
-					setAgencies(prev => prev.map(a => {
-						if (a.id === agencyId) {
-							const newGuilds = Array.from(a.agencyGuilds);
-							const [removed] = newGuilds.splice(source.index, 1);
-							newGuilds.splice(destination.index, 0, removed);
-							return { ...a, agencyGuilds: newGuilds };
-						}
-						return a;
-					}));
-				}
 			}
 		}
+	}
 
-		if (type === 'user') {
-			const userId = draggableId.replace(/-[^-]*$/, '');
-			const user = allManageableUsers.find(u => u.id === userId);
-			if (!user) return;
+	if (type === 'user') {
+		const userId = draggableId.replace(/-[^-]*$/, '');
+		const user = allManageableUsers.find(u => u.id === userId) as Omit<User, 'agency' | 'ownerGuilds' | 'createdAt' | 'updatedAt'>;
+		if (!user) return;
 
-			if (srcId.startsWith('agency-users-') && dstId === 'users-table') {
-				const sourceAgencyId = srcId.replace('agency-users-', '');
-				handleRemoveUserFromAgency(userId, sourceAgencyId);
-			}
-			else if (srcId === 'users-table' && dstId.startsWith('agency-users-')) {
-				const destAgencyId = dstId.replace('agency-users-', '');
-				handleAssignUserToAgency(userId, destAgencyId);
-			}
-			else if (srcId.startsWith('agency-users-') && dstId.startsWith('agency-users-')) {
-				const sourceAgencyId = srcId.replace('agency-users-', '');
-				const destAgencyId = dstId.replace('agency-users-', '');
-				if (sourceAgencyId !== destAgencyId) {
-					handleAssignUserToAgency(userId, destAgencyId);
-					toast({ title: "User Moved", description: `Moved user "${user.name}" between agencies.` });
+		if (srcId.startsWith('agency-users-') && dstId === 'users-table') {
+			const sourceAgencyId = srcId.replace('agency-users-', '');
+			updateOwnerRole.mutate({ id: userId, payload: { role: OwnerRole.CLIENT } }, {
+				onSuccess: () => {
+					handleRemoveUserFromAgency(userId, sourceAgencyId);
 				}
+			});
+		} else if (srcId === 'users-table' && dstId.startsWith('agency-users-')) {
+			const destAgencyId = dstId.replace('agency-users-', '');
+			handleAgencyAssignment(user, destAgencyId);
+		} else if (srcId.startsWith('agency-users-') && dstId.startsWith('agency-users-')) {
+			const sourceAgencyId = srcId.replace('agency-users-', '');
+			const destAgencyId = dstId.replace('agency-users-', '');
+
+			if (sourceAgencyId !== destAgencyId) {
+				handleAgencyAssignment(user, destAgencyId);
+				toast({ title: "User Moved", description: `Moved user "${user.name}" between agencies.` });
 			}
 		}
-	};
+	}
+};
 
 	const getAvailableGuildsForUser = useCallback((userId: string | null): Guild[] => {
 		if (!userId) return [];

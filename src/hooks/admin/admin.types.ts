@@ -12,6 +12,7 @@ export enum OwnerRole {
 
 // --- Core Entities ---
 
+
 export interface Agency {
   id: string;
   name: string;

@@ -20,6 +20,7 @@ import {
 } from "@/components/ui/table";
 import { useDashboardContext } from '@/common/context/queryContext'; // Import context hook
 import { useAuth } from '@/contexts/AuthContext'; // Import auth hook
+import { useGuildInfo } from '@/hooks/useGuildInfo'; // Import the guild info hook
 
 import { TimeViewType, useDashboardData, useActivityTrend, useMessageTrend } from '@/hooks/analytics/useDashboardData';
 import { useAggregateStats } from '@/hooks/analytics/useGamingAnalytics';
@@ -56,6 +57,7 @@ const CardSkeleton = ({ width, height }: { width: string; height: string }) => (
 const AgencyPartnerDashboard: React.FC<AgencyPartnerDashboardProps> = () => {
     const { user } = useAuth(); // Get user from auth context
     const { guildId: selectedGuildId, setGuildId: setSelectedGuildId } = useDashboardContext(); // Get guildId and setter from dashboard context, aliased for clarity
+    const { guildName } = useGuildInfo(selectedGuildId); // Get guild name from the new hook
     const [userActivityViewType, setUserActivityViewType] = useState<'daily' | 'weekly' | 'monthly' | 'yearly'>('daily');
     const [messageViewType, setMessageViewType] = useState<TimeViewType>(TimeViewType.DAY);
     const [guildSearchTerm, setGuildSearchTerm] = useState("");

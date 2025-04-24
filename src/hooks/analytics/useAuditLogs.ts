@@ -1,5 +1,4 @@
 import { useQueryBuilder } from './common/useQueryBuilder';
-import { useQueryClient } from 'react-query';
 
 export enum LogActionType {
   UPDATE_OWNER_ROLE = 'UPDATE_OWNER_ROLE',
@@ -46,8 +45,6 @@ export interface AuditLogsFilter {
 }
 
 export const useAuditLogs = (filters: AuditLogsFilter = {}) => {
-  const queryClient = useQueryClient();
-  
   const {
     page = 1,
     perPage = 10,
@@ -58,35 +55,36 @@ export const useAuditLogs = (filters: AuditLogsFilter = {}) => {
     startDate,
     endDate
   } = filters;
-  
-  // Build query params string
-  const buildQueryParams = () => {
-    const params = new URLSearchParams();
-    
-    params.append('page', page.toString());
-    params.append('perPage', perPage.toString());
-    
-    if (actionType) params.append('actionType', actionType);
-    if (targetId) params.append('targetId', targetId);
-    if (targetType) params.append('targetType', targetType);
-    if (ownerId) params.append('ownerId', ownerId);
-    if (startDate) params.append('startDate', startDate);
-    if (endDate) params.append('endDate', endDate);
-    
-    return params.toString();
+
+  const queryParams = {
+    page,
+    perPage,
+    actionType,
+    targetId,
+    targetType,
+    ownerId,
+    startDate,
+    endDate,
   };
-  
+
   const {
     data,
     isLoading,
     error,
     refetch
   } = useQueryBuilder<PaginatedWrapper<AdminAction[]>>(
-    ['auditLogs', page, perPage, actionType, targetId, targetType, ownerId, startDate, endDate],
-    () => `/admin/logs?${buildQueryParams()}`
+    ['auditLogs', queryParams],
+    () => {
+      const params = new URLSearchParams();
+      Object.entries(queryParams).forEach(([key, value]) => {
+        if (value !== undefined) {
+          params.append(key, String(value));
+        }
+      });
+      return `/admin/logs?${params.toString()}`;
+    }
   );
-  
-  // Extract the logs data and pagination meta
+
   const logs = data?.data || [];
   const meta = data?.meta || {
     page,
@@ -94,40 +92,27 @@ export const useAuditLogs = (filters: AuditLogsFilter = {}) => {
     total: 0,
     totalPages: 0
   };
-  
-  // Get distinct action types for filtering
-  const { data: actionTypes } = useQueryBuilder<LogActionType[]>(
-    ['auditLogActionTypes'],
-    () => `/admin/logs/`
-  );
-  
-  // Get distinct target types for filtering
-  const { data: targetTypes } = useQueryBuilder<string[]>(
-    ['auditLogTargetTypes'],
-    () => `/admin/logs/`
-  );
-  
-  // Get admins list for filtering
-  const { data: admins } = useQueryBuilder<{ id: string; name: string }[]>(
-    ['auditLogAdmins'],
-    () => `/admin/logs/`  );
-  
-  // For export logs functionality
-  const exportLogs = () => {
-    const baseUrl = process.env.REACT_APP_API_URL || '';
-    const url = `${baseUrl}/admin/logs/export?${buildQueryParams()}`;
-    window.open(url, '_blank');
-  };
-  
+
   return {
     logs,
     meta,
     isLoading,
     error,
     refetch,
-    actionTypes: actionTypes || Object.values(LogActionType),
-    targetTypes: targetTypes || [],
-    admins: admins || [],
-    exportLogs
+    // The following are no longer fetched from separate endpoints
+    actionTypes: Object.values(LogActionType),
+    targetTypes: [], // Since target types are not fetched, return an empty array
+    admins: [],      // Since admins are not fetched, return an empty array
+    exportLogs: () => {   // For export logs functionality
+      const baseUrl = process.env.REACT_APP_API_URL || '';
+      const params = new URLSearchParams();
+        Object.entries(queryParams).forEach(([key, value]) => {
+          if (value !== undefined) {
+            params.append(key, String(value));
+          }
+        });
+      const url = `${baseUrl}/admin/logs/export?${params.toString()}`;
+      window.open(url, '_blank');
+    }
   };
 };

@@ -57,6 +57,7 @@ interface UserManagementTableProps {
 
 const UserManagementTable = ({
   users,
+  agencies,
   pagination,
   isLoading: isTableLoading,
   onPageChange,
@@ -81,7 +82,9 @@ const UserManagementTable = ({
       name: user.name,
       role: user.role,
       isActive: user.isActive,
+      agencyId: user.agencyId,
     });
+    setUserName(user.name); // Set default input value as user's name
     setTimeout(() => {
       inputRef.current?.focus();
     }, 0);
@@ -98,7 +101,9 @@ const UserManagementTable = ({
       const updatedUser: UserType = {
         ...editingUser,
         ...editedValues,
+        agencyId: editedValues.role !== 'ADMIN' ? editedValues.agencyId : undefined,
       };
+      console.log("updatedUser", updatedUser);
       await onUpdate(updatedUser);
       setEditingUser(null);
       setEditedValues({});
@@ -126,30 +131,24 @@ const UserManagementTable = ({
 
   const handleDeleteConfirm = async () => {
     if (!userToDelete) return;
-    setDeleteError("");
-    setIsDeleting(true);
+
     try {
-      const success = await onDelete(userToDelete.id);
-      if (success) {
-        setUserToDelete(null);
-        toast({
-          title: "User deleted",
-          description: "User has been successfully deleted.",
-          variant: "default",
-        });
-      } else {
-        setDeleteError("Cannot delete user. They may be assigned to an agency or have active guilds.");
-      }
-    } catch (error) {
+      await onDelete(userToDelete.id);
+      setUserToDelete(null);
+      toast({
+        title: "User deleted",
+        description: "User has been successfully deleted.",
+        variant: "default",
+      });
+    } catch (error: any) {
       console.error("Delete error:", error);
-      setDeleteError("An unexpected error occurred while deleting the user.");
+      const errorMessage = error?.response?.data?.message || "An unexpected error occurred while deleting the user.";
+      setDeleteError(errorMessage);
       toast({
         title: "Deletion Failed",
-        description: "Could not delete the user.",
+        description: errorMessage,
         variant: "destructive",
       });
-    } finally {
-      setIsDeleting(false);
     }
   };
 
@@ -270,6 +269,38 @@ const UserManagementTable = ({
       },
     },
     {
+      accessorKey: "agencyId",
+      header: "Agency",
+      size: 200,
+      cell: ({ row }) => {
+        const user = row.original;
+        const isEditingThisRow = editingUser?.id === user.id;
+
+        return isEditingThisRow && ['AGENCY_PARTNER', 'CLIENT'].includes(editedValues.role) ? (
+          <Select
+            value={editedValues.agencyId ?? ''}
+            onValueChange={(value) => handleInputChange('agencyId', value)}
+            aria-label="Edit user agency"
+          >
+            <SelectTrigger className="h-8 text-sm">
+              <SelectValue placeholder="Select agency" />
+            </SelectTrigger>
+            <SelectContent>
+              {agencies.map((agency) => (
+                <SelectItem key={agency.id} value={agency.id}>
+                  {agency.name || agency.id}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        ) : (
+          <span className="text-sm text-muted-foreground">
+            {user.role === 'ADMIN' ? 'N/A' : user.agencyId ? agencies.find(a => a.id === user.agencyId)?.name || user.agencyId : 'N/A'}
+          </span>
+        );
+      },
+    },
+    {
       id: "actions",
       header: () => <div className="text-right pr-2">Actions</div>,
       size: 100,
@@ -331,7 +362,7 @@ const UserManagementTable = ({
         );
       },
     },
-  ], [editingUser, editedValues, handleEditSave, handleEditCancel, handleEditStart, handleInputChange, setUserToDelete, isTableLoading, isUpdating, isDeleting]);
+  ], [editingUser, editedValues, handleEditSave, handleEditCancel, handleEditStart, handleInputChange, setUserToDelete, isTableLoading, isUpdating, isDeleting, agencies]);
 
   const table = useReactTable({
     data: users,

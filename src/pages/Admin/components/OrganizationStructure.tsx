@@ -18,13 +18,14 @@ import {
 } from "@/components/ui/dialog";
 import { cn } from '@/lib/utils';
 import { Agency, Guild, User } from '@/types/dataTypes';
+import { Label } from '@/components/ui/label';
 
 interface AgencyStructureProps {
   agencies: Agency[];
   className?: string;
   isLoading: boolean;
   onAddAgency: (agency: Omit<Agency, 'id' | 'createdAt' | 'updatedAt' | 'owners' | 'agencyGuilds'>) => void;
-  onUpdateAgency: (agency: Agency) => void;
+  onUpdateAgency: (agency: { id: string, name: string, description: string }) => void;
   onDeleteAgency: (agencyId: string) => Promise<boolean>;
   onAssignGuild: (agencyId: string, guildId: string) => void;
   onRemoveGuild: (agencyId: string, guildId: string) => void;
@@ -46,6 +47,7 @@ const AgencyStructure = ({
 }: AgencyStructureProps) => {
   const [editingAgencyId, setEditingAgencyId] = React.useState<string | null>(null);
   const [newAgencyName, setNewAgencyName] = React.useState("");
+  const [newAgencyDescription, setNewAgencyDescription] = React.useState("");
   const [isAddAgencyModalOpen, setIsAddAgencyModalOpen] = React.useState(false);
   const [newAgencyData, setNewAgencyData] = React.useState({ name: "", description: "" });
   const [deleteError, setDeleteError] = React.useState<string>("");
@@ -68,14 +70,19 @@ const AgencyStructure = ({
     });
   };
 
-  const handleEditAgency = (agencyId: string, newName: string) => {
+  const handleEditAgency = (agencyId: string, newName: string, newDescription: string) => {
     console.log('agencies',agencies);
     const agency = agencies.find(a => a.id === agencyId);
     if (!agency) return;
 
-    onUpdateAgency({ ...agency, name: newName });
+    onUpdateAgency({ 
+        id: agencyId,
+        name: newName,
+        description: newDescription
+    });
     setEditingAgencyId(null);
     setNewAgencyName("");
+    setNewAgencyDescription("");
     toast({
       title: "Agency updated",
       description: "Successfully updated agency name",
@@ -152,34 +159,60 @@ const AgencyStructure = ({
             exit={{ opacity: 0, y: -20 }}
           >
             <div className="flex items-center justify-between mb-4">
-              <div className="flex items-center gap-2">
+              <div className="flex flex-grow items-center gap-4">
                 {editingAgencyId === agency.id ? (
-                  <div className="flex items-center gap-2">
-                    <Input
-                      value={newAgencyName}
-                      onChange={(e) => setNewAgencyName(e.target.value)}
-                      className="w-[200px]"
-                    />
+                  <div className="flex items-end gap-3 flex-grow">
+                    <div className="flex-1">
+                      <Label htmlFor={`agency-name-${agency.id}`} className="text-xs font-medium text-gray-600">
+                        Agency Name
+                      </Label>
+                      <Input
+                        id={`agency-name-${agency.id}`}
+                        value={newAgencyName}
+                        onChange={(e) => setNewAgencyName(e.target.value)}
+                        className="h-9 mt-1 text-sm"
+                        aria-label="Edit Agency Name"
+                      />
+                    </div>
+                    <div className="flex-1">
+                      <Label htmlFor={`agency-desc-${agency.id}`} className="text-xs font-medium text-gray-600">
+                        Description
+                      </Label>
+                      <Input
+                        id={`agency-desc-${agency.id}`}
+                        value={newAgencyDescription}
+                        onChange={(e) => setNewAgencyDescription(e.target.value)}
+                        className="h-9 mt-1 text-sm"
+                        aria-label="Edit Agency Description"
+                      />
+                    </div>
                     <Button
                       variant="ghost"
-                      size="sm"
-                      onClick={() => handleEditAgency(agency.id, newAgencyName)}
+                      size="icon"
+                      className="h-9 w-9 text-green-600 hover:bg-green-100 hover:text-green-700"
+                      onClick={() => handleEditAgency(agency.id, newAgencyName, newAgencyDescription)}
+                      aria-label="Save Agency Changes"
                     >
-                      <Check className="h-4 w-4" />
+                      <Check className="h-5 w-5" />
                     </Button>
                     <Button
                       variant="ghost"
-                      size="sm"
+                      size="icon"
+                      className="h-9 w-9 text-red-600 hover:bg-red-100 hover:text-red-700"
                       onClick={() => setEditingAgencyId(null)}
+                      aria-label="Cancel Agency Edit"
                     >
-                      <X className="h-4 w-4" />
+                      <X className="h-5 w-5" />
                     </Button>
                   </div>
                 ) : (
-                  <>
-                    <span className="font-semibold">{agency.name}</span>
-                    <Badge variant="secondary">{agency.users?.length} members</Badge>
-                  </>
+                  <div className="flex items-center gap-3">
+                    <span className="text-base font-semibold text-gray-800">{agency.name}</span>
+                    <Badge variant="outline" className="text-xs font-medium border-gray-300 text-gray-600">
+                      {agency.owners?.length || 0} {agency.owners?.length === 1 ? 'owner' : 'owners'}
+                    </Badge>
+                    {agency.description && <span className="text-sm text-gray-500 italic ml-2"> - {agency.description}</span>}
+                  </div>
                 )}
               </div>
               <div className="flex items-center gap-2">
@@ -283,7 +316,7 @@ const AgencyStructure = ({
                         snapshot.isDraggingOver ? "bg-gray-100 border-2 border-dashed border-gray-300" : "bg-white"
                       )}
                     >
-                      {agency.users?.map((user, index) => (
+                      {agency.owners?.map((user, index) => (
                         <Draggable key={user.id} draggableId={`${user.id}-${user.name}`} index={index}>
                           {(provided, snapshot) => (
                             <div
