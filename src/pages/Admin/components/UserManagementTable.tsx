@@ -6,7 +6,6 @@ import {
   useReactTable,
   flexRender,
   getFilteredRowModel,
-  // Row, // Unused import
 } from "@tanstack/react-table";
 import {
   Table,
@@ -19,13 +18,12 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Input } from "@/components/ui/input"; // Import Input
+import { Input } from "@/components/ui/input";
 import { Trash2, Loader2, Pencil, Check, X, User as UserIcon, AlertCircle, GripVertical } from "lucide-react";
 import { User as UserType, Agency, Guild, PaginationDto, UserRole } from "@/types/dataTypes";
 import { toast } from "@/hooks/use-toast";
 import {
   AlertDialog,
-  // AlertDialogAction, // Unused import
   AlertDialogCancel,
   AlertDialogContent,
   AlertDialogDescription,
@@ -36,64 +34,57 @@ import {
 import { DragDropContext, Draggable, Droppable, DropResult } from 'react-beautiful-dnd';
 import { cn } from "@/lib/utils";
 
-// Define possible roles if not imported
-const userRoles: UserRole[] = ['Admin', 'AgencyPartner', 'Client'];
+const userRoles: UserRole[] = ['ADMIN', 'AGENCY_PARTNER', 'CLIENT'];
 
 interface UserManagementTableProps {
   users: UserType[];
-  agencies: Agency[]; // Unused prop
-  guilds: Guild[]; // Unused prop
+  agencies: Agency[];
+  guilds: Guild[];
   pagination: PaginationDto;
   isLoading: boolean;
   onPageChange: (page: number) => void;
   onPageSizeChange: (size: number) => void;
-  onToggleActive: (user: UserType) => void; // Unused prop
+  onToggleActive: (user: UserType) => void;
   onDelete: (userId: string) => Promise<boolean>;
-  onUpdate: (user: UserType) => Promise<void>; // Make onUpdate async if it involves API calls
-  onAssignAgency: (userId: string, agencyId: string) => void; // Unused prop
-  onRemoveAgency: (userId: string, agencyId: string) => void; // Unused prop
-  onAssignGuild: (userId: string, guildId: string) => void; // Unused prop
-  onRemoveGuild: (userId: string, guildId: string) => void; // Unused prop
-  onRestrictGuilds: (userId: string, guildIds: string[]) => void; // Unused prop
+  onUpdate: (user: UserType) => Promise<void>;
+  onAssignAgency: (userId: string, agencyId: string) => void;
+  onRemoveAgency: (userId: string, agencyId: string) => void;
+  onAssignGuild: (userId: string, guildId: string) => void;
+  onRemoveGuild: (userId: string, guildId: string) => void;
+  onRestrictGuilds: (userId: string, guildIds: string[]) => void;
   onReorderUsers: (reorderedUsers: UserType[]) => void;
 }
 
 const UserManagementTable = ({
   users,
-  // agencies, // Unused
-  // guilds, // Unused
   pagination,
-  isLoading: isTableLoading, // Rename to avoid conflict with internal loading state
+  isLoading: isTableLoading,
   onPageChange,
   onPageSizeChange,
-  // onToggleActive, // Unused
   onDelete,
   onUpdate,
-  // onAssignAgency, // Unused
-  // onRemoveAgency, // Unused
-  // onAssignGuild, // Unused
-  // onRemoveGuild, // Unused
-  // onRestrictGuilds, // Unused
   onReorderUsers
 }: UserManagementTableProps) => {
   const [userToDelete, setUserToDelete] = React.useState<UserType | null>(null);
   const [editingUser, setEditingUser] = React.useState<UserType | null>(null);
   const [editedValues, setEditedValues] = React.useState<Partial<UserType>>({});
+  const [userName, setUserName] = React.useState<string>("");
   const [deleteError, setDeleteError] = React.useState<string>("");
-  const [isUpdating, setIsUpdating] = React.useState(false); // Loading state for update
-  const [isDeleting, setIsDeleting] = React.useState(false); // Loading state for delete
+  const [isUpdating, setIsUpdating] = React.useState(false);
+  const [isDeleting, setIsDeleting] = React.useState(false);
+  const inputRef = React.useRef<HTMLInputElement | null>(null);
 
   const handleEditStart = (user: UserType) => {
-    // Prevent starting edit if another edit or operation is in progress
     if (editingUser || isUpdating || isDeleting) return;
     setEditingUser(user);
-    // Initialize editedValues with only the fields we allow editing
     setEditedValues({
       name: user.name,
       role: user.role,
       isActive: user.isActive,
-      // Do not include email or other non-editable fields initially
     });
+    setTimeout(() => {
+      inputRef.current?.focus();
+    }, 0);
   };
 
   const handleInputChange = (field: keyof UserType, value: any) => {
@@ -104,10 +95,9 @@ const UserManagementTable = ({
     if (!editingUser || !editedValues) return;
     setIsUpdating(true);
     try {
-      // Construct the updated user object, ensuring ID is included
       const updatedUser: UserType = {
-        ...editingUser, // Start with original user data
-        ...editedValues, // Override with edited values
+        ...editingUser,
+        ...editedValues,
       };
       await onUpdate(updatedUser);
       setEditingUser(null);
@@ -124,9 +114,6 @@ const UserManagementTable = ({
         description: "Could not update the user.",
         variant: "destructive",
       });
-      // Optionally keep editing mode active on failure, or reset
-      // setEditingUser(null);
-      // setEditedValues({});
     } finally {
       setIsUpdating(false);
     }
@@ -139,7 +126,7 @@ const UserManagementTable = ({
 
   const handleDeleteConfirm = async () => {
     if (!userToDelete) return;
-    setDeleteError(""); // Clear previous errors
+    setDeleteError("");
     setIsDeleting(true);
     try {
       const success = await onDelete(userToDelete.id);
@@ -166,26 +153,21 @@ const UserManagementTable = ({
     }
   };
 
-  // Memoize columns to prevent unnecessary re-renders
   const columns = React.useMemo<ColumnDef<UserType>[]>(() => [
     {
-      id: 'drag-handle', // ID for the drag handle column itself
-      header: () => null, // No header for drag handle
-      size: 40, // Minimal size for the handle
+      id: 'drag-handle',
+      header: () => null,
+      size: 40,
       cell: ({ row }) => {
         const isEditingThisRow = editingUser?.id === row.original.id;
-        // Drag handle is provided by the Draggable component wrapper
-        // Render a visual grip icon here, but the actual drag functionality is on the row
         return (
           <div className="flex items-center justify-center">
-             {/* Drag handle is applied via Draggable's dragHandleProps */}
-             {/* The GripVertical icon is moved to the DraggableTableRow */}
           </div>
         );
       },
     },
     {
-      id: 'name', // Explicit ID
+      id: 'name',
       accessorKey: "name",
       header: "User Name",
       size: 350,
@@ -198,12 +180,15 @@ const UserManagementTable = ({
              <UserIcon className="h-8 w-8 rounded-full flex-shrink-0" />
              <div className="flex-grow min-w-0">
                 <Input
-                  value={editedValues.name ?? ''}
-                  onChange={(e) => handleInputChange('name', e.target.value)}
-                  className="h-8 text-sm" // Adjust size
+                  ref={inputRef}
+                  value={userName}
+                  onChange={(e) => {
+                    e.stopPropagation();
+                    setUserName(e.target.value);
+                  }}
+                  className="h-8 text-sm"
                   aria-label="Edit user name"
                 />
-                {/* Keep email visible but not editable */}
                 <div className="text-sm text-muted-foreground truncate mt-1">{user.email}</div>
              </div>
           </div>
@@ -238,7 +223,7 @@ const UserManagementTable = ({
             <SelectContent>
               {userRoles.map((role) => (
                 <SelectItem key={role} value={role}>
-                  {role}
+                  {role.split('_').map(word => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase()).join(' ')}
                 </SelectItem>
               ))}
             </SelectContent>
@@ -246,11 +231,11 @@ const UserManagementTable = ({
         ) : (
           <Badge variant="outline" className={cn(
             "whitespace-nowrap font-medium",
-            user.role === 'Admin' ? 'border-blue-300 bg-blue-50 text-blue-700' :
-            user.role === 'AgencyPartner' ? 'border-green-300 bg-green-50 text-green-700' :
+            user.role === 'ADMIN' ? 'border-blue-300 bg-blue-50 text-blue-700' :
+            user.role === 'AGENCY_PARTNER' ? 'border-green-300 bg-green-50 text-green-700' :
             'border-gray-300 bg-gray-50 text-gray-700'
           )}>
-            {user.role}
+            {user.role.split('_').map(word => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase()).join(' ')}
           </Badge>
         );
       },
@@ -258,7 +243,7 @@ const UserManagementTable = ({
     {
       accessorKey: "isActive",
       header: "Status",
-      size: 120, // Increased size for Select
+      size: 120,
       cell: ({ row }) => {
         const user = row.original;
         const isEditingThisRow = editingUser?.id === user.id;
@@ -269,7 +254,7 @@ const UserManagementTable = ({
              onValueChange={(value) => handleInputChange('isActive', value === 'true')}
              aria-label="Edit user status"
            >
-             <SelectTrigger className="h-8 text-sm w-[100px]"> {/* Fixed width */}
+             <SelectTrigger className="h-8 text-sm w-[100px]">
                <SelectValue />
              </SelectTrigger>
              <SelectContent>
@@ -287,11 +272,11 @@ const UserManagementTable = ({
     {
       id: "actions",
       header: () => <div className="text-right pr-2">Actions</div>,
-      size: 100, // Adjusted size
+      size: 100,
       cell: ({ row }) => {
         const user = row.original;
         const isEditingThisRow = editingUser?.id === user.id;
-        const disableActions = !!editingUser || isUpdating || isDeleting || isTableLoading; // Disable actions if any operation is in progress or another row is being edited
+        const disableActions = !!editingUser || isUpdating || isDeleting || isTableLoading;
 
         return (
           <div className="flex items-center justify-end gap-1">
@@ -299,10 +284,10 @@ const UserManagementTable = ({
               <>
                 <Button
                   variant="ghost"
-                  size="icon" // Use standard icon size
+                  size="icon"
                   onClick={handleEditSave}
-                  disabled={isUpdating} // Disable only save during its own update
-                  className="text-green-600 hover:text-green-700 hover:bg-green-100 h-8 w-8" // Adjust size
+                  disabled={isUpdating}
+                  className="text-green-600 hover:text-green-700 hover:bg-green-100 h-8 w-8"
                   aria-label="Save changes"
                 >
                   {isUpdating ? <Loader2 className="h-4 w-4 animate-spin" /> : <Check className="h-4 w-4" />}
@@ -311,8 +296,8 @@ const UserManagementTable = ({
                   variant="ghost"
                   size="icon"
                   onClick={handleEditCancel}
-                  disabled={isUpdating} // Disable cancel during update
-                  className="text-destructive hover:text-red-700 hover:bg-red-100 h-8 w-8" // Adjust size
+                  disabled={isUpdating}
+                  className="text-destructive hover:text-red-700 hover:bg-red-100 h-8 w-8"
                   aria-label="Cancel editing"
                 >
                   <X className="h-4 w-4" />
@@ -324,10 +309,9 @@ const UserManagementTable = ({
                   variant="ghost"
                   size="icon"
                   onClick={() => handleEditStart(user)}
-                  // Disable edit if user is Admin, or if any operation is ongoing
                   disabled={user.role === 'Admin' || disableActions}
                   aria-label="Edit user"
-                  className="text-muted-foreground hover:text-foreground hover:bg-accent h-8 w-8" // Adjust size
+                  className="text-muted-foreground hover:text-foreground hover:bg-accent h-8 w-8"
                 >
                   <Pencil className="h-4 w-4" />
                 </Button>
@@ -335,10 +319,9 @@ const UserManagementTable = ({
                   variant="ghost"
                   size="icon"
                   onClick={() => setUserToDelete(user)}
-                   // Disable delete if user is Admin, or if any operation is ongoing
                   disabled={user.role === 'Admin' || disableActions}
                   aria-label="Delete user"
-                  className="text-destructive hover:text-red-700 hover:bg-red-100 h-8 w-8" // Adjust size
+                  className="text-destructive hover:text-red-700 hover:bg-red-100 h-8 w-8"
                 >
                   <Trash2 className="h-4 w-4" />
                 </Button>
@@ -348,8 +331,7 @@ const UserManagementTable = ({
         );
       },
     },
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  ], [editingUser, editedValues, handleEditSave, handleEditCancel, handleEditStart, handleInputChange, setUserToDelete, isTableLoading, isUpdating, isDeleting]); // Include all dependencies
+  ], [editingUser, editedValues, handleEditSave, handleEditCancel, handleEditStart, handleInputChange, setUserToDelete, isTableLoading, isUpdating, isDeleting]);
 
   const table = useReactTable({
     data: users,
@@ -364,9 +346,6 @@ const UserManagementTable = ({
       },
     },
     manualPagination: true,
-    // enableColumnResizing: true, // Optional
-    // columnResizeMode: 'onChange', // Optional
-    // Provide meta to access editing state/handlers within cells if needed elsewhere
     meta: {
         editingUser,
         editedValues,
@@ -377,50 +356,43 @@ const UserManagementTable = ({
   const handleDragEnd = (result: DropResult) => {
     const { destination, source, draggableId } = result;
 
-    // No destination or dropped in the same place
     if (!destination || (destination.droppableId === source.droppableId && destination.index === source.index)) {
       return;
     }
 
-    // Ensure draggableId is just the user ID if format was changed
-    const userId = draggableId; // Assuming draggableId is now just the user.id
+    const userId = draggableId;
 
     const reorderedUsers = Array.from(users);
     const [movedUser] = reorderedUsers.splice(source.index, 1);
     reorderedUsers.splice(destination.index, 0, movedUser);
 
-    // Call the callback prop to handle the reorder persistence
     onReorderUsers(reorderedUsers);
   };
 
-  // Render function for table rows within Draggable
   const renderRow = (row: any, provided: any, snapshot: any) => (
     <TableRow
       ref={provided.innerRef}
       {...provided.draggableProps}
       data-state={row.getIsSelected() && "selected"}
       className={cn(
-        "border-b hover:bg-muted/50", // Standard row styles
-        snapshot.isDragging && "bg-gray-100 shadow-md opacity-90", // Style for the row being dragged
-        editingUser?.id === row.original.id && "bg-accent/50" // Highlight row being edited
+        "border-b hover:bg-muted/50",
+        snapshot.isDragging && "bg-gray-100 shadow-md opacity-90",
+        editingUser?.id === row.original.id && "bg-accent/50"
       )}
       style={{
-        ...provided.draggableProps.style, // Required style overrides from dnd
+        ...provided.draggableProps.style,
       }}
     >
       {row.getVisibleCells().map((cell: any, cellIndex: number) => (
         <TableCell
           key={cell.id}
-          // Apply drag handle props only to the designated handle cell
           {...(cell.column.id === 'drag-handle' ? provided.dragHandleProps : {})}
           style={{ width: cell.column.getSize() }}
-          className="px-3 py-1.5 align-middle h-16" // Adjust padding/height for inputs
+          className="px-3 py-1.5 align-middle h-16"
         >
-          {/* Render the drag handle icon in the first cell */}
           {cell.column.id === 'drag-handle' && (
              <GripVertical className="h-5 w-5 text-gray-400 cursor-grab" />
           )}
-          {/* Render cell content */}
           {flexRender(
             cell.column.columnDef.cell,
             cell.getContext()
@@ -430,11 +402,10 @@ const UserManagementTable = ({
     </TableRow>
   );
 
-
   return (
       <div className="flex flex-col">
         <div className="rounded-md border relative overflow-x-auto">
-          {(isTableLoading || isUpdating || isDeleting) && ( // Show loader for any loading state
+          {(isTableLoading || isUpdating || isDeleting) && (
             <div className="absolute inset-0 bg-background/80 backdrop-blur-sm flex items-center justify-center z-20">
               <Loader2 className="h-6 w-6 animate-spin text-primary" />
               <span className="ml-2 text-sm text-muted-foreground">
@@ -464,14 +435,13 @@ const UserManagementTable = ({
                 </TableRow>
               ))}
             </TableHeader>
-            {/* Correct Droppable placement around TableBody */}
             <Droppable droppableId="users-table" type="user">
               {(provided, snapshot) => (
                 <TableBody
                   ref={provided.innerRef}
                   {...provided.droppableProps}
                   className={cn(
-                    snapshot.isDraggingOver && "bg-accent" // Style when dragging over the body
+                    snapshot.isDraggingOver && "bg-accent"
                   )}
                 >
                   {table.getRowModel().rows.length === 0 ? (
@@ -487,9 +457,8 @@ const UserManagementTable = ({
                     table.getRowModel().rows.map((row, index) => (
                       <Draggable
                         key={row.original.id}
-                            draggableId={`${row.original.id}-${row.original.name}`}
+                        draggableId={`${row.original.id}-${row.original.name}`}
                         index={index}
-                        // Disable dragging while editing
                         isDragDisabled={!!editingUser}
                       >
                         {(provided, snapshot) => renderRow(row, provided, snapshot)}
@@ -503,14 +472,13 @@ const UserManagementTable = ({
           </Table>
         </div>
 
-        {/* Pagination Controls */}
         <div className="flex items-center justify-between py-4 gap-4 flex-wrap">
           <div className="flex items-center gap-2">
             <span className="text-sm text-muted-foreground whitespace-nowrap">Rows per page:</span>
             <Select
               value={pagination.itemsPerPage.toString()}
               onValueChange={(value) => onPageSizeChange(parseInt(value))}
-              disabled={isTableLoading || !!editingUser} // Disable during load or edit
+              disabled={isTableLoading || !!editingUser}
             >
               <SelectTrigger className="w-[75px] h-9">
                 <SelectValue />
@@ -552,9 +520,8 @@ const UserManagementTable = ({
           )}
         </div>
 
-        {/* Delete Confirmation Dialog */}
         <AlertDialog open={!!userToDelete} onOpenChange={(open) => {
-          if (!open && !isDeleting) { // Prevent closing while delete is in progress
+          if (!open && !isDeleting) {
             setUserToDelete(null);
             setDeleteError("");
           }

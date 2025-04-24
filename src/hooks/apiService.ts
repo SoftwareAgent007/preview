@@ -3,10 +3,10 @@ import { jwtDecode } from 'jwt-decode';
 
 type ApiService<T> = {
   getData: (endpoint: string) => Promise<T>;
-  postData: (endpoint: string, body: any, guildId: string) => Promise<T>;
-  deleteData: (endpoint: string, guildId: string) => Promise<T>;
-  patchData: (endpoint: string, body: any, guildId: string) => Promise<T>;
-  putData: (endpoint: string, body: any, guildId: string) => Promise<T>;
+  postData: (endpoint: string, body: any, guildId?: string) => Promise<T>;
+  deleteData: (endpoint: string, guildId?: string) => Promise<T>;
+  patchData: (endpoint: string, body: any, guildId?: string) => Promise<T>;
+  putData: (endpoint: string, body: any, guildId?: string) => Promise<T>;
 };
 
 export const DEFAULT_START_DATE = new Date(new Date().setFullYear(new Date().getFullYear() - 1)).toISOString();
@@ -84,10 +84,10 @@ const createApiService = <T>(baseUrl: string): ApiService<T> => {
     return responseInterceptor(response);
   };
 
-  const postData = async (endpoint: string, body: any, guildId: string): Promise<T> => {
+  const postData = async (endpoint: string, body: any, guildId?: string): Promise<T> => {
     if (!baseUrl) throw new Error("API URL is missing!");
-    if (!guildId) throw new Error("guildId is required!");
-    const { url, options } = requestInterceptor(`${baseUrl}${endpoint}?guildId=${guildId}`, {
+    const urlWithGuildId = guildId ? `${baseUrl}${endpoint}?guildId=${guildId}` : `${baseUrl}${endpoint}`;
+    const { url, options } = requestInterceptor(urlWithGuildId, {
       method: 'POST',
       body
     });
@@ -95,18 +95,18 @@ const createApiService = <T>(baseUrl: string): ApiService<T> => {
     return responseInterceptor(response);
   };
 
-  const deleteData = async (endpoint: string, guildId: string): Promise<T> => {
+  const deleteData = async (endpoint: string, guildId?: string): Promise<T> => {
     if (!baseUrl) throw new Error("API URL is missing!");
-    if (!guildId) throw new Error("guildId is required!");
-    const { url, options } = requestInterceptor(`${baseUrl}${endpoint}?guildId=${guildId}`, { method: 'DELETE' });
+    const urlWithGuildId = guildId ? `${baseUrl}${endpoint}?guildId=${guildId}` : `${baseUrl}${endpoint}`;
+    const { url, options } = requestInterceptor(urlWithGuildId, { method: 'DELETE' });
     const response = await fetch(url, options);
     return responseInterceptor(response);
   };
 
-  const patchData = async (endpoint: string, body: any, guildId: string ): Promise<T> => {
+  const patchData = async (endpoint: string, body: any, guildId?: string): Promise<T> => {
     if (!baseUrl) throw new Error("API URL is missing!");
-    if (!guildId) throw new Error("guildId is required!");
-    const { url, options } = requestInterceptor(`${baseUrl}${endpoint}?guildId=${guildId}`, {
+    const urlWithGuildId = guildId ? `${baseUrl}${endpoint}?guildId=${guildId}` : `${baseUrl}${endpoint}`;
+    const { url, options } = requestInterceptor(urlWithGuildId, {
       method: 'PATCH',
       body
     });
@@ -114,10 +114,10 @@ const createApiService = <T>(baseUrl: string): ApiService<T> => {
     return responseInterceptor(response);
   };
 
-  const putData = async (endpoint: string, body: any, guildId: string): Promise<T> => {
+  const putData = async (endpoint: string, body: any, guildId?: string): Promise<T> => {
     if (!baseUrl) throw new Error("API URL is missing!");
-    if (!guildId) throw new Error("guildId is required!");
-    const { url, options } = requestInterceptor(`${baseUrl}${endpoint}?guildId=${guildId}`, {
+    const urlWithGuildId = guildId ? `${baseUrl}${endpoint}?guildId=${guildId}` : `${baseUrl}${endpoint}`;
+    const { url, options } = requestInterceptor(urlWithGuildId, {
       method: 'PUT',
       body
     });

@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { motion } from "framer-motion";
 import { DragDropContext, Droppable, Draggable } from 'react-beautiful-dnd';
 import { Card } from "@/components/ui/card";
@@ -23,7 +23,7 @@ interface AgencyStructureProps {
   agencies: Agency[];
   className?: string;
   isLoading: boolean;
-  onAddAgency: (agency: Omit<Agency, 'id'>) => void;
+  onAddAgency: (agency: Omit<Agency, 'id' | 'createdAt' | 'updatedAt' | 'owners' | 'agencyGuilds'>) => void;
   onUpdateAgency: (agency: Agency) => void;
   onDeleteAgency: (agencyId: string) => Promise<boolean>;
   onAssignGuild: (agencyId: string, guildId: string) => void;
@@ -47,18 +47,21 @@ const AgencyStructure = ({
   const [editingAgencyId, setEditingAgencyId] = React.useState<string | null>(null);
   const [newAgencyName, setNewAgencyName] = React.useState("");
   const [isAddAgencyModalOpen, setIsAddAgencyModalOpen] = React.useState(false);
-  const [newAgencyData, setNewAgencyData] = React.useState({ name: "" });
+  const [newAgencyData, setNewAgencyData] = React.useState({ name: "", description: "" });
   const [deleteError, setDeleteError] = React.useState<string>("");
 
+  useEffect(() => {
+    console.log('agencies',agencies);
+  }, [agencies]);
+
   const handleAddAgency = () => {
+    console.log('newAgencyData', newAgencyData);
     onAddAgency({
       name: newAgencyData.name,
-      members: [],
-      guilds: [],
-      users: []
+      description: newAgencyData.description,
     });
     setIsAddAgencyModalOpen(false);
-    setNewAgencyData({ name: "" });
+    setNewAgencyData({ name: "", description: "" });
     toast({
       title: "Agency added",
       description: `Successfully added ${newAgencyData.name}`,
@@ -66,6 +69,7 @@ const AgencyStructure = ({
   };
 
   const handleEditAgency = (agencyId: string, newName: string) => {
+    console.log('agencies',agencies);
     const agency = agencies.find(a => a.id === agencyId);
     if (!agency) return;
 
@@ -98,32 +102,41 @@ const AgencyStructure = ({
         <h3 className="text-xl font-semibold">Agency Structure</h3>
         <Dialog open={isAddAgencyModalOpen} onOpenChange={setIsAddAgencyModalOpen}>
           <DialogTrigger asChild>
-            <Button className="bg-blue-500 hover:bg-blue-600 hover:text-white text-white text-sm font-normal" variant="outline" size="sm">
+            <Button className="bg-gradient-to-r from-blue-500 to-blue-600 text-white font-medium shadow-sm hover:shadow-md transition-all duration-200 rounded-md" size="sm">
               <Plus className="mr-2 h-4 w-4" /> Add Agency
             </Button>
           </DialogTrigger>
-          <DialogContent>
+          <DialogContent className="sm:max-w-md">
             <DialogHeader>
-              <DialogTitle>Add New Agency</DialogTitle>
-              <DialogDescription>
+              <DialogTitle className="text-xl font-bold text-gray-800">Add New Agency</DialogTitle>
+              <DialogDescription className="text-gray-500">
                 Create a new agency to manage guilds and users.
               </DialogDescription>
             </DialogHeader>
-            <div className="grid gap-4 py-4">
+            <div className="grid gap-6 py-4">
               <div className="grid grid-cols-4 items-center gap-4">
-                <label htmlFor="name" className="text-right">
+                <label htmlFor="name" className="text-right text-sm font-medium text-gray-700">
                   Name
                 </label>
                 <Input
                   id="name"
                   value={newAgencyData.name}
                   onChange={(e) => setNewAgencyData({ ...newAgencyData, name: e.target.value })}
-                  className="col-span-3"
+                  className="col-span-3 focus:ring-blue-500 focus:border-blue-500 rounded-md"
+                />
+                <label htmlFor="description" className="text-right text-sm font-medium text-gray-700">
+                  Description
+                </label>
+                <Input
+                  id="description"
+                  value={newAgencyData.description}
+                  onChange={(e) => setNewAgencyData({ ...newAgencyData, description: e.target.value })}
+                  className="col-span-3 focus:ring-blue-500 focus:border-blue-500 rounded-md"
                 />
               </div>
             </div>
-            <DialogFooter>
-              <Button className="bg-blue-500 hover:bg-blue-600 text-white text-sm font-normal" type="submit" onClick={handleAddAgency}>Add Agency</Button>
+            <DialogFooter className="sm:justify-end">
+              <Button className="bg-blue-500 hover:bg-blue-600 text-white font-medium px-4 py-2 rounded-md transition-colors duration-200" onClick={handleAddAgency}>Add Agency</Button>
             </DialogFooter>
           </DialogContent>
         </Dialog>
@@ -165,7 +178,7 @@ const AgencyStructure = ({
                 ) : (
                   <>
                     <span className="font-semibold">{agency.name}</span>
-                    <Badge variant="secondary">{agency.users.length} members</Badge>
+                    <Badge variant="secondary">{agency.users?.length} members</Badge>
                   </>
                 )}
               </div>
@@ -223,8 +236,9 @@ const AgencyStructure = ({
                         snapshot.isDraggingOver ? "bg-gray-100 border-2 border-dashed border-gray-300" : "bg-white"
                       )}
                     >
-                      {agency.guilds?.map((guild, index) => (
-                        <Draggable key={guild.id}  draggableId={`${guild.id}-${guild.name}`} index={index}>
+                      {agency.agencyGuilds?.map((guild, index) => (
+                        
+                        <Draggable key={guild.id} draggableId={guild.id} index={index}>
                           {(provided, snapshot) => (
                             <div
                               ref={provided.innerRef}
@@ -234,7 +248,7 @@ const AgencyStructure = ({
                                 snapshot.isDragging && "shadow-lg"
                               )}
                             >
-                              <div className="flex items-center gap-2">
+                                <div className="flex items-center gap-2">
                                 <div {...provided.dragHandleProps}>
                                   <GripVertical className="h-4 w-4 text-gray-400" />
                                 </div>

@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -8,79 +8,101 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { motion } from "framer-motion";
 import { DateRange } from "react-day-picker";
-import { Download, ChevronLeft, ChevronRight } from 'lucide-react';
-
-interface AuditLog {
-  id: string;
-  timestamp: string;
-  user: {
-    name: string;
-    email: string;
-    avatar?: string;
-  };
-  actionType: string;
-  targetEntity: string;
-  organization: string;
-  guild: string;
-  oldValue: string;
-  newValue: string;
-}
+import { Download, ChevronLeft, ChevronRight, Loader2 } from 'lucide-react';
+import { useAuditLogs, LogActionType, AdminAction } from '@/hooks/analytics/useAuditLogs';
+import { format } from 'date-fns';
 
 const AuditLogs = () => {
   const [searchTerm, setSearchTerm] = useState("");
   const [dateRange, setDateRange] = useState<DateRange | undefined>();
-  const [selectedOrg, setSelectedOrg] = useState("all");
-  const [selectedGuild, setSelectedGuild] = useState("all");
-  const [selectedAction, setSelectedAction] = useState("all");
-  const [selectedGroup, setSelectedGroup] = useState("all");
-  const [selectedRole, setSelectedRole] = useState("all");
+  const [selectedActionType, setSelectedActionType] = useState<LogActionType | "all">("all");
+  const [selectedTargetType, setSelectedTargetType] = useState<string>("all");
+  const [selectedOwnerId, setSelectedOwnerId] = useState<string>("all");
   const [currentPage, setCurrentPage] = useState(1);
-  const [logsPerPage] = useState(10);
+  const [perPage, setPerPage] = useState(10);
 
-  const [mockLogs] = useState<AuditLog[]>([
-    {
-      id: "1",
-      timestamp: "2025-03-15 14:30:25",
-      user: {
-        name: "John Doe",
-        email: "john@example.com",
-        avatar: "https://github.com/shadcn.png"
-      },
-      actionType: "Role Update",
-      targetEntity: "User",
-      organization: "Gaming Division",
-      guild: "Gaming Guild",
-      oldValue: "User",
-      newValue: "Admin"
-    },
-    {
-      id: "2", 
-      timestamp: "2025-03-15 13:25:10",
-      user: {
-        name: "Jane Smith",
-        email: "jane@example.com"
-      },
-      actionType: "Guild Assignment",
-      targetEntity: "Guild",
-      organization: "Art Division",
-      guild: "Art Guild",
-      oldValue: "-",
-      newValue: "Assigned"
-    }
-  ]);
+  // Convert date range to ISO strings for the API
+  const dateFilters = useMemo(() => {
+    if (!dateRange) return {};
+    
+    return {
+      startDate: dateRange.from ? format(dateRange.from, 'yyyy-MM-dd\'T\'HH:mm:ss\'Z\'') : undefined,
+      endDate: dateRange.to ? format(dateRange.to, 'yyyy-MM-dd\'T\'23:59:59\'Z\'') : undefined
+    };
+  }, [dateRange]);
 
-  const handleExport = () => {
-    // TODO: Implement export functionality
-    console.log("Exporting report...");
+  // Build filters object for the useAuditLogs hook
+  const filters = useMemo(() => ({
+    page: currentPage,
+    perPage,
+    actionType: selectedActionType !== "all" ? selectedActionType : undefined,
+    targetType: selectedTargetType !== "all" ? selectedTargetType : undefined,
+    ownerId: selectedOwnerId !== "all" ? selectedOwnerId : undefined,
+    ...dateFilters
+  }), [currentPage, perPage, selectedActionType, selectedTargetType, selectedOwnerId, dateFilters]);
+
+  // Use the hook with our filters
+  const {
+    logs,
+    meta,
+    isLoading,
+    error,
+    refetch,
+    actionTypes,
+    targetTypes,
+    admins,
+    exportLogs
+  } = useAuditLogs(filters);
+
+  // Helper function to get admin name by ID
+  const getAdminName = (id: string) => {
+    const admin = admins.find(a => a.id === id);
+    return admin ? admin.name : "Unknown";
   };
 
-  // Get current logs
-  const indexOfLastLog = currentPage * logsPerPage;
-  const indexOfFirstLog = indexOfLastLog - logsPerPage;
-  const currentLogs = mockLogs.slice(indexOfFirstLog, indexOfLastLog);
+  // Handle search filter
+  const filteredLogs = useMemo(() => {
+    if (!searchTerm.trim()) return logs;
+    
+    const term = searchTerm.toLowerCase();
+    return logs.filter(log => 
+      log.id.toLowerCase().includes(term) ||
+      log.targetId.toLowerCase().includes(term) ||
+      log.ownerName.toLowerCase().includes(term) ||
+      (log.details && JSON.stringify(log.details).toLowerCase().includes(term))
+    );
+  }, [logs, searchTerm]);
 
-  // Change page
-  const paginate = (pageNumber: number) => setCurrentPage(pageNumber);
+  // Handle pagination change
+  const paginate = (pageNumber: number) => {
+    setCurrentPage(pageNumber);
+  };
+
+  // Format details object for display
+  const formatDetails = (details: Record<string, any> | undefined) => {
+    if (!details) return "-";
+    try {
+      return JSON.stringify(details, null, 2);
+    } catch (e) {
+      return "-";
+    }
+  };
+
+  // Format timestamp for display
+  const formatTimestamp = (timestamp: string) => {
+    try {
+      return format(new Date(timestamp), 'yyyy-MM-dd HH:mm:ss');
+    } catch (e) {
+      return timestamp;
+    }
+  };
+
+  // Format action type for display (convert SNAKE_CASE to Title Case)
+  const formatActionType = (type: LogActionType) => {
+    return type.split('_').map(word => 
+      word.charAt(0) + word.slice(1).toLowerCase()
+    ).join(' ');
+  };
 
   return (
     <motion.div 
@@ -90,7 +112,7 @@ const AuditLogs = () => {
     >
       <div className="mx-auto" style={{ maxWidth: `${import.meta.env.VITE_MAX_WIDTH || 1200}px` }}>
         <Card className="p-6 mb-6">
-          <div className="grid grid-cols-4 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
             <Input
               placeholder="Search logs..."
               value={searchTerm}
@@ -98,67 +120,81 @@ const AuditLogs = () => {
             />
             
             <DatePickerWithRange
-              value={dateRange}
-              onChange={setDateRange}
+              value={dateRange as DateRange}
+              onChange={(range) => setDateRange(range)}
             />
 
-            <Select value={selectedOrg} onValueChange={setSelectedOrg}>
-              <SelectTrigger>
-                <SelectValue placeholder="Select Organization" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">All Organizations</SelectItem>
-                <SelectItem value="gaming">Gaming Division</SelectItem>
-                <SelectItem value="art">Art Division</SelectItem>
-              </SelectContent>
-            </Select>
-
-            <Select value={selectedGuild} onValueChange={setSelectedGuild}>
-              <SelectTrigger>
-                <SelectValue placeholder="Select Guild" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">All Guilds</SelectItem>
-                <SelectItem value="gaming">Gaming Guild</SelectItem>
-                <SelectItem value="art">Art Guild</SelectItem>
-              </SelectContent>
-            </Select>
-
-            <Select value={selectedAction} onValueChange={setSelectedAction}>
+            <Select 
+              value={selectedActionType} 
+              onValueChange={(value) => setSelectedActionType(value as LogActionType | "all")}
+            >
               <SelectTrigger>
                 <SelectValue placeholder="Action Type" />
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="all">All Actions</SelectItem>
-                <SelectItem value="role">Role Update</SelectItem>
-                <SelectItem value="guild">Guild Assignment</SelectItem>
+                {actionTypes.map(type => (
+                  <SelectItem key={type} value={type}>
+                    {formatActionType(type)}
+                  </SelectItem>
+                ))}
               </SelectContent>
             </Select>
 
-            <Select value={selectedGroup} onValueChange={setSelectedGroup}>
+            <Select 
+              value={selectedTargetType} 
+              onValueChange={setSelectedTargetType}
+            >
               <SelectTrigger>
-                <SelectValue placeholder="Select Group" />
+                <SelectValue placeholder="Target Type" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="all">All Groups</SelectItem>
-                <SelectItem value="moderators">Moderators</SelectItem>
-                <SelectItem value="admins">Admins</SelectItem>
+                <SelectItem value="all">All Target Types</SelectItem>
+                {targetTypes.map(type => (
+                  <SelectItem key={type} value={type}>
+                    {type}
+                  </SelectItem>
+                ))}
               </SelectContent>
             </Select>
 
-            <Select value={selectedRole} onValueChange={setSelectedRole}>
+            <Select 
+              value={selectedOwnerId} 
+              onValueChange={setSelectedOwnerId}
+            >
               <SelectTrigger>
-                <SelectValue placeholder="Author Role" />
+                <SelectValue placeholder="Author" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="all">All Roles</SelectItem>
-                <SelectItem value="admin">Admin</SelectItem>
-                <SelectItem value="moderator">Moderator</SelectItem>
-                <SelectItem value="user">User</SelectItem>
+                <SelectItem value="all">All Authors</SelectItem>
+                {admins.map(admin => (
+                  <SelectItem key={admin.id} value={admin.id}>
+                    {admin.name}
+                  </SelectItem>
+                ))}
               </SelectContent>
             </Select>
 
-            <Button variant="outline" className="flex items-center gap-2">
+            <Select 
+              value={perPage.toString()} 
+              onValueChange={(value) => setPerPage(parseInt(value))}
+            >
+              <SelectTrigger>
+                <SelectValue placeholder="Items per page" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="10">10 per page</SelectItem>
+                <SelectItem value="25">25 per page</SelectItem>
+                <SelectItem value="50">50 per page</SelectItem>
+                <SelectItem value="100">100 per page</SelectItem>
+              </SelectContent>
+            </Select>
+
+            <Button 
+              variant="outline" 
+              className="flex items-center gap-2"
+              onClick={exportLogs}
+            >
               <Download className="h-4 w-4" />
               Export Full Report
             </Button>
@@ -166,78 +202,143 @@ const AuditLogs = () => {
         </Card>
 
         <Card className="p-6">
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Date & Time</TableHead>
-                <TableHead>User</TableHead>
-                <TableHead>Action Type</TableHead>
-                <TableHead>Target Entity</TableHead>
-                <TableHead>Organization</TableHead>
-                <TableHead>Guild</TableHead>
-                <TableHead>Old Value</TableHead>
-                <TableHead>New Value</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {currentLogs.map((log) => (
-                <TableRow key={log.id}>
-                  <TableCell>{log.timestamp}</TableCell>
-                  <TableCell>
-                    <div className="flex items-center gap-2">
-                      <Avatar className="h-8 w-8">
-                        <AvatarImage src={log.user.avatar} />
-                        <AvatarFallback>{log.user.name[0]}</AvatarFallback>
-                      </Avatar>
-                      <div>
-                        <div className="font-medium">{log.user.name}</div>
-                        <div className="text-sm text-gray-500">{log.user.email}</div>
-                      </div>
-                    </div>
-                  </TableCell>
-                  <TableCell>{log.actionType}</TableCell>
-                  <TableCell>{log.targetEntity}</TableCell>
-                  <TableCell>{log.organization}</TableCell>
-                  <TableCell>{log.guild}</TableCell>
-                  <TableCell>{log.oldValue}</TableCell>
-                  <TableCell>{log.newValue}</TableCell>
-                </TableRow>
-              ))}
-            </TableBody>
-          </Table>
-          <div className="mt-4 flex items-center justify-between">
-            <div>
-              Showing {indexOfFirstLog + 1} to {Math.min(indexOfLastLog, mockLogs.length)} of {mockLogs.length} entries
+          {isLoading ? (
+            <div className="flex justify-center items-center py-16">
+              <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+              <span className="ml-2 text-muted-foreground">Loading logs...</span>
             </div>
-            <div className="flex items-center space-x-2">
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => paginate(currentPage - 1)}
-                disabled={currentPage === 1}
-              >
-                <ChevronLeft className="h-4 w-4" />
-              </Button>
-              {Array.from({ length: Math.ceil(mockLogs.length / logsPerPage) }, (_, i) => (
-                <Button
-                  key={i}
-                  variant={currentPage === i + 1 ? "default" : "outline"}
-                  size="sm"
-                  onClick={() => paginate(i + 1)}
-                >
-                  {i + 1}
-                </Button>
-              ))}
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => paginate(currentPage + 1)}
-                disabled={currentPage === Math.ceil(mockLogs.length / logsPerPage)}
-              >
-                <ChevronRight className="h-4 w-4" />
-              </Button>
+          ) : error ? (
+            <div className="text-center py-16 text-destructive">
+              Error loading logs. Please try again later.
             </div>
-          </div>
+          ) : filteredLogs.length === 0 ? (
+            <div className="text-center py-16 text-muted-foreground">
+              No logs found matching your criteria.
+            </div>
+          ) : (
+            <>
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Date & Time</TableHead>
+                    <TableHead>User</TableHead>
+                    <TableHead>Action Type</TableHead>
+                    <TableHead>Target ID</TableHead>
+                    <TableHead>Target Type</TableHead>
+                    <TableHead>Details</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {filteredLogs.map((log) => (
+                    <TableRow key={log.id}>
+                      <TableCell>{formatTimestamp(log.timestamp)}</TableCell>
+                      <TableCell>
+                        <div className="flex items-center gap-2">
+                          <Avatar className="h-8 w-8">
+                            <AvatarFallback>{log.ownerName[0]}</AvatarFallback>
+                          </Avatar>
+                          <div>
+                            <div className="font-medium">{log.ownerName}</div>
+                            <div className="text-sm text-gray-500">{log.ownerId}</div>
+                          </div>
+                        </div>
+                      </TableCell>
+                      <TableCell>{formatActionType(log.actionType)}</TableCell>
+                      <TableCell>{log.targetId}</TableCell>
+                      <TableCell>{log.targetType}</TableCell>
+                      <TableCell>
+                        <pre className="text-xs whitespace-pre-wrap max-w-[200px] overflow-hidden text-ellipsis">
+                          {formatDetails(log.details)}
+                        </pre>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+              <div className="mt-4 flex items-center justify-between">
+                <div>
+                  Showing {meta.page > 0 ? (meta.page - 1) * meta.perPage + 1 : 0} to {Math.min(meta.page * meta.perPage, meta.total)} of {meta.total} entries
+                </div>
+                <div className="flex items-center space-x-2">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => paginate(currentPage - 1)}
+                    disabled={currentPage === 1}
+                  >
+                    <ChevronLeft className="h-4 w-4" />
+                  </Button>
+                  {meta.totalPages <= 7 ? (
+                    // Show all pages if 7 or fewer
+                    Array.from({ length: meta.totalPages }, (_, i) => (
+                      <Button
+                        key={i}
+                        variant={currentPage === i + 1 ? "default" : "outline"}
+                        size="sm"
+                        onClick={() => paginate(i + 1)}
+                      >
+                        {i + 1}
+                      </Button>
+                    ))
+                  ) : (
+                    // Show ellipsis for many pages
+                    <>
+                      <Button
+                        variant={currentPage === 1 ? "default" : "outline"}
+                        size="sm"
+                        onClick={() => paginate(1)}
+                      >
+                        1
+                      </Button>
+                      
+                      {currentPage > 3 && <span>...</span>}
+                      
+                      {Array.from(
+                        { length: Math.min(3, meta.totalPages) },
+                        (_, i) => {
+                          const pageNum = Math.max(
+                            2,
+                            Math.min(
+                              currentPage - 1 + i,
+                              meta.totalPages - 1
+                            )
+                          );
+                          return (
+                            <Button
+                              key={pageNum}
+                              variant={currentPage === pageNum ? "default" : "outline"}
+                              size="sm"
+                              onClick={() => paginate(pageNum)}
+                            >
+                              {pageNum}
+                            </Button>
+                          );
+                        }
+                      )}
+                      
+                      {currentPage < meta.totalPages - 2 && <span>...</span>}
+                      
+                      <Button
+                        variant={currentPage === meta.totalPages ? "default" : "outline"}
+                        size="sm"
+                        onClick={() => paginate(meta.totalPages)}
+                      >
+                        {meta.totalPages}
+                      </Button>
+                    </>
+                  )}
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => paginate(currentPage + 1)}
+                    disabled={currentPage === meta.totalPages}
+                  >
+                    <ChevronRight className="h-4 w-4" />
+                  </Button>
+                </div>
+              </div>
+            </>
+          )}
         </Card>
       </div>
     </motion.div>

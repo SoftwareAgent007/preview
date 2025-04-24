@@ -10,13 +10,16 @@ export function useModifyBuilder<TParams, TResponse = any>(
   options?: {
     body?: (params: TParams) => any;
     method?: 'POST' | 'PUT' | 'PATCH' | 'DELETE';
+    includeGuildId?: boolean;
   } & Omit<UseMutationOptions<TResponse, Error, TParams>, 'mutationFn'>
 ) {
+  options = { includeGuildId: true, ...options };
   const dashboardContext = useContext(DashboardContext);
   const navigate = useNavigate();
   const guildId = dashboardContext.guildId;
+  const shouldIncludeGuildId = options?.includeGuildId !== false;
 
-  if (!guildId) {
+  if (!guildId && shouldIncludeGuildId) {
     return useMutation<TResponse, Error, TParams>(
       async () => {
         navigate(ROUTES.ASSIGN_GUILD);
@@ -33,18 +36,28 @@ export function useModifyBuilder<TParams, TResponse = any>(
     const url = buildUrl(params);
     const body = options?.body ? options.body(params) : params;
     
-    // Add guildId to body for non-DELETE requests
-    const requestBody = options?.method !== 'DELETE' ? { ...body, guildId } : body;
+    // Add guildId to body for non-DELETE requests if includeGuildId is true
+    const requestBody = options?.method !== 'DELETE' && shouldIncludeGuildId 
+      ? { ...body, guildId } 
+      : body;
     
     switch(options?.method) {
       case 'DELETE':
-        return apiService.deleteData(url, guildId);
+        return shouldIncludeGuildId 
+          ? apiService.deleteData(url, guildId) 
+          : apiService.deleteData(url);
       case 'PATCH':
-        return apiService.patchData(url, requestBody, guildId);
+        return shouldIncludeGuildId 
+          ? apiService.patchData(url, requestBody, guildId) 
+          : apiService.patchData(url, requestBody);
       case 'PUT':
-        return apiService.putData(url, requestBody, guildId);
+        return shouldIncludeGuildId 
+          ? apiService.putData(url, requestBody, guildId) 
+          : apiService.putData(url, requestBody);
       default:
-        return apiService.postData(url, requestBody, guildId);
+        return shouldIncludeGuildId 
+          ? apiService.postData(url, requestBody, guildId) 
+          : apiService.postData(url, requestBody);
     }
   };
 

@@ -17,39 +17,17 @@ import UserManagementTable from "./components/UserManagementTable";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
+import { nanoid } from 'nanoid';
 
-// Mock Data (Replace with actual data fetching)
-const MOCK_USERS: User[] = [
-	{ id: 'user-1', name: 'Alice Admin', email: 'alice@admin.com', role: 'Admin', isActive: true },
-	{ id: 'user-2', name: 'Bob Partner', email: 'bob@agencya.com', role: 'AgencyPartner', isActive: true, agencyId: 'agency-1' },
-	{ id: 'user-3', name: 'Charlie Client', email: 'charlie@client.com', role: 'Client', isActive: true, guildId: 'guild-1' },
-	{ id: 'user-4', name: 'Diana Partner', email: 'diana@agencyb.com', role: 'AgencyPartner', isActive: true, agencyId: 'agency-2' },
-	{ id: 'user-5', name: 'Ethan Client', email: 'ethan@client.com', role: 'Client', isActive: false, guildId: 'guild-3' },
-	{ id: 'user-6', name: 'Fiona Free', email: 'fiona@free.com', role: 'AgencyPartner', isActive: true }, // Unassigned partner
-];
+const CLONE_SUFFIX = () => nanoid(6); // Generates a unique suffix
 
-const MOCK_GUILDS: Guild[] = [
-	{ id: 'guild-1', name: 'Gaming Guild Alpha', agencyId: 'agency-1', isActive: true },
-	{ id: 'guild-2', name: 'Art Guild Beta', agencyId: 'agency-1', isActive: true },
-	{ id: 'guild-3', name: 'Music Guild Gamma', agencyId: 'agency-2', isActive: false },
-	{ id: 'guild-4', name: 'Dev Guild Delta', isActive: true }, // Unassigned guild
-];
+function makeDraggableId(guildId: string) {
+  return `${guildId}-${CLONE_SUFFIX()}`;
+}
 
-const MOCK_AGENCIES: Agency[] = [
-	{
-		id: 'agency-1',
-		name: 'Creative Agency A',
-		users: MOCK_USERS.filter(u => u.agencyId === 'agency-1'),
-		guilds: MOCK_GUILDS.filter(g => g.agencyId === 'agency-1'),
-	},
-	{
-		id: 'agency-2',
-		name: 'Marketing Agency B',
-		users: MOCK_USERS.filter(u => u.agencyId === 'agency-2'),
-		guilds: MOCK_GUILDS.filter(g => g.agencyId === 'agency-2'),
-	},
-];
-
+function baseGuildId(draggableId: string) {
+  return draggableId.replace(/-[^-]+$/, '');
+}
 
 type UserGuildAccess = Record<string, string[]>;
 
@@ -72,56 +50,71 @@ const AdminPanel = () => {
 	const [isEditingRestrictions, setIsEditingRestrictions] = useState<boolean>(false);
 	const [editingGuildRestrictions, setEditingGuildRestrictions] = useState<Record<string, boolean>>({});
 
-	// const { data: owners, isLoading: isLoadingOwners } = useGetAllOwners();
-	// const { data: guildsData, isLoading: isLoadingGuilds } = useGetAllGuilds();
-	// const { data: agenciesData, isLoading: isLoadingAgencies } = useGetAllAgencies();
-	// const updateOwnerRole = useUpdateOwnerRole();
-	// const assignGuildToOwner = useAssignGuildToOwner();
-	// const removeGuildFromOwner = useRemoveGuildFromOwner();
-	// const toggleGuildActivityState = useToggleGuildActivityState();
-	// const createAgencyMutation = useCreateAgency();
-	// const updateAgencyMutation = useUpdateAgency();
-	// const deleteAgencyMutation = useDeleteAgency();
-	// const assignGuildToAgencyMutation = useAssignGuildToAgency();
-	// const removeGuildFromAgencyMutation = useRemoveGuildFromAgency();
+	const { data: owners, isLoading: isLoadingOwners } = useGetAllOwners();
+	const { data: guildsData, isLoading: isLoadingGuilds } = useGetAllGuilds();
+	const { data: agenciesData, isLoading: isLoadingAgencies } = useGetAllAgencies();
+	const updateOwnerRole = useUpdateOwnerRole();
+	const assignGuildToOwner = useAssignGuildToOwner();
+	const removeGuildFromOwner = useRemoveGuildFromOwner();
+	const toggleGuildActivityState = useToggleGuildActivityState();
+	const createAgencyMutation = useCreateAgency();
+	const updateAgencyMutation = useUpdateAgency();
+	const deleteAgencyMutation = useDeleteAgency();
+	const assignGuildToAgencyMutation = useAssignGuildToAgency();
+	const removeGuildFromAgencyMutation = useRemoveGuildFromAgency();
 
-	// Use mock data for now
-	const [mockUsers, setMockUsers] = useState<User[]>(MOCK_USERS);
-	const [agencies, setAgencies] = useState<Agency[]>(MOCK_AGENCIES);
-	const [guilds, setGuilds] = useState<Guild[]>(MOCK_GUILDS);
-	const isLoading = false; // Set to false when using mock data
+	const [users, setUsers] = useState<User[]>([]);
+	const [agencies, setAgencies] = useState<Agency[]>([]);
+	const [guilds, setGuilds] = useState<Guild[]>([]);
+	const isLoading = isLoadingOwners || isLoadingGuilds || isLoadingAgencies;
 
 	const roleOptions = ["All Roles", "Admin", "AgencyPartner", "Client"];
 
-	const filteredUsers = React.useMemo(() => {
-		return mockUsers.filter(user => {
-			const matchesSearch = user.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-				user.email.toLowerCase().includes(searchTerm.toLowerCase());
-			const matchesRole = selectedRole === "All Roles" || user.role === selectedRole;
+	useEffect(() => {
+		if (owners) {
+			setUsers(owners as User[]);
+		}
+	}, [owners]);
+
+	useEffect(() => {
+		if (agenciesData) {
+			setAgencies(agenciesData as Agency[]);
+		}
+	}, [agenciesData]);
+
+	useEffect(() => {
+		if (guildsData) {
+			setGuilds(guildsData as Guild[]);
+		}
+	}, [guildsData]);
+
+	const filteredUsers = useMemo(() => {
+		return users.filter(user => {
+			const matchesSearch = user?.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+				user?.email?.toLowerCase().includes(searchTerm.toLowerCase());
+			const matchesRole = selectedRole === "All Roles" || user?.role === selectedRole;
 			const matchesAgency = selectedAgency === "All Agencies" ||
 				(user as any).agencyId === selectedAgency ||
-				user.role === 'Admin'; // Admins are always shown regardless of agency filter
+				user?.role === 'Admin'; // Admins are always shown regardless of agency filter
 
 			return matchesSearch && matchesRole && matchesAgency;
 		});
-	}, [mockUsers, searchTerm, selectedRole, selectedAgency]);
+	}, [users, searchTerm, selectedRole, selectedAgency]);
 
-	// Recalculate User Guild Access whenever dependencies change
 	useEffect(() => {
 		const calculateUserGuildAccess = (): UserGuildAccess => {
 			const accessMap: UserGuildAccess = {};
-
-			const allUsersWithAgencyId = [
-				...mockUsers,
-				...agencies.flatMap(a =>
-					a.users.map(u => ({
+			const allUsersWithAgencyId: User[] = [
+				...users,
+				...(agencies?.flatMap(a =>
+					(a.owners || []).filter(Boolean).map(u => ({
 						...u,
 						agencyId: a.id
 					}))
-				)
+				) || [])
 			];
 
-			const uniqueUsers = Array.from(new Map(allUsersWithAgencyId.map(u => [u.id, u])).values());
+			const uniqueUsers = Array.from(new Map(allUsersWithAgencyId?.map(u => [u?.id, u])).values());
 
 			uniqueUsers.forEach(user => {
 				const userAny = user as any;
@@ -161,31 +154,32 @@ const AdminPanel = () => {
 		const newAccessMap = calculateUserGuildAccess();
 		setUserGuildAccess(newAccessMap);
 
-	}, [mockUsers, agencies, guilds]);
+	}, [users, agencies, guilds]);
 
-	// User Management Handlers
 	const handleUserUpdate = (updatedUser: User) => {
-		setMockUsers(prev => prev.map(user =>
-			user.id === updatedUser.id ? updatedUser : user
-		));
-		// Also update user if they are within an agency
-		setAgencies(prev => prev.map(agency => ({
-			...agency,
-			users: agency.users.map(u => u.id === updatedUser.id ? updatedUser : u)
-		})));
-		toast({
-			title: "User updated",
-			description: `Successfully updated user ${updatedUser.name}`,
+		updateOwnerRole.mutate(updatedUser, {
+			onSuccess: () => {
+				setUsers(prev => prev.map(user =>
+					user.id === updatedUser.id ? updatedUser : user
+				));
+				setAgencies(prev => prev.map(agency => ({
+					...agency,
+					users: agency.owners.map(u => u.id === updatedUser.id ? updatedUser : u)
+				})));
+				toast({
+					title: "User updated",
+					description: `Successfully updated user ${updatedUser.name}`,
+				});
+			}
 		});
 	};
 
 	const handleUserDelete = async (userId: string): Promise<boolean> => {
-		const user = allManageableUsers.find(u => u.id === userId); // Check combined list
+		const user = allManageableUsers.find(u => u.id === userId);
 		if (!user) return false;
 
-		// Prevent deleting AgencyPartner if they are still assigned to an agency
 		if (user.role === 'AgencyPartner' && (user as any).agencyId) {
-			const isInAgency = agencies.some(a => a.users.some(u => u.id === userId));
+			const isInAgency = agencies.some(a => a.owners?.some(u => u.id === userId));
 			if (isInAgency) {
 				toast({
 					title: "Deletion Restricted",
@@ -196,21 +190,21 @@ const AdminPanel = () => {
 			}
 		}
 
-		// Remove from top-level list
-		setMockUsers(prev => prev.filter(user => user.id !== userId));
-		// Remove from any agency list
-		setAgencies(prev => prev.map(agency => ({
-			...agency,
-			users: agency.users.filter(u => u.id !== userId)
-		})));
-
-		toast({
-			title: "User deleted",
-			description: "Successfully deleted user",
+		removeGuildFromOwner.mutate(userId, {
+			onSuccess: () => {
+				setUsers(prev => prev.filter(user => user.id !== userId));
+				setAgencies(prev => prev.map(agency => ({
+					...agency,
+					users: agency.owners.filter(u => u.id !== userId)
+				})));
+				toast({
+					title: "User deleted",
+					description: "Successfully deleted user",
+				});
+			}
 		});
 		return true;
 	};
-
 
 	const handleToggleActive = (user: User) => {
 		const updatedUser = {
@@ -220,30 +214,31 @@ const AdminPanel = () => {
 		handleUserUpdate(updatedUser);
 	};
 
-	// Agency Management Handlers
-	const handleAddAgency = (agencyData: Omit<Agency, 'id' | 'users' | 'guilds'>) => {
-		const newAgency: Agency = {
-			...agencyData,
-			id: `agency-${Date.now()}`, // Simple unique ID generation
-			users: [],
-			guilds: []
-		};
-		setAgencies(prev => [...prev, newAgency]);
-		toast({ title: "Agency Added", description: `Agency "${newAgency.name}" created.` });
+	const handleAddAgency = (agencyData: { name: string, description: string }) => {
+		createAgencyMutation.mutate({ name: agencyData.name, description: agencyData.description }, {
+			onSuccess: (newAgency) => {
+				setAgencies(prev => [...prev, newAgency]);
+				toast({ title: "Agency Added", description: `Agency "${newAgency.name}" created.` });
+			}
+		});
 	};
 
 	const handleUpdateAgency = (updatedAgency: Agency) => {
-		setAgencies(prev => prev.map(agency =>
-			agency.id === updatedAgency.id ? updatedAgency : agency
-		));
-		toast({ title: "Agency Updated", description: `Agency "${updatedAgency.name}" updated.` });
+		updateAgencyMutation.mutate(updatedAgency, {
+			onSuccess: () => {
+				setAgencies(prev => prev.map(agency =>
+					agency.id === updatedAgency.id ? updatedAgency : agency
+				));
+				toast({ title: "Agency Updated", description: `Agency "${updatedAgency.name}" updated.` });
+			}
+		});
 	};
 
 	const handleDeleteAgency = async (agencyId: string): Promise<boolean> => {
 		const agency = agencies.find(a => a.id === agencyId);
 		if (!agency) return false;
 
-		if (agency.users.length > 0 || agency.guilds.length > 0) {
+		if (agency.owners.length > 0 || agency.agencyGuilds.length > 0) {
 			toast({
 				title: "Deletion Restricted",
 				description: "Cannot delete agency with assigned users or guilds.",
@@ -252,82 +247,84 @@ const AdminPanel = () => {
 			return false;
 		}
 
-		setAgencies(prev => prev.filter(a => a.id !== agencyId));
-		toast({ title: "Agency Deleted", description: `Agency "${agency.name}" deleted.` });
+		deleteAgencyMutation.mutate(agencyId, {
+			onSuccess: () => {
+				setAgencies(prev => prev.filter(a => a.id !== agencyId));
+				toast({ title: "Agency Deleted", description: `Agency "${agency.name}" deleted.` });
+			}
+		});
 		return true;
 	};
 
 	const handleAssignGuildToAgency = (agencyId: string, guildId: string) => {
-		const guild = guilds.find(g => g.id === guildId);
-		if (!guild) return;
+		assignGuildToAgencyMutation.mutate({ agencyId, guildId }, {
+			onSuccess: () => {
+				const guild = guilds.find(g => g.id === guildId);
+				if (!guild) return;
 
-		// Update guild's agencyId
-		setGuilds(prev => prev.map(g =>
-			g.id === guildId ? { ...g, agencyId } : g
-		));
+				// No longer update the guild's agencyId in the guilds list
+				// This allows the guild to exist in multiple agencies
 
-		// Update agency's guilds list (add) and remove from others
-		setAgencies(prev => prev.map(agency => {
-			if (agency.id === agencyId) {
-				// Add to target agency if not already present
-				if (!agency.guilds.some(g => g.id === guildId)) {
-					return { ...agency, guilds: [...agency.guilds, { ...guild, agencyId }] };
-				}
-			} else {
-				// Remove from other agencies
-				return { ...agency, guilds: agency.guilds.filter(g => g.id !== guildId) };
+				// Only add the guild to the target agency without removing from others
+				setAgencies(prev => prev.map(agency => {
+					if (agency.id === agencyId) {
+						if (!agency.agencyGuilds.some(g => g.id === guildId)) {
+							return { ...agency, agencyGuilds: [...agency.agencyGuilds, { ...guild, agencyId }] };
+						}
+					}
+					return agency;
+				}));
+
+				toast({ title: "Guild Assigned", description: `Guild "${guild.name}" assigned to agency.` });
 			}
-			return agency;
-		}));
-
-		toast({ title: "Guild Assigned", description: `Guild "${guild.name}" assigned to agency.` });
+		});
 	};
 
 	const handleRemoveGuildFromAgency = (agencyId: string, guildId: string) => {
-		const guild = guilds.find(g => g.id === guildId);
-		if (!guild) return;
+		removeGuildFromAgencyMutation.mutate({ agencyId, guildId }, {
+			onSuccess: () => {
+				const guild = guilds.find(g => g.id === guildId);
+				if (!guild) return;
 
-		// Remove guild's agencyId reference
-		setGuilds(prev => prev.map(g =>
-			g.id === guildId ? { ...g, agencyId: undefined } : g
-		));
+				setGuilds(prev => prev.map(g =>
+					g.id === guildId ? { ...g, agencyId: undefined } : g
+				));
 
-		// Remove guild from the specific agency's list
-		setAgencies(prev => prev.map(agency =>
-			agency.id === agencyId
-				? { ...agency, guilds: agency.guilds.filter(g => g.id !== guildId) }
-				: agency
-		));
+				setAgencies(prev => prev.map(agency =>
+					agency.id === agencyId
+						? { ...agency, agencyGuilds: agency.agencyGuilds.filter(g => g.id !== guildId) }
+						: agency
+				));
 
-		// Also remove guild from any agency partner's restricted list within that agency
-		setMockUsers(prev => prev.map(user => {
-			if (user.role === 'AgencyPartner' && (user as any).agencyId === agencyId) {
-				return {
-					...user,
-					restrictedGuildIds: ((user as any).restrictedGuildIds || []).filter((id: string) => id !== guildId)
-				};
+				setUsers(prev => prev.map(user => {
+					if (user.role === 'AgencyPartner' && (user as any).agencyId === agencyId) {
+						return {
+							...user,
+							restrictedGuildIds: ((user as any).restrictedGuildIds || []).filter((id: string) => id !== guildId)
+						};
+					}
+					return user;
+				}));
+				setAgencies(prev => prev.map(agency => ({
+					...agency,
+					users: agency.owners.map(user => {
+						if (user.role === 'AgencyPartner' && user.id === user.id) {
+							return {
+								...user,
+								restrictedGuildIds: ((user as any).restrictedGuildIds || []).filter((id: string) => id !== guildId)
+							};
+						}
+						return user;
+					})
+				})));
+
+				toast({ title: "Guild Removed", description: `Guild "${guild.name}" removed from agency.` });
 			}
-			return user;
-		}));
-		setAgencies(prev => prev.map(agency => ({
-			...agency,
-			users: agency.users.map(user => {
-				if (user.role === 'AgencyPartner' && user.id === user.id) { // Check user within the agency
-					return {
-						...user,
-						restrictedGuildIds: ((user as any).restrictedGuildIds || []).filter((id: string) => id !== guildId)
-					};
-				}
-				return user;
-			})
-		})));
-
-
-		toast({ title: "Guild Removed", description: `Guild "${guild.name}" removed from agency.` });
+		});
 	};
 
 	const handleAssignUserToAgency = (userId: string, agencyId: string) => {
-		const user = allManageableUsers.find(u => u.id === userId); // Find from combined list
+		const user = allManageableUsers.find(u => u.id === userId);
 		if (!user || user.role === 'Admin' || user.role === 'Client') {
 			toast({ title: "Assignment Restricted", description: "Only Agency Partners can be assigned to agencies.", variant: "destructive" });
 			return;
@@ -336,26 +333,22 @@ const AdminPanel = () => {
 		const targetAgency = agencies.find(a => a.id === agencyId);
 		if (!targetAgency) return;
 
-		// Remove user from their current agency, if any
 		const currentAgencyId = (user as any).agencyId;
 		if (currentAgencyId && currentAgencyId !== agencyId) {
 			setAgencies(prev => prev.map(agency => {
 				if (agency.id === currentAgencyId) {
-					return { ...agency, users: agency.users.filter(u => u.id !== userId) };
+					return { ...agency, users: agency.owners.filter(u => u.id !== userId) };
 				}
 				return agency;
 			}));
 		}
 
-		// Remove user from the top-level mockUsers list (they now belong *in* the agency)
-		setMockUsers(prev => prev.filter(u => u.id !== userId));
+		setUsers(prev => prev.filter(u => u.id !== userId));
 
-		// Add user to the target agency's user list (if not already there)
 		setAgencies(prev => prev.map(agency => {
 			if (agency.id === agencyId) {
-				if (!agency.users.some(u => u.id === userId)) {
-					// Add agencyId and reset restrictions when assigning
-					return { ...agency, users: [...agency.users, { ...user, agencyId: agencyId, restrictedGuildIds: undefined }] };
+				if (!agency.owners.some(u => u.id === userId)) {
+					return { ...agency, users: [...agency.owners, { ...user, agencyId: agencyId, restrictedGuildIds: undefined }] };
 				}
 			}
 			return agency;
@@ -365,17 +358,12 @@ const AdminPanel = () => {
 	};
 
 	const handleAssignAgencyToUser = (userId: string, agencyId: string) => {
-		// This function seems redundant if handleAssignUserToAgency moves the user *into* the agency object.
-		// If the model keeps users separate and just links via agencyId, this would be used.
-		// For the current model (moving user into agency.users), this might not be needed.
-		// Let's keep the logic from the prompt for now, but it might need adjustment based on the final data structure.
-		setMockUsers(prev => prev.map(u =>
+		setUsers(prev => prev.map(u =>
 			u.id === userId ? { ...u, agencyId } : u
 		));
-		// If the user is also in an agency's list, update it there too.
 		setAgencies(prev => prev.map(agency => ({
 			...agency,
-			users: agency.users.map(u => u.id === userId ? { ...u, agencyId } : u)
+			users: agency.owners.map(u => u.id === userId ? { ...u, agencyId } : u)
 		})));
 	};
 
@@ -383,23 +371,20 @@ const AdminPanel = () => {
 		const agency = agencies.find(a => a.id === agencyId);
 		if (!agency) return;
 
-		const user = agency.users.find(u => u.id === userId);
-		if (!user) return; // User not found in this agency's list
+		const user = agency.owners.find(u => u.id === userId);
+		if (!user) return;
 
-		// Add user back to the top-level mockUsers list, removing agency-specific fields
-		setMockUsers(prev => {
-			// Avoid adding duplicates if user somehow exists in both places
+		setUsers(prev => {
 			if (prev.some(u => u.id === userId)) {
 				return prev.map(u => u.id === userId ? { ...user, agencyId: undefined, restrictedGuildIds: undefined } : u);
 			}
 			const updatedUsers = [...prev, { ...user, agencyId: undefined, restrictedGuildIds: undefined }];
-			return updatedUsers.sort((a, b) => a.name.localeCompare(b.name));
+			return updatedUsers.sort((a, b) => a.name?.localeCompare(b.name));
 		});
 
-		// Remove user from the agency's user list
 		setAgencies(prev => prev.map(a => {
 			if (a.id === agencyId) {
-				return { ...a, users: a.users.filter(u => u.id !== userId) };
+				return { ...a, users: a.owners?.filter(u => u.id !== userId) };
 			}
 			return a;
 		}));
@@ -410,7 +395,6 @@ const AdminPanel = () => {
 		});
 	};
 
-
 	const handleAssignGuildToUser = (userId: string, guildId: string) => {
 		const user = allManageableUsers.find(u => u.id === userId);
 		if (!user || user.role !== 'Client') {
@@ -418,14 +402,12 @@ const AdminPanel = () => {
 			return;
 		}
 
-		// Update in top-level list
-		setMockUsers(prev => prev.map(u =>
+		setUsers(prev => prev.map(u =>
 			u.id === userId ? { ...u, guildId } : u
 		));
-		// Update in agency list (though clients shouldn't be in agencies)
 		setAgencies(prev => prev.map(agency => ({
 			...agency,
-			users: agency.users.map(u => u.id === userId ? { ...u, guildId } : u)
+			users: agency.owners.map(u => u.id === userId ? { ...u, guildId } : u)
 		})));
 
 		const guild = guilds.find(g => g.id === guildId);
@@ -434,16 +416,14 @@ const AdminPanel = () => {
 
 	const handleRemoveGuildFromUser = (userId: string, guildId: string) => {
 		const user = allManageableUsers.find(u => u.id === userId);
-		if (!user || user.role !== 'Client') return; // Should only apply to clients
+		if (!user || user.role !== 'Client') return;
 
-		// Update in top-level list
-		setMockUsers(prev => prev.map(u =>
+		setUsers(prev => prev.map(u =>
 			u.id === userId ? { ...u, guildId: undefined } : u
 		));
-		// Update in agency list
 		setAgencies(prev => prev.map(agency => ({
 			...agency,
-			users: agency.users.map(u => u.id === userId ? { ...u, guildId: undefined } : u)
+			users: agency.owners.map(u => u.id === userId ? { ...u, guildId: undefined } : u)
 		})));
 
 		const guild = guilds.find(g => g.id === guildId);
@@ -451,30 +431,29 @@ const AdminPanel = () => {
 	};
 
 	const handleRestrictUserGuilds = (userId: string, guildIds: string[]) => {
-		// This function is now handled by handleSaveRestrictions
-		// Kept here to satisfy the prop requirement for UserManagementTable if needed, but logic moved.
 		console.warn("handleRestrictUserGuilds called, but logic is in handleSaveRestrictions");
 	};
 
-	// Guild Management Handlers
 	const handleGuildUpdate = (updatedGuild: Guild) => {
-		setGuilds(prev => prev.map(guild =>
-			guild.id === updatedGuild.id ? updatedGuild : guild
-		));
+		toggleGuildActivityState.mutate(updatedGuild, {
+			onSuccess: () => {
+				setGuilds(prev => prev.map(guild =>
+					guild.id === updatedGuild.id ? updatedGuild : guild
+				));
 
-		// Update guild within any agency it might belong to
-		setAgencies(prev => prev.map(agency => ({
-			...agency,
-			guilds: agency.guilds.map(g => g.id === updatedGuild.id ? updatedGuild : g)
-		})));
-		toast({ title: "Guild Updated", description: `Guild "${updatedGuild.name}" updated.` });
+				setAgencies(prev => prev.map(agency => ({
+					...agency,
+					agencyGuilds: agency.agencyGuilds.map(g => g.id === updatedGuild.id ? updatedGuild : g)
+				})));
+				toast({ title: "Guild Updated", description: `Guild "${updatedGuild.name}" updated.` });
+			}
+		});
 	};
 
 	const handleGuildDelete = async (guildId: string): Promise<boolean> => {
 		const guild = guilds.find(g => g.id === guildId);
 		if (!guild) return false;
 
-		// Check if any client is assigned to this guild
 		const hasClients = allManageableUsers.some(u =>
 			u.role === 'Client' && (u as any).guildId === guildId
 		);
@@ -488,112 +467,218 @@ const AdminPanel = () => {
 			return false;
 		}
 
-		// Remove guild from its agency, if any
-		if (guild.agencyId) {
-			setAgencies(prev => prev.map(agency => {
-				if (agency.id === guild.agencyId) {
-					return { ...agency, guilds: agency.guilds.filter(g => g.id !== guildId) };
+		removeGuildFromAgencyMutation.mutate({ agencyId: guild.agencyId, guildId }, {
+			onSuccess: () => {
+				if (guild.agencyId) {
+					setAgencies(prev => prev.map(agency => {
+						if (agency.id === guild.agencyId) {
+							return { ...agency, agencyGuilds: agency.agencyGuilds.filter(g => g.id !== guildId) };
+						}
+						return agency;
+					}));
 				}
-				return agency;
-			}));
-		}
 
-		// Remove guild from any agency partner's restricted list
-		setMockUsers(prev => prev.map(user => {
-			if (user.role === 'AgencyPartner' && (user as any).restrictedGuildIds) {
-				return {
-					...user,
-					restrictedGuildIds: ((user as any).restrictedGuildIds || []).filter((id: string) => id !== guildId)
-				};
+				setUsers(prev => prev.map(user => {
+					if (user.role === 'AgencyPartner' && (user as any).restrictedGuildIds) {
+						return {
+							...user,
+							restrictedGuildIds: ((user as any).restrictedGuildIds || []).filter((id: string) => id !== guildId)
+						};
+					}
+					return user;
+				}));
+				setAgencies(prev => prev.map(agency => ({
+					...agency,
+					users: agency.owners.map(user => {
+						if (user.role === 'AgencyPartner' && (user as any).restrictedGuildIds) {
+							return {
+								...user,
+								restrictedGuildIds: ((user as any).restrictedGuildIds || []).filter((id: string) => id !== guildId)
+							};
+						}
+						return user;
+					})
+				})));
+
+				setGuilds(prev => prev.filter(g => g.id !== guildId));
+				toast({ title: "Guild Deleted", description: `Guild "${guild.name}" deleted.` });
 			}
-			return user;
-		}));
-		setAgencies(prev => prev.map(agency => ({
-			...agency,
-			users: agency.users.map(user => {
-				if (user.role === 'AgencyPartner' && (user as any).restrictedGuildIds) {
-					return {
-						...user,
-						restrictedGuildIds: ((user as any).restrictedGuildIds || []).filter((id: string) => id !== guildId)
-					};
-				}
-				return user;
-			})
-		})));
-
-
-		// Remove guild from the main list
-		setGuilds(prev => prev.filter(g => g.id !== guildId));
-		toast({ title: "Guild Deleted", description: `Guild "${guild.name}" deleted.` });
+		});
 		return true;
 	};
 
 	const handleDragEnd = (result: DropResult) => {
-		if (!result.destination) {
-			return;
+		const { source, destination, draggableId, type } = result;
+		
+		// If no destination, the item was dropped outside a valid droppable
+		if (!destination) return;
+
+		// If the item was dropped back into its original position
+		if (source.droppableId === destination.droppableId && 
+			source.index === destination.index) return;
+
+		const srcId = source.droppableId;
+		const dstId = destination.droppableId;
+
+		// Handle guild dragging
+		if (type === 'guild') {
+			// Extract the base guild ID without any drag suffixes
+			const guildId = baseGuildId(draggableId);
+			const guild = guilds.find(g => g.id === guildId);
+			
+			if (!guild) return;
+
+			// Case 1: Dragging from guilds table (source) to an agency (consumer)
+			if (srcId === 'guilds-table' && dstId.startsWith('agency-guilds-')) {
+				const agencyId = dstId.replace('agency-guilds-', '');
+				const targetAgency = agencies.find(a => a.id === agencyId);
+				console.log("targetAgency", targetAgency);
+				console.log("agencyId", agencyId);
+				// Check if the guild is already assigned to this agency
+				if (targetAgency && targetAgency.agencyGuilds.some(g => g.id === guildId)) {
+					toast({
+						title: "Guild already assigned",
+						description: `This guild is already assigned to this agency`,
+						variant: "destructive"
+					});
+					return;
+				}
+
+				// Create a copy of the guild with the new agency ID
+				const guildCopy = { ...guild, agencyId };
+
+				// Update the agency's guilds
+				setAgencies(prev => prev.map(a => 
+					a.id === agencyId 
+						? { ...a, agencyGuilds: [...a.agencyGuilds, guildCopy] } 
+						: a
+				));
+
+				// The original guild remains in the guilds list unchanged
+				// We're no longer updating the original guild's agencyId
+
+				toast({
+					title: "Guild assigned",
+					description: `Successfully assigned guild to agency`,
+				});
+
+				// Call the API to persist the change
+				handleAssignGuildToAgency(agencyId, guildId);
+			}
+
+			// Case 2: Dragging from an agency (consumer) back to guilds table (source)
+			else if (srcId.startsWith('agency-guilds-') && dstId === 'guilds-table') {
+				const agencyId = srcId.replace('agency-guilds-', '');
+				
+				// Remove the guild from the agency
+				setAgencies(prev => prev.map(a => 
+					a.id === agencyId 
+						? { ...a, agencyGuilds: a.agencyGuilds.filter(g => g.id !== guildId) } 
+						: a
+				));
+
+				toast({
+					title: "Guild removed",
+					description: `Successfully removed guild from agency`,
+				});
+
+				// Call the API to persist the change
+				handleRemoveGuildFromAgency(agencyId, guildId);
+			}
+
+			// Case 3: Moving guild between agencies
+			else if (srcId.startsWith('agency-guilds-') && dstId.startsWith('agency-guilds-')) {
+				const sourceAgencyId = srcId.replace('agency-guilds-', '');
+				const destAgencyId = dstId.replace('agency-guilds-', '');
+				
+				// Don't allow dragging to the same agency
+				if (sourceAgencyId === destAgencyId) return;
+
+				const targetAgency = agencies.find(a => a.id === destAgencyId);
+				console.log("targetAgency", targetAgency);
+				console.log("destAgencyId", destAgencyId);
+				// Check if the guild is already assigned to the destination agency
+				if (targetAgency && targetAgency.agencyGuilds.some(g => g.id === guildId)) {
+					toast({
+						title: "Guild already assigned",
+						description: `This guild is already assigned to this agency`,
+						variant: "destructive"
+					});
+					return;
+				}
+
+				// Create a copy of the guild with the new agency ID
+				const guildCopy = { ...guild, agencyId: destAgencyId };
+
+				// Remove from source agency and add to destination agency
+				setAgencies(prev => prev.map(a => {
+					if (a.id === sourceAgencyId) {
+						return { ...a, agencyGuilds: a.agencyGuilds.filter(g => g.id !== guildId) };
+					}
+					if (a.id === destAgencyId) {
+						return { ...a, agencyGuilds: [...a.agencyGuilds, guildCopy] };
+					}
+					return a;
+				}));
+
+				toast({
+					title: "Guild moved",
+					description: `Successfully moved guild between agencies`,
+				});
+
+				// Call the API to persist the changes
+				handleRemoveGuildFromAgency(sourceAgencyId, guildId);
+				handleAssignGuildToAgency(destAgencyId, guildId);
+			}
+
+			// Case 4: Reordering within a container (guilds table or an agency)
+			else if (srcId === dstId) {
+				// If we're reordering within the guilds table
+				if (srcId === 'guilds-table') {
+					const newGuilds = Array.from(guilds);
+					const [removed] = newGuilds.splice(source.index, 1);
+					newGuilds.splice(destination.index, 0, removed);
+					setGuilds(newGuilds);
+				}
+				// If we're reordering within an agency
+				else if (srcId.startsWith('agency-guilds-')) {
+					const agencyId = srcId.replace('agency-guilds-', '');
+					setAgencies(prev => prev.map(a => {
+						if (a.id === agencyId) {
+							const newGuilds = Array.from(a.agencyGuilds);
+							const [removed] = newGuilds.splice(source.index, 1);
+							newGuilds.splice(destination.index, 0, removed);
+							return { ...a, agencyGuilds: newGuilds };
+						}
+						return a;
+					}));
+				}
+			}
 		}
 
-		const { source, destination, draggableId, type } = result;
-		const sourceDroppableId = source.droppableId;
-		const destDroppableId = destination.droppableId;
-
-		// --- User Drag and Drop ---
 		if (type === 'user') {
-			const userId = draggableId.split('-')[0]; // Extract ID
+			const userId = draggableId.replace(/-[^-]*$/, '');
 			const user = allManageableUsers.find(u => u.id === userId);
 			if (!user) return;
 
-			// Dragging from Agency Users -> Users Table (Remove from Agency)
-			if (sourceDroppableId.startsWith('agency-users-') && destDroppableId === 'users-table') {
-				const sourceAgencyId = sourceDroppableId.replace('agency-users-', '');
+			if (srcId.startsWith('agency-users-') && dstId === 'users-table') {
+				const sourceAgencyId = srcId.replace('agency-users-', '');
 				handleRemoveUserFromAgency(userId, sourceAgencyId);
 			}
-			// Dragging from Users Table -> Agency Users (Assign to Agency)
-			else if (sourceDroppableId === 'users-table' && destDroppableId.startsWith('agency-users-')) {
-				const destAgencyId = destDroppableId.replace('agency-users-', '');
+			else if (srcId === 'users-table' && dstId.startsWith('agency-users-')) {
+				const destAgencyId = dstId.replace('agency-users-', '');
 				handleAssignUserToAgency(userId, destAgencyId);
 			}
-			// Dragging between Agency Users -> Agency Users (Move between Agencies)
-			else if (sourceDroppableId.startsWith('agency-users-') && destDroppableId.startsWith('agency-users-')) {
-				const sourceAgencyId = sourceDroppableId.replace('agency-users-', '');
-				const destAgencyId = destDroppableId.replace('agency-users-', '');
+			else if (srcId.startsWith('agency-users-') && dstId.startsWith('agency-users-')) {
+				const sourceAgencyId = srcId.replace('agency-users-', '');
+				const destAgencyId = dstId.replace('agency-users-', '');
 				if (sourceAgencyId !== destAgencyId) {
-					// Note: handleAssignUserToAgency already includes logic to remove from the old agency implicitly
 					handleAssignUserToAgency(userId, destAgencyId);
 					toast({ title: "User Moved", description: `Moved user "${user.name}" between agencies.` });
 				}
 			}
 		}
-
-		// --- Guild Drag and Drop ---
-		if (type === 'guild') {
-			const guildId = draggableId.split('-')[0]; // Extract ID
-			const guild = guilds.find(g => g.id === guildId);
-			if (!guild) return;
-
-			// Dragging from Agency Guilds -> Guilds Table (Remove from Agency)
-			if (sourceDroppableId.startsWith('agency-guilds-') && destDroppableId === 'guilds-table') {
-				const sourceAgencyId = sourceDroppableId.replace('agency-guilds-', '');
-				handleRemoveGuildFromAgency(sourceAgencyId, guildId);
-			}
-			// Dragging from Guilds Table -> Agency Guilds (Assign to Agency)
-			else if (sourceDroppableId === 'guilds-table' && destDroppableId.startsWith('agency-guilds-')) {
-				const destAgencyId = destDroppableId.replace('agency-guilds-', '');
-				handleAssignGuildToAgency(destAgencyId, guildId);
-			}
-			// Dragging between Agency Guilds -> Agency Guilds (Move between Agencies)
-			else if (sourceDroppableId.startsWith('agency-guilds-') && destDroppableId.startsWith('agency-guilds-')) {
-				const sourceAgencyId = sourceDroppableId.replace('agency-guilds-', '');
-				const destAgencyId = destDroppableId.replace('agency-guilds-', '');
-				if (sourceAgencyId !== destAgencyId) {
-					// Assigning to new agency implicitly handles removal from old one via setGuilds update
-					handleAssignGuildToAgency(destAgencyId, guildId);
-					toast({ title: "Guild Moved", description: `Moved guild "${guild.name}" between agencies.` });
-				}
-			}
-		}
 	};
-
 
 	const getAvailableGuildsForUser = useCallback((userId: string | null): Guild[] => {
 		if (!userId) return [];
@@ -607,19 +692,32 @@ const AdminPanel = () => {
 	);
 
 	const allManageableUsers = useMemo(() => {
-		const agencyUsers = agencies.flatMap(a =>
-			a.users.map(u => ({
+		// Handle case when agencies is undefined or null
+		const agencyUsers = agencies?.flatMap(a => 
+			// Handle case when users array might be undefined
+			(a.owners || []).map(u => ({
 				...u,
-				agencyId: a.id // Ensure agencyId is present
+				agencyId: a.id
 			}))
+		) || [];
+		
+		// Handle case when users might be undefined
+		const combined = [...(users || []), ...agencyUsers];
+		
+		// Handle case when user.id might be undefined and prevent sorting errors
+		const uniqueUsers = Array.from(
+			new Map(combined.filter(user => user && user.id).map(user => [user.id, user])).values()
 		);
-		const combined = [...mockUsers, ...agencyUsers];
-		const uniqueUsers = Array.from(new Map(combined.map(user => [user.id, user])).values());
-		return uniqueUsers.sort((a, b) => a.name.localeCompare(b.name));
-	}, [mockUsers, agencies]);
+		
+		// Handle case when name might be undefined during sort
+		return uniqueUsers.sort((a, b) => {
+			if (!a.name && !b.name) return 0;
+			if (!a.name) return 1;
+			if (!b.name) return -1;
+			return a.name.localeCompare(b.name);
+		});
+	}, [users, agencies]);
 
-
-	// Restriction Editing Handlers
 	const handleStartEditingRestrictions = (userId: string) => {
 		const user = allManageableUsers.find(u => u.id === userId);
 		if (!user || user.role !== 'AgencyPartner') return;
@@ -664,8 +762,7 @@ const AdminPanel = () => {
 
 		let userFoundAndUpdated = false;
 
-		// Update in top-level mockUsers
-		setMockUsers(prev => {
+		setUsers(prev => {
 			const userIndex = prev.findIndex(u => u.id === selectedUserIdForGuildView && u.role === 'AgencyPartner');
 			if (userIndex !== -1) {
 				userFoundAndUpdated = true;
@@ -676,16 +773,15 @@ const AdminPanel = () => {
 			return prev;
 		});
 
-		// Update within agencies
 		if (!userFoundAndUpdated) {
 			setAgencies(prev => prev.map(agency => {
-				const userIndex = agency.users.findIndex(u => u.id === selectedUserIdForGuildView && u.role === 'AgencyPartner');
+				const userIndex = agency.owners.findIndex(u => u.id === selectedUserIdForGuildView && u.role === 'AgencyPartner');
 				if (userIndex !== -1) {
 					userFoundAndUpdated = true;
 					const updatedUsers = [
-						...agency.users.slice(0, userIndex),
-						{ ...agency.users[userIndex], restrictedGuildIds: selectedGuildIds },
-						...agency.users.slice(userIndex + 1),
+						...agency.owners.slice(0, userIndex),
+						{ ...agency.owners[userIndex], restrictedGuildIds: selectedGuildIds },
+						...agency.owners.slice(userIndex + 1),
 					];
 					return { ...agency, users: updatedUsers };
 				}
@@ -769,7 +865,7 @@ const AdminPanel = () => {
 								</SelectTrigger>
 								<SelectContent>
 									<SelectItem value="All Agencies">All Agencies</SelectItem>
-									{agencies.map(agency => (
+									{agencies?.map(agency => (
 										<SelectItem key={agency.id} value={agency.id}>
 											{agency.name}
 										</SelectItem>
@@ -778,26 +874,26 @@ const AdminPanel = () => {
 							</Select>
 						</div>
 						<UserManagementTable
-							users={filteredUsers} // Pass the filtered list of top-level users
-							agencies={agencies} // Pass agencies to allow selecting target agency
-							guilds={guilds} // Pass guilds for client assignment
-							pagination={{ // Basic pagination, adjust as needed
+							users={filteredUsers}
+							agencies={agencies}
+							guilds={guilds}
+							pagination={{
 								currentPage: 1,
 								totalPages: 1,
 								itemsPerPage: filteredUsers.length,
 								totalItems: filteredUsers.length
 							}}
 							isLoading={isLoading}
-							onPageChange={() => {}} // Implement pagination logic if needed
-							onPageSizeChange={() => {}} // Implement page size logic if needed
+							onPageChange={() => {}}
+							onPageSizeChange={() => {}}
 							onToggleActive={handleToggleActive}
 							onDelete={handleUserDelete}
 							onUpdate={handleUserUpdate}
-							onAssignAgency={handleAssignAgencyToUser} // Use the correct handler
-							onRemoveAgency={handleRemoveUserFromAgency} // Use the correct handler
+							onAssignAgency={handleAssignAgencyToUser}
+							onRemoveAgency={handleRemoveUserFromAgency}
 							onAssignGuild={handleAssignGuildToUser}
 							onRemoveGuild={handleRemoveGuildFromUser}
-							onRestrictGuilds={handleRestrictUserGuilds} // Keep prop, logic moved
+							onRestrictGuilds={handleRestrictUserGuilds}
 						/>
 					</Card>
 
@@ -825,7 +921,7 @@ const AdminPanel = () => {
 									<SelectContent>
 										{allManageableUsers.map(user => (
 											<SelectItem key={user.id} value={user.id}>
-												{user.name} <span className="text-xs text-muted-foreground ml-1">({user.role})</span>
+												{user.name} <span className="text-xs text-muted-foreground ml-1">({user.role.split('_').map(word => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase()).join(' ')})</span>
 											</SelectItem>
 										))}
 									</SelectContent>
@@ -872,7 +968,7 @@ const AdminPanel = () => {
 										<h4 className="font-medium text-base">
 											{selectedUser.role === 'Client' ? 'Assigned Guild:' : 'Accessible Guilds:'}
 										</h4>
-										{selectedUser?.role === 'AgencyPartner' && guildsForEditingPartner.length > 0 && ( // Only show edit if partner has guilds in their agency
+										{selectedUser?.role === 'AgencyPartner' && guildsForEditingPartner.length > 0 && (
 											<Button variant="outline" size="sm" onClick={() => handleStartEditingRestrictions(selectedUser.id)}>
 												<Edit className="h-3.5 w-3.5 mr-1.5" />
 												Edit Restrictions
@@ -881,15 +977,15 @@ const AdminPanel = () => {
 									</div>
 									{(() => {
 										switch (selectedUser.role) {
-											case 'Admin':
+											case 'ADMIN':
 												return <p className="text-sm text-muted-foreground italic">Admins have access to all guilds (cannot be restricted).</p>;
-											case 'Client':
+											case 'CLIENT':
 												return availableGuildsForSelectedUser.length > 0 ? (
 													<Badge variant="outline">{availableGuildsForSelectedUser[0].name}</Badge>
 												) : (
 													<p className="text-sm text-muted-foreground italic">Client is not assigned to any guild.</p>
 												);
-											case 'AgencyPartner':
+											case 'AGENCYPARTNER':
 												return availableGuildsForSelectedUser.length > 0 ? (
 													<div className="flex flex-wrap gap-2">
 														{availableGuildsForSelectedUser.map(guild => (
@@ -909,10 +1005,10 @@ const AdminPanel = () => {
 					</Card>
 
 					<h2 className="text-2xl font-bold mb-4 mt-8">Agency Management</h2>
-					<AgencyStructure
+				<AgencyStructure
 						agencies={agencies}
-						guilds={guilds} // Pass all guilds for assignment dropdowns
-						users={mockUsers} // Pass unassigned users for assignment dropdowns
+						guilds={guilds}
+						users={users}
 						isLoading={isLoading}
 						className="mb-6"
 						onAddAgency={handleAddAgency}
@@ -926,12 +1022,12 @@ const AdminPanel = () => {
 
 					<h2 className="text-2xl font-bold mb-4 mt-8">Guilds Management</h2>
 					<GuildsManagement
-						guilds={guilds} // Pass all guilds
-						agencies={agencies} // Pass agencies for assignment dropdowns
+						guilds={guilds}
+						agencies={agencies}
 						onUpdate={handleGuildUpdate}
 						onDelete={handleGuildDelete}
-						onAssignToAgency={handleAssignGuildToAgency} // Pass handler
-						onRemoveFromAgency={handleRemoveGuildFromAgency} // Pass handler
+						onAssignToAgency={handleAssignGuildToAgency}
+						onRemoveFromAgency={handleRemoveGuildFromAgency}
 						className="mb-6"
 					/>
 				</div>

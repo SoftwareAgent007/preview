@@ -6,6 +6,8 @@
  * This document outlines request and response types for various analytics endpoints.
  */
 
+import { OwnerGuild } from "@/hooks/admin/admin.types";
+
 
 export interface TimeRange {
   startDate: Date;
@@ -396,18 +398,28 @@ export type UserRole = 'Admin' | 'AgencyPartner' | 'Client';
 
 export interface User {
   id: string;
-  name: string;
   email: string;
+  name: string;
   role: UserRole;
-  isActive: boolean;
+  createdAt: Date;
+  updatedAt: Date;
+  agencyId: string | null;
+  agency: Agency | null;
+  ownerGuilds: OwnerGuild[];
 }
-
 export interface Agency {
   id: string;
   name: string;
-  members: User[];
-  guilds: Guild[];
-  users: User[];
+  description?: string;
+  createdAt: Record<string, never> | Date;
+  updatedAt: Record<string, never> | Date;
+  owners: {
+    id: string;
+    email: string;
+    name: string;
+    role: string;
+  }[];
+  agencyGuilds: Guild[];
 }
 
 export interface Guild {

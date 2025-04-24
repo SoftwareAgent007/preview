@@ -29,7 +29,7 @@ import { cn } from '@/lib/utils';
 import { Agency, Guild } from '@/types/dataTypes';
 
 interface GuildsManagementProps {
-  guilds: Guild[];
+  guilds: (Guild & { _dragId?: string })[];
   agencies: Agency[];
   className?: string;
   onUpdate: (guild: Guild) => void;
@@ -52,6 +52,19 @@ const GuildsManagement = ({
   const [editedValues, setEditedValues] = React.useState<Partial<Guild>>({});
   const [guildToDelete, setGuildToDelete] = React.useState<Guild | null>(null);
   const [deleteError, setDeleteError] = React.useState<string>("");
+
+  // Calculate usage count for each guild (how many agencies it's assigned to)
+  const guildUsageCount = React.useMemo(() => {
+    const counts: Record<string, number> = {};
+    
+    agencies.forEach(agency => {
+      agency.agencyGuilds?.forEach(guild => {
+        counts[guild.id] = (counts[guild.id] || 0) + 1;
+      });
+    });
+    
+    return counts;
+  }, [agencies]);
 
   const handleEditStart = (guild: Guild) => {
     setEditingGuild(guild);
@@ -104,6 +117,18 @@ const GuildsManagement = ({
     }
   };
 
+  const handleAssignToAgency = (guildId: string, agencyId: string) => {
+    // Ensure the guild is not already assigned to the agency
+    const targetAgency = agencies.find(a => a.id === agencyId);
+    if (targetAgency && !targetAgency.agencyGuilds.some(g => g.id === guildId)) {
+      onAssignToAgency(guildId, agencyId);
+    }
+  };
+
+  const handleRemoveFromAgency = (guildId: string, agencyId: string) => {
+    onRemoveFromAgency(guildId, agencyId);
+  };
+
   return (
     <Card className={cn("p-6", className)}>
       <h3 className="text-xl font-semibold mb-4">Guilds Management</h3>
@@ -112,7 +137,7 @@ const GuildsManagement = ({
           <TableHeader>
             <TableRow>
               <TableHead className="w-[250px]">Guild Name</TableHead>
-              <TableHead className="w-[200px]">Agency</TableHead>
+              <TableHead className="w-[150px]">Agency Usage</TableHead>
               <TableHead className="w-[100px]">Members</TableHead>
               <TableHead className="w-[100px] text-right">Actions</TableHead>
             </TableRow>
@@ -132,11 +157,11 @@ const GuildsManagement = ({
                   </TableRow>
                 ) : (
                   guilds.map((guild, index) => {
-                    // Find the agency name for display
-                    const agencyName = agencies.find(a => a.id === guild.agencyId)?.name;
-
+                    // Get usage count for this guild
+                    const usageCount = guildUsageCount[guild.id] || 0;
+                    
                     return (
-                      <Draggable key={guild.id} draggableId={`${guild.id}-${guild.name}`} index={index}>
+                      <Draggable key={guild.id} draggableId={guild.id} index={index}>
                         {(provided, snapshot) => (
                           <TableRow
                             ref={provided.innerRef}
@@ -166,11 +191,12 @@ const GuildsManagement = ({
                               </div>
                             </TableCell>
                             <TableCell>
-                              {/* Display agency name using Badge */}
-                              {agencyName ? (
-                                <Badge variant="secondary">{agencyName}</Badge>
+                              {usageCount > 0 ? (
+                                <Badge variant="secondary">
+                                  {usageCount} {usageCount === 1 ? 'agency' : 'agencies'}
+                                </Badge>
                               ) : (
-                                <span className="text-gray-500 italic">None</span>
+                                <span className="text-gray-500 italic">Not assigned</span>
                               )}
                             </TableCell>
                             <TableCell>
