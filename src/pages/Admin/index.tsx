@@ -552,7 +552,13 @@ const handleDragEnd = (result: DropResult) => {
 	const dstId = destination.droppableId;
 
 	if (type === 'guild') {
-		const guildId = baseGuildId(draggableId);
+		// Extract the base guild ID, handling different draggable ID formats
+		const guildId = draggableId.includes('guilds-table-') 
+			? draggableId.replace('guilds-table-', '')
+			: draggableId.includes('agency-guilds-') 
+				? draggableId.replace('agency-guilds-', '')
+				: baseGuildId(draggableId);
+				
 		const guild = guilds.find(g => g.id === guildId);
 
 		if (!guild) return;
@@ -600,11 +606,16 @@ const handleDragEnd = (result: DropResult) => {
 			handleAssignGuildToAgency(agencyId, guildId);
 		} else if (srcId.startsWith('agency-guilds-') && dstId === 'guilds-table') {
 			const agencyId = srcId.replace('agency-guilds-', '');
+			
+			// Get the actual draggable ID that might include prefixes
+			const actualDraggableId = draggableId.includes('agency-guilds-') 
+				? draggableId.replace('agency-guilds-', '')
+				: draggableId;
 
 			// Remove the guild from the agency's agencyGuilds list
 			setAgencies(prev => prev.map(a =>
 				a.id === agencyId
-					? { ...a, agencyGuilds: a.agencyGuilds.filter(g => g.id !== draggableId) }
+					? { ...a, agencyGuilds: a.agencyGuilds.filter(g => g.id !== actualDraggableId) }
 					: a
 			));
 
@@ -634,6 +645,11 @@ const handleDragEnd = (result: DropResult) => {
 
 			const targetAgency = agencies.find(a => a.id === destAgencyId);
 			
+			// Get the actual draggable ID that might include prefixes
+			const actualDraggableId = draggableId.includes('agency-guilds-') 
+				? draggableId.replace('agency-guilds-', '')
+				: draggableId;
+				
 			// Check if guild already exists in the target agency by comparing base guild IDs
 			const guildAlreadyExists = targetAgency?.agencyGuilds.some(g => baseGuildId(g.id) === guildId);
 			if (guildAlreadyExists) {
@@ -655,7 +671,7 @@ const handleDragEnd = (result: DropResult) => {
 
 			setAgencies(prev => prev.map(a => {
 				if (a.id === sourceAgencyId) {
-					return { ...a, agencyGuilds: a.agencyGuilds.filter(g => g.id !== draggableId) };
+					return { ...a, agencyGuilds: a.agencyGuilds.filter(g => g.id !== actualDraggableId) };
 				}
 				if (a.id === destAgencyId) {
 					return { ...a, agencyGuilds: [...a.agencyGuilds, guildCopy] };
@@ -1053,8 +1069,7 @@ const handleDragEnd = (result: DropResult) => {
 						</CardContent>
 					</Card>
 
-					<h2 className="text-2xl font-bold mb-4 mt-8">Agency Management</h2>
-				<AgencyStructure
+					<AgencyStructure
 						agencies={agencies}
 						guilds={guilds}
 						users={users}
@@ -1069,7 +1084,6 @@ const handleDragEnd = (result: DropResult) => {
 						onRemoveUser={handleRemoveUserFromAgency}
 					/>
 
-					<h2 className="text-2xl font-bold mb-4 mt-8">Guilds Management</h2>
 					<GuildsManagement
 						guilds={guilds}
 						agencies={agencies}

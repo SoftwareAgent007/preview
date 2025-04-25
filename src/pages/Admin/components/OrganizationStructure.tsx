@@ -106,7 +106,7 @@ const AgencyStructure = ({
   return (
     <Card className={cn("p-6", className)}>
       <div className="flex justify-between items-center mb-4">
-        <h3 className="text-xl font-semibold">Agency Structure</h3>
+        <h2 className="text-2xl font-bold mb-4">Agency Management</h2>
         <Dialog open={isAddAgencyModalOpen} onOpenChange={setIsAddAgencyModalOpen}>
           <DialogTrigger asChild>
             <Button className="bg-gradient-to-r from-blue-500 to-blue-600 text-white font-medium shadow-sm hover:shadow-md transition-all duration-200 rounded-md" size="sm">
@@ -271,7 +271,7 @@ const AgencyStructure = ({
                     >
                       {agency.agencyGuilds?.map((guild, index) => (
                         
-                        <Draggable key={guild.id} draggableId={guild.id} index={index}>
+                        <Draggable key={guild.id} draggableId={'agency-guilds-'+guild.id} index={index}>
                           {(provided, snapshot) => (
                             <div
                               ref={provided.innerRef}

@@ -427,6 +427,9 @@ export interface Guild {
   name: string;
   members: User[];
   agencyIds?: string[]; // Changed from single agencyId to array of agencyIds
+  memberCount: number;
+  joinedAt: string;
+  active: boolean;
 }
 
 export interface AgencyPartner extends User {
