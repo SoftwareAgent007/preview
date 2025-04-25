@@ -99,7 +99,7 @@ const TopPlayedArtistsCard = ({ artists }: TopPlayedArtistsCardProps) => {
                         <Users className="w-6 h-6 text-indigo-600" />
                       </div>
                     }
-                    title={artist?.artist?.name}
+                    title={artist?.artist?.name ?? '-'}
                     description={`${artist?.plays.toLocaleString()} plays`}
                     backgroundColor={index % 2 !== 1 ? 'hover:bg-gray-100' : 'hover:bg-gray-50'}
                   />
