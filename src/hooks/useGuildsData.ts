@@ -11,13 +11,14 @@ export interface Guild {
   active: boolean;
 }
 
-export const useGuildsData = (guildIds?: string[]) => {
-  const user = JSON.parse(localStorage.getItem('user') || '{}');
-
+/**
+ * Hook to fetch guilds for a specific owner
+ * Uses the /auth/guilds/:id endpoint from AuthController
+ */
+export const useGuildsData = (ownerId: string) => {
   const { data, isLoading, error } = useQueryBuilder<Guild[]>(
-    ['guilds', guildIds],
-    () =>
-      `/owners/${user.id}/guilds`
+    ['guilds', ownerId],
+    () => `/auth/guilds/${ownerId}`
   );
 
   return {

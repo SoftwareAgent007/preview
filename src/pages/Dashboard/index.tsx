@@ -148,12 +148,13 @@ const Dashboard = () => {
     },
     {
       title: "Total Game Time",
-      value: Math.floor(totalGameTime?.hours ?? 0),
+      value: totalGameTime?.hours || 0 > 1000 ? Number(totalGameTime?.hours.toFixed(0)).toLocaleString() : totalGameTime?.hours.toLocaleString(), 
       description: "Hours Played", 
       trend: parseInt(totalGameTime?.hourChange ?? "0"),
       isTrendPositive: totalGameTime?.hourChange?.startsWith('+') ?? false,
       tooltipContent: "Total time spent playing games",
       index: 2,
+      unitParam: "hrs"
     },
     {
       title: "Active Listeners",
@@ -250,7 +251,7 @@ const Dashboard = () => {
                   messageFrequency={dailyMessageMetrics ?? []} 
                   width={graphWidth} 
                   isLoading={isMessageTrendLoading}
-                  onViewTypeChange={setMessageViewType}
+                  onViewTypeChange={(type) => setMessageViewType(type as 'daily' | 'weekly' | 'monthly' | 'yearly')}
                 />
               )}
             </ChartCard>
@@ -380,7 +381,7 @@ const Dashboard = () => {
                   hasError(card.value) ? (
                     <ErrorComponent key={card.title} />
                   ) : (
-                    <StatCard key={card.title} {...card} />
+                    <StatCard key={card.title} {...card} unitParam={card?.unitParam} />
                   )
                 ))
               )}

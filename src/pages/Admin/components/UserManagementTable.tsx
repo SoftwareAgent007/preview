@@ -247,25 +247,12 @@ const UserManagementTable = ({
         const user = row.original;
         const isEditingThisRow = editingUser?.id === user.id;
 
-        return isEditingThisRow ? (
-           <Select
-             value={editedValues.isActive ? 'true' : 'false'}
-             onValueChange={(value) => handleInputChange('isActive', value === 'true')}
-             aria-label="Edit user status"
-           >
-             <SelectTrigger className="h-8 text-sm w-[100px]">
-               <SelectValue />
-             </SelectTrigger>
-             <SelectContent>
-               <SelectItem value="true">Active</SelectItem>
-               <SelectItem value="false">Inactive</SelectItem>
-             </SelectContent>
-           </Select>
-        ) : (
-          <Badge variant={user.isActive ? "success" : "secondary"} className="whitespace-nowrap">
-            {user.isActive ? "Active" : "Inactive"}
+        return (
+          <Badge variant={user.ownerGuilds.length > 0 ? "success" : "secondary"} className="whitespace-nowrap">
+            {user.ownerGuilds.length > 0 ? "Assigned" : "Unassigned"}
           </Badge>
-        );
+          )
+        
       },
     },
     {

@@ -9,6 +9,7 @@ interface User {
   id: string;
   email: string;
   name: string;
+  role: "ADMIN" | "AGENCY_PARTNER" | "CLIENT";
   guildIds: string[];
 }
 
@@ -69,6 +70,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           if (storedUser) {
             const userData = JSON.parse(storedUser);
             setUser({
+              ...decoded,
               ...userData,
               guildIds: decoded.guildIds
             });
@@ -91,6 +93,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       const decoded = jwtDecode<JWTPayload>(response.accessToken);
       
       const userData = {
+        ...decoded,
         id: response.owner.id,
         email: response.owner.email,
         name: response.owner.name,

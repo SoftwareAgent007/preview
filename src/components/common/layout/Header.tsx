@@ -20,7 +20,7 @@ import { DEFAULT_DATE_RANGE } from "@/hooks/apiService";
 import { useGuildsData } from "@/hooks/useGuildsData";
 import { BREADCRUMB_PATHS, ROUTES } from "@/routes/routes.constant";
 import { motion } from "framer-motion";
-import { LogOut, Menu, Search } from "lucide-react";
+import { LogOut, Menu, Search, Loader2 } from "lucide-react";
 import { useEffect, useState } from "react";
 import { useQueryClient } from "react-query";
 import { useLocation, useNavigate } from "react-router-dom";
@@ -36,17 +36,19 @@ const Header = ({ isSidebarOpen, setIsSidebarOpen }: {
   const [isUserMenuOpen, setIsUserMenuOpen] = useState(false);
   const { selectedPeriod, guildId, setSelectedPeriod, setGuildId } = useDashboardContext();
   const queryClient = useQueryClient();
-  const { guilds, isLoading: isLoadingGuilds } = useGuildsData(user?.guildIds);
+  const { guilds, isLoading: isLoadingGuilds, error: guildsError } = useGuildsData(user?.id);
 
   useEffect(() => {
-    if (!guildId && user?.guildIds && user.guildIds.length > 0) {
+    // If no guild is selected but guilds are loaded, set a default guild
+    if (!guildId && guilds.length > 0) {
+      // Try to select a default guild or the first available guild
       const defaultGuildId = "1306748279903621142";
-      const guildToSet = user.guildIds.includes(defaultGuildId) ? defaultGuildId : user.guildIds[0];
+      const guildToSet = guilds.find(g => g.id === defaultGuildId)?.id || guilds[0].id;
       setGuildId(guildToSet);
     }
-  }, [user, guildId, setGuildId]);
+  }, [guilds, guildId, setGuildId]);
 
-  const isMoreThenOneGuild = user?.guildIds?.length && user?.guildIds?.length > 1;
+  const isMoreThenOneGuild = guilds.length > 1;
 
   const getCurrentTitle = (pathname: string) => {
     if (
@@ -76,15 +78,37 @@ const Header = ({ isSidebarOpen, setIsSidebarOpen }: {
     ? user.name.split(' ').map(n => n[0]).join('').toUpperCase()
     : 'U';
 
+  const handleGuildChange = (id: string) => {
+    if (setGuildId) {
+      setGuildId(id);
+      // Refresh relevant data when guild changes
+      queryClient.invalidateQueries(['dashboard', id]);
+    }
+  };
+
   const renderGuildSelect = () => {
-    if (!isMoreThenOneGuild) return null;
+    if (!guilds.length && !isLoadingGuilds) {
+      return null;
+    }
 
     if (isLoadingGuilds) {
-      return 
+      return (
+        <div className="w-[220px] h-10 flex items-center justify-center bg-gray-100 rounded">
+          <Loader2 className="h-4 w-4 animate-spin text-gray-500" />
+        </div>
+      );
+    }
+
+    if (guildsError) {
+      return (
+        <div className="w-[220px] h-10 flex items-center justify-center bg-red-50 rounded text-xs text-red-500">
+          Error loading guilds
+        </div>
+      );
     }
 
     return (
-      <Select value={guildId} onValueChange={(id) => setGuildId && setGuildId(id)}>
+      <Select value={guildId} onValueChange={handleGuildChange}>
         <SelectTrigger className="w-[220px]">
           <SelectValue placeholder="Select Guild">
             {guilds?.find(g => g.id === guildId)?.name || 'Select Guild'}

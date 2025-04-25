@@ -88,7 +88,7 @@ const DeviceUsageTable = ({ data }: { data: { deviceType: string; count: number;
             <TableRow key={index} className="relative">
               <TableCell>{device.deviceType.charAt(0).toUpperCase() + device.deviceType.slice(1)}</TableCell>
               <TableCell className="text-right">{device.percentage}%</TableCell>
-              <TableCell className="text-right">{device.count}</TableCell>
+              <TableCell className="text-right">{device.count.toLocaleString()}</TableCell>
               <motion.div
                 className="absolute bottom-0 left-0 h-1 bg-blue-500 rounded-full"
                 initial={{ width: 0 }}
@@ -101,7 +101,7 @@ const DeviceUsageTable = ({ data }: { data: { deviceType: string; count: number;
                 whileHover={{ opacity: 1 }}
                 transition={{ duration: 0.2 }}
               >
-                {device.deviceType}: {device.count} devices, {device.percentage}% of total usage
+                {device.deviceType}: {device.count.toLocaleString()} devices, {device.percentage}% of total usage
               </motion.div>
             </TableRow>
           ))}

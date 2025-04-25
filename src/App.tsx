@@ -27,6 +27,7 @@ import Admin from "./pages/Admin/index.tsx";
 import AuditLogs from "./pages/AuditLogs/index.tsx";
 import AgencyPartnerDashboard from "./pages/AgencyManage/AgencyPartnerDashboard.tsx";
 import ClientDashboard from "./pages/AgencyManage/ClientDashboard.tsx";
+import RoleProtectedRoute from "./components/common/RoleProtectedRoute.tsx";
 
 const queryClient = new QueryClient({
   defaultOptions: { 
@@ -96,6 +97,7 @@ function App() {
                   {/* Protected routes - require both auth and guild */}
                   <Route element={<ProtectedRoute />}>
                     <Route element={<DashboardLayout children/>}>
+                      {/* Routes accessible to all authenticated users */}
                       <Route path="/" element={<Dashboard />}/>
                       <Route path="keyword-analytics" element={<KeywordAnalytics />} />
                       <Route path="user-activity" element={<UserActivityAnalytics />} />
@@ -106,10 +108,22 @@ function App() {
                       </Route>
                       <Route path="music-metrics" element={<MusicMetrics />} />
                       <Route path="message-reactions" element={<MessageReactionsAnalytics />} />
-                      <Route path="admin" element={<Admin />} />
-                      <Route path="agency-partner-dashboard" element={<AgencyPartnerDashboard />} />
-                      <Route path="client-dashboard" element={<ClientDashboard />} />
-                      <Route path="audit-logs" element={<AuditLogs />} />
+                      
+                      {/* Admin-only routes */}
+                      <Route element={<RoleProtectedRoute allowedRoles={['ADMIN']} />}>
+                        <Route path="admin" element={<Admin />} />
+                        <Route path="audit-logs" element={<AuditLogs />} />
+                      </Route>
+                      
+                      {/* Agency Partner routes */}
+                      <Route element={<RoleProtectedRoute allowedRoles={['ADMIN', 'AGENCY_PARTNER']} />}>
+                        <Route path="agency-partner-dashboard" element={<AgencyPartnerDashboard />} />
+                      </Route>
+                      
+                      {/* Client routes */}
+                      <Route element={<RoleProtectedRoute allowedRoles={['ADMIN', 'CLIENT']} />}>
+                        <Route path="client-dashboard" element={<ClientDashboard />} />
+                      </Route>
                     </Route>
                   </Route>
                 </Routes>

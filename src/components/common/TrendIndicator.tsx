@@ -17,7 +17,7 @@ const TrendIndicator = ({ value, unit = "", isPositive = true }: TrendIndicatorP
         <ArrowDownIcon className="h-4 w-4" style={{ color }} />
       )}
       <span style={{ color }}>
-        {isPositive ? "+" : "-"}{Math.abs(value)}
+        {isPositive ? "+" : "-"}{Math.abs(Number(value)).toLocaleString()}
       </span>
       {unit && (
         <span style={{ color }}>

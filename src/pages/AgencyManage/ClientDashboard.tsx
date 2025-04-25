@@ -14,13 +14,8 @@ import MessageFrequencyChart from '@/components/charts/userActivityTimeline/mess
 // Data Hooks & Types
 import { TimeViewType, useDashboardData, useActivityTrend, useMessageTrend } from '@/hooks/analytics/useDashboardData';
 import { useAggregateStats } from '@/hooks/analytics/useGamingAnalytics';
-
-// Define props for the dashboard
-interface ClientDashboardProps {
-    // guildId is likely provided by context now, remove if not needed directly
-    // guildId: string;
-    guildName: string; // Still useful for display
-}
+import { useGuildsData } from '@/hooks/useGuildsData';
+import { useAuth } from '@/contexts/AuthContext';
 
 // Skeleton Loader
 const CardSkeleton = ({ width, height }: { width: string; height: string }) => (
@@ -29,7 +24,11 @@ const CardSkeleton = ({ width, height }: { width: string; height: string }) => (
     </ContentLoader>
 );
 
-const ClientDashboard: React.FC<Omit<ClientDashboardProps, 'guildId'>> = ({ guildName }) => {
+const ClientDashboard = () => {
+    const { user } = useAuth(); // Get user from auth context
+    const { guilds, isLoading: isLoadingGuilds, error: guildsError } = useGuildsData(user?.id ?? ""); // Get guilds data
+    const guildName = guilds[0]?.name; // Get guild name from the guilds data
+   
     // --- State for Chart View Types ---
     const [userActivityViewType, setUserActivityViewType] = useState<'daily' | 'weekly' | 'monthly' | 'yearly'>('daily');
     const [messageViewType, setMessageViewType] = useState<TimeViewType>(TimeViewType.DAY);
@@ -44,7 +43,7 @@ const ClientDashboard: React.FC<Omit<ClientDashboardProps, 'guildId'>> = ({ guil
     } = useDashboardData();
 
     const { data: activityTrend, isLoading: isActivityLoading } = useActivityTrend('user', userActivityViewType);
-    const { trend: messageTrend, isLoading: isMessageLoading } = useMessageTrend(messageViewType);
+    const { trend: messageTrend, isLoading: isMessageLoading } = useMessageTrend(messageViewType === 'daily' ? TimeViewType.DAY : messageViewType === 'weekly' ? TimeViewType.WEEK : messageViewType === 'monthly' ? TimeViewType.MONTH : TimeViewType.YEAR);
     const { aggregateStats, isLoading: isGamingStatsLoading, error: gamingStatsError } = useAggregateStats();
 
     // --- UI State & Refs ---
@@ -76,7 +75,7 @@ const ClientDashboard: React.FC<Omit<ClientDashboardProps, 'guildId'>> = ({ guil
     const statsCards = useMemo(() => [
         {
             title: "Total Users",
-            value: totalUsers?.count ?? 0,
+            value: totalUsers?.count.toLocaleString() ?? 0,
             description: totalUsers?.label ?? 'total members', // Example adjustment
             trend: totalUsers?.percentChange ?? 0,
             isTrendPositive: (totalUsers?.percentChange ?? 0) > 0,
@@ -94,7 +93,7 @@ const ClientDashboard: React.FC<Omit<ClientDashboardProps, 'guildId'>> = ({ guil
         },
         {
             title: "Total Messages",
-            value: totalMessages?.count ?? 0,
+            value: totalMessages?.count.toLocaleString() ?? 0,
             description: totalMessages?.label ?? 'in this guild', // Example adjustment
             trend: totalMessages?.percentChange ?? 0,
             isTrendPositive: (totalMessages?.percentChange ?? 0) > 0,

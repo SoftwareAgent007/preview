@@ -8,6 +8,7 @@ import StatCard from '@/pages/Dashboard/components/StatCard';
 import ChartCard from '@/pages/Dashboard/components/ChartCard';
 import UserActivityTimeline from '@/components/charts/userActivityTimeline/userActivityTimelineChartWrapper';
 import MessageFrequencyChart from '@/components/charts/userActivityTimeline/messageFrequencyChart';
+
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import {
@@ -20,10 +21,11 @@ import {
 } from "@/components/ui/table";
 import { useDashboardContext } from '@/common/context/queryContext'; // Import context hook
 import { useAuth } from '@/contexts/AuthContext'; // Import auth hook
-import { useGuildInfo } from '@/hooks/useGuildInfo'; // Import the guild info hook
 
 import { TimeViewType, useDashboardData, useActivityTrend, useMessageTrend } from '@/hooks/analytics/useDashboardData';
 import { useAggregateStats } from '@/hooks/analytics/useGamingAnalytics';
+import { useGuildsData } from '@/hooks/useGuildsData';
+import { toast } from '@/hooks/use-toast';
 
 // Removed guildName from props as guildId will be managed by context
 interface AgencyPartnerDashboardProps {}
@@ -57,9 +59,11 @@ const CardSkeleton = ({ width, height }: { width: string; height: string }) => (
 const AgencyPartnerDashboard: React.FC<AgencyPartnerDashboardProps> = () => {
     const { user } = useAuth(); // Get user from auth context
     const { guildId: selectedGuildId, setGuildId: setSelectedGuildId } = useDashboardContext(); // Get guildId and setter from dashboard context, aliased for clarity
-    const { guildName } = useGuildInfo(selectedGuildId); // Get guild name from the new hook
-    const [userActivityViewType, setUserActivityViewType] = useState<'daily' | 'weekly' | 'monthly' | 'yearly'>('daily');
-    const [messageViewType, setMessageViewType] = useState<TimeViewType>(TimeViewType.DAY);
+    const { guilds, isLoading: isLoadingGuilds, error: guildsError } = useGuildsData(user?.id ?? ""); // Get guilds data
+    const guildName = guilds.find(guild => guild.id === selectedGuildId)?.name; // Get guild name from the guilds data
+    const [userActivityViewType, setUserActivityViewType] = useState<'day' | 'week' | 'month' | 'year'>('day');
+    const [messageViewType, setMessageViewType] = useState<'daily' | 'weekly' | 'monthly' | 'yearly'>('daily');
+
     const [guildSearchTerm, setGuildSearchTerm] = useState("");
     // Removed selectedGuildId state, using guildId from context instead
 
@@ -87,7 +91,7 @@ const AgencyPartnerDashboard: React.FC<AgencyPartnerDashboardProps> = () => {
     } = useDashboardData();
 
     const { data: activityTrend, isLoading: isActivityLoading } = useActivityTrend('user', userActivityViewType);
-    const { trend: messageTrend, isLoading: isMessageLoading } = useMessageTrend(messageViewType);
+    const { trend: messageTrend, isLoading: isMessageLoading } = useMessageTrend(messageViewType === 'daily' ? TimeViewType.DAY : messageViewType === 'weekly' ? TimeViewType.WEEK : messageViewType === 'monthly' ? TimeViewType.MONTH : TimeViewType.YEAR);
     const { aggregateStats, isLoading: isGamingStatsLoading, error: gamingStatsError } = useAggregateStats();
 
     const [graphWidth, setGraphWidth] = useState(0);
@@ -176,16 +180,35 @@ const AgencyPartnerDashboard: React.FC<AgencyPartnerDashboardProps> = () => {
                     className="block mx-auto"
                     style={{ maxWidth: `${import.meta.env.VITE_MAX_WIDTH || 1200}px` }}
                 >
-                    {/* Header */}
-                    <div className="flex flex-col md:flex-row justify-between items-start mb-6">
-                        <h1 className="text-2xl font-bold text-gray-800 mb-2 md:mb-0">
-                            {guildName} Statistics
-                        </h1>
-                        <Button variant="outline" className="flex items-center gap-2">
+                    {/* Dashboard Header */}
+                    <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-6 pb-4">
+                        <div className="flex flex-col md:flex-row items-start md:items-center gap-3 md:gap-5">
+                            <div 
+                            className="text-blue-600 text-3xl font-extrabold tracking-tight hover:underline cursor-pointer transition"
+                            onClick={() => {
+                                navigator.clipboard.writeText(guildName!);
+                                toast({
+                                    description: "Guild name copied to clipboard!",
+                                    variant: "default",
+                                });
+                            }}
+                            >
+                            {guildName}
+                            </div>
+
+                            <div className="text-gray-400 text-xl font-semibold">/</div>
+
+                            <h1 className="text-2xl font-semibold text-gray-800">
+                            Guild Overview
+                            </h1>
+                        </div>
+
+                        <Button variant="outline" className="mt-4 md:mt-0 flex items-center gap-2">
                             <Download className="h-4 w-4" />
                             Export Report
                         </Button>
                     </div>
+
 
                     {/* Stats Cards */}
                     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-6 h-fit">
@@ -213,7 +236,7 @@ const AgencyPartnerDashboard: React.FC<AgencyPartnerDashboardProps> = () => {
                                     width={graphWidth}
                                     isLoading={isActivityLoading}
                                     tooltipContent={`User activity trend in ${guildName}`}
-                                    onViewTypeChange={(type) => setUserActivityViewType(type as 'daily' | 'weekly' | 'monthly' | 'yearly')}
+                                    onViewTypeChange={(type) => setUserActivityViewType(type as 'day' | 'week' | 'month' | 'year')}
                                 />
                             )}
                         </ChartCard>
@@ -225,7 +248,7 @@ const AgencyPartnerDashboard: React.FC<AgencyPartnerDashboardProps> = () => {
                                     messageFrequency={messageTrend ?? []}
                                     width={graphWidth}
                                     isLoading={isMessageLoading}
-                                    onViewTypeChange={(type) => setMessageViewType(type as TimeViewType)}
+                                    onViewTypeChange={setMessageViewType}
                                 />
                             )}
                         </ChartCard>

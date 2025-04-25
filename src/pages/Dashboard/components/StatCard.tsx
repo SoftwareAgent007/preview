@@ -23,6 +23,7 @@ interface StatCardProps {
   index?: number;
   isExtraData?: boolean;
   extraInfo?: ExtraInfo;
+  unitParam?: string;
 }
 
 const StatCard = ({ 
@@ -34,7 +35,8 @@ const StatCard = ({
   tooltipContent,
   index = 0,
   isExtraData = false,
-  extraInfo
+  extraInfo,
+  unitParam
 }: StatCardProps) => {
   const [isExpanded, setIsExpanded] = useState(false);
   const showExpandButton = isExtraData && extraInfo && Object.keys(extraInfo).length > 0;
@@ -145,9 +147,9 @@ const StatCard = ({
             variants={item}
             className="text-sm text-gray-500 mt-2 flex justify-between items-center"
           >
-            <span>{trend}% from last {selectedPeriod.count} {selectedPeriod.type}</span>
+            <span>{trend} {unitParam || "%"} from last {selectedPeriod.count} {selectedPeriod.type}</span>
             <TrendIndicator 
-              unit="%" 
+              unit={unitParam || "%"} 
               value={trend} 
               isPositive={isTrendPositive} 
             />
@@ -164,13 +166,13 @@ const StatCard = ({
               >
                 <div className="border-t border-gray-100 mt-4 pt-4 space-y-2">
                   {extraInfo.netChange !== undefined && (
-                    <p className="text-sm text-gray-600">Net Change: <span className="font-medium">{extraInfo.netChange}</span></p>
+                    <p className="text-sm text-gray-600">Net Change: <span className="font-medium">{extraInfo.netChange?.toLocaleString()}</span></p>
                   )}
                   {extraInfo.newUsersCount !== undefined && (
-                    <p className="text-sm text-gray-600">New Users: <span className="font-medium">{extraInfo.newUsersCount}</span></p>
+                    <p className="text-sm text-gray-600">New Users: <span className="font-medium">{extraInfo.newUsersCount?.toLocaleString()}</span></p>
                   )}
                   {extraInfo.departedUsersCount !== undefined && (
-                    <p className="text-sm text-gray-600">Departed Users: <span className="font-medium">{extraInfo.departedUsersCount}</span></p>
+                    <p className="text-sm text-gray-600">Departed Users: <span className="font-medium">{extraInfo.departedUsersCount?.toLocaleString()}</span></p>
                   )}
                 </div>
               </motion.div>

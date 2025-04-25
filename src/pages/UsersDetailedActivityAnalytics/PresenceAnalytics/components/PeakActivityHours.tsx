@@ -33,7 +33,7 @@ const PeakActivityHours = ({ hourlyActivity, width = 500 }: PeakActivityHoursPro
                 {String(hour.hour).padStart(2, '0')}:00
               </span>
               <span className="text-sm text-gray-600">
-                {hour.maxUsers} users
+                {hour.maxUsers.toLocaleString()} users
               </span>
             </div>
             <div className="relative h-2 bg-gray-200 rounded-full overflow-hidden">
@@ -45,8 +45,8 @@ const PeakActivityHours = ({ hourlyActivity, width = 500 }: PeakActivityHoursPro
               />
             </div>
             <div className="flex justify-between text-xs text-gray-500 mt-1">
-              <span>Min: {hour.minUsers}</span>
-              <span>Avg: {Math.round(hour.avgUsers)}</span>
+              <span>Min: {hour.minUsers.toLocaleString()}</span>
+              <span>Avg: {Math.round(hour.avgUsers).toLocaleString()}</span>
             </div>
           </motion.div>
         ))}

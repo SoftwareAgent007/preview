@@ -23,6 +23,20 @@ export const ROUTES = {
   CLIENT_DASHBOARD: "/client-dashboard",
 } as const;
 
+// User roles
+export const ROLES = {
+  ADMIN: 'ADMIN',
+  AGENCY_PARTNER: 'AGENCY_PARTNER',
+  CLIENT: 'CLIENT'
+} as const;
+
+// Role-based redirects
+export const ROLE_REDIRECTS = {
+  [ROLES.ADMIN]: ROUTES.ADMIN,
+  [ROLES.AGENCY_PARTNER]: ROUTES.AGENCY_PARTNER_DASHBOARD,
+  [ROLES.CLIENT]: ROUTES.CLIENT_DASHBOARD
+} as const;
+
 export const BREADCRUMB_PATHS: Record<string, BreadcrumbItem[]> = {
   [ROUTES.DASHBOARD]: [{ label: "Dashboard" }],
   [ROUTES.KEYWORD_ANALYTICS]: [
@@ -70,8 +84,8 @@ export const BREADCRUMB_PATHS: Record<string, BreadcrumbItem[]> = {
     { label: "Music Metrics" },
   ],
   [ROUTES.ADMIN]: [
-    { label: "Dashboard", path: ROUTES.ADMIN },
-    { label: "Admin" },
+    { label: "Dashboard", path: ROUTES.DASHBOARD },
+    { label: "Admin Panel" },
   ],
   // [ROUTES.MESSAGE_REACTIONS]: [
   //   { label: "Dashboard", path: ROUTES.DASHBOARD },
@@ -82,6 +96,15 @@ export const BREADCRUMB_PATHS: Record<string, BreadcrumbItem[]> = {
   ],
   [ROUTES.AUDIT_LOGS]: [
     { label: "Dashboard", path: ROUTES.DASHBOARD },
+    { label: "Admin", path: ROUTES.ADMIN },
     { label: "Audit Logs" },
+  ],
+  [ROUTES.AGENCY_PARTNER_DASHBOARD]: [
+    { label: "Dashboard", path: ROUTES.DASHBOARD },
+    { label: "Agency Partner Dashboard" },
+  ],
+  [ROUTES.CLIENT_DASHBOARD]: [
+    { label: "Dashboard", path: ROUTES.DASHBOARD },
+    { label: "Client Dashboard" },
   ],
 } as const;

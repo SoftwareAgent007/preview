@@ -168,7 +168,7 @@ const GamingAnalytics = () => {
     },
     { 
       title: "Total Game Time", 
-      value: basicStats.totalHours, 
+      value: basicStats.totalHours > 1000 ? Number(basicStats.totalHours.toFixed(0)).toLocaleString() : basicStats.totalHours.toLocaleString(), 
       subtitle: "Cumulative Hours Played", 
       unit: "hrs",
       tooltip: "Total cumulative hours spent playing this game"
@@ -318,7 +318,7 @@ const GamingAnalytics = () => {
           ) : (
             <>
               {statsData.slice(0, 5).map((stat, index) => (
-                <StatCard height="140px" {...stat} index={index} />
+                <StatCard height="140px" {...stat} index={index} unitParam={stat?.unit} />
               ))}
             </>
           )}

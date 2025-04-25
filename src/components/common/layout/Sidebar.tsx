@@ -1,19 +1,68 @@
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { NavLink, useLocation } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import { ChevronDown, ChevronRight, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { menuCategories } from "./constant";
+import { ROUTES } from "@/routes/routes.constant";
+import { useAuth } from "@/contexts/AuthContext";
 
 interface SidebarProps {
   onClose: () => void;
 }
 
+// Define which routes are accessible to which roles
+const routePermissions = {
+  [ROUTES.ADMIN]: ['ADMIN'],
+  [ROUTES.AUDIT_LOGS]: ['ADMIN'],
+  [ROUTES.AGENCY_PARTNER_DASHBOARD]: ['ADMIN', 'AGENCY_PARTNER'],
+  [ROUTES.CLIENT_DASHBOARD]: ['ADMIN', 'CLIENT']
+};
+
 const Sidebar = ({ onClose }: SidebarProps) => {
     const location = useLocation();
+    const { user } = useAuth();
     const [expandedItems, setExpandedItems] = useState<string[]>(
       location.pathname.includes('/user-activity/detailed') ? ['/user-activity'] : []
     );
+  
+    // Filter menu items based on user role
+    const filteredMenuCategories = useMemo(() => {
+      const filtered: typeof menuCategories = {};
+      
+      Object.entries(menuCategories).forEach(([category, items]) => {
+        const filteredItems = items.filter(item => {
+          // Check if this route has role restrictions
+          const allowedRoles = routePermissions[item.path as keyof typeof routePermissions];
+          
+          // If no restrictions, show to everyone
+          if (!allowedRoles) return true;
+          
+          // Otherwise, check if user's role is allowed
+          return user && allowedRoles.includes(user.role);
+        }).map(item => {
+          // Also filter nested items if they exist
+          if (item.nested) {
+            return {
+              ...item,
+              nested: item.nested.filter(nestedItem => {
+                const nestedAllowedRoles = routePermissions[nestedItem.path as keyof typeof routePermissions];
+                if (!nestedAllowedRoles) return true;
+                return user && nestedAllowedRoles.includes(user.role);
+              })
+            };
+          }
+          return item;
+        });
+        
+        // Only include category if it has items
+        if (filteredItems.length > 0) {
+          filtered[category] = filteredItems;
+        }
+      });
+      
+      return filtered;
+    }, [user]);
   
     const toggleExpand = (path: string) => {
       setExpandedItems(prev => 
@@ -46,7 +95,7 @@ const Sidebar = ({ onClose }: SidebarProps) => {
       <div className="p-6">
         <h2 className="text-2xl font-bold mb-6">DataPlay</h2>
         <nav className="space-y-6">
-          {Object.entries(menuCategories).map(([category, items]) => (
+          {Object.entries(filteredMenuCategories).map(([category, items]) => (
             <div key={category} className="space-y-1">
               <p className="text-sm font-medium text-gray-500 mb-2">
                 {category}
@@ -71,6 +120,9 @@ const Sidebar = ({ onClose }: SidebarProps) => {
                   >
                     <span className="h-5 w-5 mr-3">{item.icon}</span>
                     <span>{item.label}</span>
+                    {item.beta && (
+                      <span className="ml-2 px-1.5 py-0.5 text-xs bg-blue-100 text-blue-800 rounded">Beta</span>
+                    )}
                     {item.nested && (
                       expandedItems.includes(item.path) 
                         ? <ChevronDown className="ml-auto h-4 w-4" />
