@@ -1,25 +1,32 @@
-import { Card } from "@/components/ui/card";
-import CircleRoleChart from "../circleChartOfRoles";
-import { useEffect, useRef, useState } from "react";
 import ReactDOM from "react-dom";
+import { useEffect, useRef, useState } from "react";
 import { Expand, Minimize } from "lucide-react";
-import { ClickableTooltip } from "@/components/ui/tooltip";
 import { motion, AnimatePresence } from "framer-motion";
 
-const RolesChart = ({ width, data }: { width?: number, data: { roleName: string, count: number, percentage: number, color: string }[] }) => {
+import { Card } from "@/components/ui/card";
+import { ClickableTooltip } from "@/components/ui/tooltip";
+import CircleRoleChart from "../circleChartOfRoles";
+
+interface RolesDataItem {
+    roleName: string,
+    count: number,
+    percentage: number,
+    color: string
+}
+
+type RolesData = Array<RolesDataItem>
+
+const RolesChart = ({ width, data }: { width?: number, data:[] }) => {
     const chartRef = useRef<HTMLDivElement | null>(null);
     const [chartWidth, setChartWidth] = useState(width || 400);
     const [chartHeight, setChartHeight] = useState(300);
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [processedData, setProcessedData] = useState<{ roleName: string, count: number, percentage: number, color: string }[]>([]);
 
-    const MIN_CHART_SIZE = 300;
-    const MAX_CHART_SIZE = 800;
-
     const updateChartDimensions = () => {
         if (chartRef.current) {
-            const containerWidth = chartRef.current.offsetWidth;
-            const containerHeight = chartRef.current.offsetHeight;
+            const containerWidth = chartRef.current?.offsetWidth;
+            const containerHeight = chartRef.current?.offsetHeight;
             
             // Calculate width based on container size
             const newWidth = Math.min(containerWidth - 48, 800); // 48px for padding
@@ -31,30 +38,7 @@ const RolesChart = ({ width, data }: { width?: number, data: { roleName: string,
     };
 
     useEffect(() => {
-        const processedData = data.reduce((acc, item) => {
-            if (item.percentage < 2) {
-                const other = acc.find(d => d.roleName === "Other");
-                if (other) {
-                    other.count += item.count;
-                    other.percentage += item.percentage;
-                } else {
-                    acc.push({ roleName: "Other", count: item.count, percentage: item.percentage, color: "#CCCCCC" });
-                }
-            } else {
-                acc.push(item);
-            }
-            return acc;
-        }, [] as { roleName: string, count: number, percentage: number, color: string }[]);
-
-        const totalPercentage = data.reduce((sum, item) => sum + item.percentage, 0);
-        const noRolePercentage = 100 - totalPercentage;
-
-        if (noRolePercentage > 0) {
-            const highestCount = Math.max(...processedData.map(item => item.count));
-            const highestPercentage = Math.max(...processedData.map(item => item.percentage));
-            const noRoleCount = Math.round((highestCount / highestPercentage) * noRolePercentage);
-            processedData.push({ roleName: "No Role", count: noRoleCount, percentage: noRolePercentage, color: "#E0E0E0" });
-        }
+        const processedData = processRolesData(data);
         setProcessedData(processedData);
     }, [data])
 
@@ -62,7 +46,7 @@ const RolesChart = ({ width, data }: { width?: number, data: { roleName: string,
         updateChartDimensions();
         const resizeObserver = new ResizeObserver(updateChartDimensions);
         if (chartRef.current) {
-            resizeObserver.observe(chartRef.current);
+            resizeObserver.observe(chartRef.current!);
         }
         return () => resizeObserver.disconnect();
     }, []);
@@ -179,7 +163,7 @@ const RolesChart = ({ width, data }: { width?: number, data: { roleName: string,
 
 interface ModalProps {
     closeModal: () => void;
-    data: { roleName: string, count: number, percentage: number, color: string }[];
+    data: RolesData;
     width: number;
     height: number;
 }
@@ -245,7 +229,7 @@ const Modal: React.FC<ModalProps> = ({ closeModal, data, width, height }) => {
                         className="flex flex-col items-center"
                     >
                         <CircleRoleChart 
-                            data={processedData} 
+                            data={data}
                             width={width} 
                             height={height}
                         />
@@ -256,5 +240,34 @@ const Modal: React.FC<ModalProps> = ({ closeModal, data, width, height }) => {
         document.body
     );
 };
+
+const processRolesData = (data:RolesData):RolesData => {
+    const processedData :RolesData = data.reduce((acc, item) => {
+        if (item.percentage < 2) {
+            const other = acc.find(d => d.roleName === "Other");
+            if (other) {
+                other.count += item.count;
+                other.percentage += item.percentage;
+            } else {
+                acc.push({ roleName: "Other", count: item.count, percentage: item.percentage, color: "#CCCCCC" });
+            }
+        } else {
+            acc.push(item);
+        }
+        return acc;
+    }, []);
+
+    const totalPercentage = data.reduce((sum, item) => sum + item.percentage, 0);
+    const noRolePercentage = 100 - totalPercentage;
+
+    if (noRolePercentage > 0) {
+        const highestCount = Math.max(...processedData.map(item => item.count));
+        const highestPercentage = Math.max(...processedData.map(item => item.percentage));
+        const noRoleCount = Math.round((highestCount / highestPercentage) * noRolePercentage);
+        processedData.push({ roleName: "No Role", count: noRoleCount, percentage: noRolePercentage, color: "#E0E0E0" });
+    }
+
+    return processedData
+}
 
 export default RolesChart;
