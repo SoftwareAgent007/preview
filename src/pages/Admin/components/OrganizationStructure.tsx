@@ -269,6 +269,9 @@ const AgencyStructure = ({
                         snapshot.isDraggingOver ? "bg-gray-100 border-2 border-dashed border-gray-300" : "bg-white"
                       )}
                     >
+                      {agency.agencyGuilds?.length === 0 && (
+                        <div className="text-center text-gray-500">Drop guilds here</div>
+                      )}
                       {agency.agencyGuilds?.map((guild, index) => (
                         
                         <Draggable key={guild.id} draggableId={'agency-guilds-'+guild.id} index={index}>
@@ -316,6 +319,9 @@ const AgencyStructure = ({
                         snapshot.isDraggingOver ? "bg-gray-100 border-2 border-dashed border-gray-300" : "bg-white"
                       )}
                     >
+                      {agency.owners?.length === 0 && (
+                        <div className="text-center text-gray-500">Drop users here</div>
+                      )}
                       {agency.owners?.map((user, index) => (
                         <Draggable key={user.id} draggableId={`${user.id}-${user.name}`} index={index}>
                           {(provided, snapshot) => (

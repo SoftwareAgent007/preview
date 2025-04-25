@@ -3,7 +3,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { useGetAllOwners, useGetAllGuilds, useUpdateOwnerRole, useAssignGuildToOwner, useRemoveGuildFromOwner, useToggleGuildActivityState, useGetAllAgencies, useCreateAgency, useUpdateAgency, useDeleteAgency, useAssignGuildToAgency, useRemoveGuildFromAgency, useAssignOwnerToAgency, useRemoveOwnerFromAgency } from "@/hooks/admin/useAdminData";
+import { useGetAllOwners, useGetAllGuilds, useUpdateOwnerRole, useAssignGuildToOwner, useRemoveGuildFromOwner, useToggleGuildActivityState, useGetAllAgencies, useCreateAgency, useUpdateAgency, useDeleteAgency, useAssignGuildToAgency, useRemoveGuildFromAgency, useAssignOwnerToAgency, useRemoveOwnerFromAgency, useGetGuildsForOwner, useRestoreInheritedGuildToOwner } from "@/hooks/admin/useAdminData";
 import { toast } from "@/hooks/use-toast";
 import { Owner, Guild, User, Agency } from "@/types/dataTypes";
 import { motion } from "framer-motion";
@@ -54,11 +54,13 @@ const AdminPanel = () => {
 	const { data: owners, isLoading: isLoadingOwners } = useGetAllOwners();
 	const { data: guildsData, isLoading: isLoadingGuilds } = useGetAllGuilds();
 	const { data: agenciesData, isLoading: isLoadingAgencies } = useGetAllAgencies();
+	const { data: guildsForOwner, isLoading: isLoadingGuildsForOwner } = useGetGuildsForOwner(selectedUserIdForGuildView);
+	const restoreGuildToOwner = useRestoreInheritedGuildToOwner();
+	const removeGuildFromOwner = useRemoveGuildFromOwner();
 	const updateOwnerRole = useUpdateOwnerRole();
 	const assignGuildToOwner = useAssignGuildToOwner();
 	const assignUserToAgency = useAssignOwnerToAgency();
 	const removeOwnerFromAgency = useRemoveOwnerFromAgency();
-	const removeGuildFromOwner = useRemoveGuildFromOwner();
 	const toggleGuildActivityState = useToggleGuildActivityState();
 	const createAgencyMutation = useCreateAgency();
 	const updateAgencyMutation = useUpdateAgency();
@@ -155,7 +157,7 @@ const AdminPanel = () => {
 		};
 
 		const newAccessMap = calculateUserGuildAccess();
-		setUserGuildAccess(newAccessMap);
+		// setUserGuildAccess(newAccessMap);
 
 	}, [users, agencies, guilds]);
 
@@ -746,6 +748,7 @@ const handleDragEnd = (result: DropResult) => {
 };
 
 	const getAvailableGuildsForUser = useCallback((userId: string | null): Guild[] => {
+		console.log('getAvailableGuildsForUser', userId,'guildsForOwner', guildsForOwner);
 		if (!userId) return [];
 		const accessibleGuildIds = userGuildAccess[userId] || [];
 		return guilds.filter(guild => accessibleGuildIds.includes(guild.id));
@@ -883,8 +886,9 @@ const handleDragEnd = (result: DropResult) => {
 	}, [selectedUserIdForGuildView, allManageableUsers]);
 
 	const guildsForEditingPartner = useMemo(() => {
-		if (!selectedUser || selectedUser.role !== 'AgencyPartner') return [];
-		const partnerAgencyId = (selectedUser as any).agencyId;
+		if (!selectedUser || selectedUser.role !== 'AGENCY_PARTNER') return [];
+		const partnerAgencyId = selectedUser.agencyId;
+		console.log('guilds', guilds);
 		return guilds.filter(g => g.agencyId === partnerAgencyId);
 	}, [selectedUser, guilds]);
 
@@ -974,6 +978,7 @@ const handleDragEnd = (result: DropResult) => {
 								<Select
 									value={selectedUserIdForGuildView ?? ""}
 									onValueChange={(value) => {
+										console.log('selected user for guild id view', value);
 										setSelectedUserIdForGuildView(value || null);
 										if (isEditingRestrictions) {
 											handleCancelEditingRestrictions();
@@ -995,9 +1000,10 @@ const handleDragEnd = (result: DropResult) => {
 
 							<Separator className="my-4" />
 
+
 							{!selectedUserIdForGuildView || !selectedUser ? (
 								<p className="text-sm text-muted-foreground pt-2">Select a user to see their available guilds.</p>
-							) : isEditingRestrictions && selectedUser.role === 'AgencyPartner' ? (
+							) : isEditingRestrictions && selectedUser.role === 'AGENCY_PARTNER' ? (
 								<div className="p-4 border rounded-md bg-muted/30 space-y-3">
 									<p className="text-sm font-medium">Select guilds <span className="font-semibold">{selectedUser.name}</span> can access:</p>
 									<div className="space-y-2 max-h-48 overflow-y-auto pr-2 border-t border-b py-3 my-2">
@@ -1033,7 +1039,7 @@ const handleDragEnd = (result: DropResult) => {
 										<h4 className="font-medium text-base">
 											{selectedUser.role === 'Client' ? 'Assigned Guild:' : 'Accessible Guilds:'}
 										</h4>
-										{selectedUser?.role === 'AgencyPartner' && guildsForEditingPartner.length > 0 && (
+										{selectedUser?.role === 'AGENCY_PARTNER' && guildsForEditingPartner.length > 0 && (
 											<Button variant="outline" size="sm" onClick={() => handleStartEditingRestrictions(selectedUser.id)}>
 												<Edit className="h-3.5 w-3.5 mr-1.5" />
 												Edit Restrictions
@@ -1041,19 +1047,23 @@ const handleDragEnd = (result: DropResult) => {
 										)}
 									</div>
 									{(() => {
+										if (isLoadingGuildsForOwner) {
+											return <p className="text-sm text-muted-foreground">Loading guilds...</p>;
+										}
+										
 										switch (selectedUser.role) {
 											case 'ADMIN':
 												return <p className="text-sm text-muted-foreground italic">Admins have access to all guilds (cannot be restricted).</p>;
 											case 'CLIENT':
-												return availableGuildsForSelectedUser.length > 0 ? (
-													<Badge variant="outline">{availableGuildsForSelectedUser[0].name}</Badge>
+												return guildsForOwner?.length || 0 > 0 ? (
+													<Badge variant="outline">{guildsForOwner[0]?.name}</Badge>
 												) : (
 													<p className="text-sm text-muted-foreground italic">Client is not assigned to any guild.</p>
 												);
-											case 'AGENCYPARTNER':
-												return availableGuildsForSelectedUser.length > 0 ? (
+											case 'AGENCY_PARTNER':
+												return guildsForOwner?.length || 0 > 0 ? (
 													<div className="flex flex-wrap gap-2">
-														{availableGuildsForSelectedUser.map(guild => (
+														{guildsForOwner?.map(guild => (
 															<Badge key={guild.id} variant="secondary">{guild.name}</Badge>
 														))}
 													</div>

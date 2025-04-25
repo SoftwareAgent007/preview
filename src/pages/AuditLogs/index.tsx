@@ -104,16 +104,17 @@ const AuditLogs = () => {
 
   const formatTimestamp = (timestamp: string | Date) => {
     try {
-      // Handle potential Date object from date picker or string from API
       const date = typeof timestamp === 'string' ? new Date(timestamp) : timestamp;
-      // Check if the date is valid before formatting
       if (isNaN(date.getTime())) {
-        return String(timestamp); // Return original string if date is invalid
+        // Keep original string if date is invalid, might be intentional
+        return String(timestamp);
       }
-      return format(date, 'yyyy-MM-dd HH:mm:ss');
+      // More human-readable format
+      return format(date, 'MMM d, yyyy, h:mm:ss a');
     } catch (e) {
       console.error("Error formatting timestamp:", e);
-      return String(timestamp); // Fallback to original value
+      // Fallback to original value on error
+      return String(timestamp);
     }
   };
 
@@ -255,7 +256,7 @@ const AuditLogs = () => {
                 <TableBody>
                   {filteredLogs.map((log) => (
                     <TableRow key={log.id}>
-                      <TableCell>{formatTimestamp(log.timestamp)}</TableCell>
+                      <TableCell>{formatTimestamp(log.createdAt)}</TableCell>
                       <TableCell>
                         <div className="flex items-center gap-2">
                           <div>
