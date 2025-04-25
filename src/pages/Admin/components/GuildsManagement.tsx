@@ -12,8 +12,8 @@ import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
-// Removed Select imports as they are no longer used here
-import { Pencil, Trash2, Check, X, AlertCircle, GripVertical } from "lucide-react";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
+import { Pencil, Trash2, Check, X, AlertCircle, GripVertical, Calendar, Power, PowerOff } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
 import {
   AlertDialog,
@@ -27,6 +27,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import { cn } from '@/lib/utils';
 import { Agency, Guild } from '@/types/dataTypes';
+import { format } from 'date-fns';
 
 interface GuildsManagementProps {
   guilds: (Guild & { _dragId?: string })[];
@@ -129,16 +130,34 @@ const GuildsManagement = ({
     onRemoveFromAgency(guildId, agencyId);
   };
 
+  // Function to truncate ID for display
+  const truncateId = (id: string) => {
+    if (id.length <= 10) return id;
+    return id.substring(0, 6) + '...' + id.substring(id.length - 4);
+  };
+
+  // Format date for display
+  const formatDate = (dateString: string) => {
+    try {
+      return format(new Date(dateString), 'MMM d, yyyy');
+    } catch (e) {
+      return 'Invalid date';
+    }
+  };
+
   return (
     <Card className={cn("p-6", className)}>
-      <h3 className="text-xl font-semibold mb-4">Guilds Management</h3>
+      <h3 className="text-2xl font-bold mb-6">Guilds Management</h3>
       <div className="rounded-md border">
         <Table>
           <TableHeader>
             <TableRow>
-              <TableHead className="w-[250px]">Guild Name</TableHead>
-              <TableHead className="w-[150px]">Agency Usage</TableHead>
-              <TableHead className="w-[100px]">Members</TableHead>
+              <TableHead className="w-[200px]">Guild Name</TableHead>
+              <TableHead className="w-[120px]">ID</TableHead>
+              <TableHead className="w-[120px]">Joined At</TableHead>
+              <TableHead className="w-[80px]">Status</TableHead>
+              <TableHead className="w-[120px]">Agency Usage</TableHead>
+              <TableHead className="w-[80px]">Members</TableHead>
               <TableHead className="w-[100px] text-right">Actions</TableHead>
             </TableRow>
           </TableHeader>
@@ -151,7 +170,7 @@ const GuildsManagement = ({
               >
                 {guilds.length === 0 ? (
                   <TableRow>
-                    <TableCell colSpan={4} className="h-24 text-center">
+                    <TableCell colSpan={7} className="h-24 text-center">
                       No guilds found
                     </TableCell>
                   </TableRow>
@@ -161,7 +180,7 @@ const GuildsManagement = ({
                     const usageCount = guildUsageCount[guild.id] || 0;
                     
                     return (
-                      <Draggable key={guild.id} draggableId={guild.id} index={index}>
+                      <Draggable key={guild.id} draggableId={'guilds-table-'+guild.id} index={index}>
                         {(provided, snapshot) => (
                           <TableRow
                             ref={provided.innerRef}
@@ -178,7 +197,7 @@ const GuildsManagement = ({
                                   <Input
                                     value={editedValues.name ?? ''} // Use ?? '' for controlled input
                                     onChange={(e) => setEditedValues(prev => ({ ...prev, name: e.target.value }))}
-                                    className="w-[200px]"
+                                    className="w-[150px]"
                                     autoFocus
                                     onKeyDown={(e) => {
                                       if (e.key === 'Enter') handleEditSave();
@@ -191,6 +210,54 @@ const GuildsManagement = ({
                               </div>
                             </TableCell>
                             <TableCell>
+                              <TooltipProvider>
+                                <Tooltip>
+                                  <TooltipTrigger asChild>
+                                    <span 
+                                      className="cursor-pointer text-sm text-muted-foreground"
+                                      onClick={() => {
+                                        navigator.clipboard.writeText(guild.id);
+                                        toast({
+                                          title: "Copied to clipboard",
+                                          description: "Guild ID has been copied to clipboard",
+                                          duration: 2000,
+                                        });
+                                      }}
+                                    >
+                                      {truncateId(guild.id)}
+                                    </span>
+                                  </TooltipTrigger>
+                                  <TooltipContent>
+                                    <p className="font-mono text-xs">{guild.id} (click to copy)</p>
+                                  </TooltipContent>
+                                </Tooltip>
+                              </TooltipProvider>
+                            </TableCell>
+                            <TableCell>
+                              <TooltipProvider>
+                                <Tooltip>
+                                  <TooltipTrigger asChild>
+                                    <div className="flex items-center gap-1 text-sm">
+                                      <Calendar className="h-3.5 w-3.5 text-muted-foreground" />
+                                      <span>{formatDate(guild.joinedAt)}</span>
+                                    </div>
+                                  </TooltipTrigger>
+                                  <TooltipContent>
+                                    <p className="text-xs">{new Date(guild.joinedAt).toLocaleString()}</p>
+                                  </TooltipContent>
+                                </Tooltip>
+                              </TooltipProvider>
+                            </TableCell>
+                            <TableCell>
+                              <Badge variant={guild.active ? "success" : "secondary"} className={cn(
+                                "flex items-center gap-1 w-fit",
+                                !guild.active && "bg-gray-200 text-gray-700"
+                              )}>
+                                {guild.active ? <Power className="h-3 w-3" /> : <PowerOff className="h-3 w-3" />}
+                                {guild.active ? "Active" : "Inactive"}
+                              </Badge>
+                            </TableCell>
+                            <TableCell>
                               {usageCount > 0 ? (
                                 <Badge variant="secondary">
                                   {usageCount} {usageCount === 1 ? 'agency' : 'agencies'}
@@ -200,8 +267,9 @@ const GuildsManagement = ({
                               )}
                             </TableCell>
                             <TableCell>
-                              {/* Assuming guild.members exists and is an array */}
-                              <Badge variant="outline">{guild.members?.length ?? 0} members</Badge>
+                              <span className="text-sm font-medium">
+                                {guild.memberCount.toLocaleString()}
+                              </span>
                             </TableCell>
                             <TableCell className="text-right">
                               <div className="flex items-center justify-end gap-1"> {/* Reduced gap */}

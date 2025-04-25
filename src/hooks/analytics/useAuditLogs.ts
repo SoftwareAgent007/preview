@@ -12,15 +12,22 @@ export enum LogActionType {
   REMOVE_MULTIPLE_GUILDS = 'REMOVE_MULTIPLE_GUILDS',
 }
 
+interface OwnerInfo {
+  id: string;
+  name: string;
+  email: string;
+  role: string; // Consider using a Role enum if available
+}
+
 export interface AdminAction {
   id: string;
+  ownerId: string; // ID of the user performing the action
   actionType: LogActionType;
-  targetId: string;
-  targetType: string;
-  ownerId: string;
-  ownerName: string;
-  timestamp: string;
-  details: Record<string, any>;
+  targetId: string; // ID of the entity being acted upon
+  targetType: string; // Type of the entity (e.g., 'GUILD', 'USER', 'AGENCY')
+  details: Record<string, any>; // Action-specific details
+  createdAt: string; // Timestamp of the action
+  owner: OwnerInfo; // Details of the user performing the action
 }
 
 export interface PaginatedWrapper<T> {
