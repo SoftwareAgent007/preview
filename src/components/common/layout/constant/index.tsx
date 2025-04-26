@@ -50,7 +50,7 @@ export const menuCategories: MenuCategories = {
     { icon: <Music2 />, label: "Music Metrics", path: ROUTES.MUSIC_METRICS, beta: true },
   ],
   Community: [
-    { icon: <Building2 />, label: "Assign Guild", path: ROUTES.ASSIGN_GUILD },
+    // { icon: <Building2 />, label: "Assign Guild", path: ROUTES.ASSIGN_GUILD },
     { icon: <Settings />, label: "Admin", path: ROUTES.ADMIN },
     { icon: <ClipboardList />, label: "Audit Logs", path: ROUTES.AUDIT_LOGS },
     { icon: <Briefcase />, label: "Agency Partner Dashboard", path: ROUTES.AGENCY_PARTNER_DASHBOARD },

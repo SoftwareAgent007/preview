@@ -19,7 +19,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Input } from "@/components/ui/input";
-import { Trash2, Loader2, Pencil, Check, X, User as UserIcon, AlertCircle, GripVertical } from "lucide-react";
+import { Trash2, Loader2, Pencil, Check, X, User as UserIcon, AlertCircle, GripVertical, Plus } from "lucide-react";
 import { User as UserType, Agency, Guild, PaginationDto, UserRole } from "@/types/dataTypes";
 import { toast } from "@/hooks/use-toast";
 import {
@@ -31,6 +31,15 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { Label } from "@/components/ui/label";
 import { DragDropContext, Draggable, Droppable, DropResult } from 'react-beautiful-dnd';
 import { cn } from "@/lib/utils";
 
@@ -47,6 +56,7 @@ interface UserManagementTableProps {
   onToggleActive: (user: UserType) => void;
   onDelete: (userId: string) => Promise<boolean>;
   onUpdate: (user: UserType) => Promise<void>;
+  onCreateUser: (user: Partial<UserType>) => Promise<void>;
   onAssignAgency: (userId: string, agencyId: string) => void;
   onRemoveAgency: (userId: string, agencyId: string) => void;
   onAssignGuild: (userId: string, guildId: string) => void;
@@ -64,6 +74,7 @@ const UserManagementTable = ({
   onPageSizeChange,
   onDelete,
   onUpdate,
+  onCreateUser,
   onReorderUsers
 }: UserManagementTableProps) => {
   const [userToDelete, setUserToDelete] = React.useState<UserType | null>(null);
@@ -73,6 +84,14 @@ const UserManagementTable = ({
   const [deleteError, setDeleteError] = React.useState<string>("");
   const [isUpdating, setIsUpdating] = React.useState(false);
   const [isDeleting, setIsDeleting] = React.useState(false);
+  const [isCreating, setIsCreating] = React.useState(false);
+  const [createUserDialogOpen, setCreateUserDialogOpen] = React.useState(false);
+  const [newUser, setNewUser] = React.useState<Partial<UserType>>({
+    name: "",
+    email: "",
+    password: "",
+    role: "CLIENT",
+  });
   const inputRef = React.useRef<HTMLInputElement | null>(null);
 
   const handleEditStart = (user: UserType) => {
@@ -81,7 +100,6 @@ const UserManagementTable = ({
     setEditedValues({
       name: user.name,
       role: user.role,
-      isActive: user.isActive,
       agencyId: user.agencyId,
     });
     setUserName(user.name); // Set default input value as user's name
@@ -149,6 +167,43 @@ const UserManagementTable = ({
         description: errorMessage,
         variant: "destructive",
       });
+    }
+  };
+
+  const handleCreateUser = async () => {
+    if (!newUser.name || !newUser.email) {
+      toast({
+        title: "Missing Information",
+        description: "Please provide both name and email for the new user.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setIsCreating(true);
+    try {
+      await onCreateUser(newUser);
+      setCreateUserDialogOpen(false);
+      setNewUser({
+        name: "",
+        email: "",
+        password: "",
+        role: "CLIENT",
+      });
+      toast({
+        title: "User created",
+        description: "New user has been successfully created.",
+        variant: "default",
+      });
+    } catch (error) {
+      console.error("Create user error:", error);
+      toast({
+        title: "Creation Failed",
+        description: "Could not create the new user.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsCreating(false);
     }
   };
 
@@ -422,6 +477,18 @@ const UserManagementTable = ({
 
   return (
       <div className="flex flex-col">
+        <div className="flex justify-between items-center mb-4">
+          <h2 className="text-xl font-semibold">User Management</h2>
+          <Button 
+            onClick={() => setCreateUserDialogOpen(true)}
+            disabled={!!editingUser || isTableLoading}
+            className="flex items-center gap-1 bg-blue-500 text-white"
+          >
+            <Plus className="h-4 w-4" />
+            Add User
+          </Button>
+        </div>
+
         <div className="rounded-md border relative overflow-x-auto">
           {(isTableLoading || isUpdating || isDeleting) && (
             <div className="absolute inset-0 bg-background/80 backdrop-blur-sm flex items-center justify-center z-20">
@@ -570,6 +637,108 @@ const UserManagementTable = ({
             </AlertDialogFooter>
           </AlertDialogContent>
         </AlertDialog>
+
+        <Dialog open={createUserDialogOpen} onOpenChange={setCreateUserDialogOpen}>
+          <DialogContent className="sm:max-w-[425px]">
+            <DialogHeader>
+              <DialogTitle>Add New User</DialogTitle>
+              <DialogDescription>
+                Create a new user account. Fill in the required information below.
+              </DialogDescription>
+            </DialogHeader>
+            <div className="grid gap-4 py-4">
+              <div className="grid grid-cols-4 items-center gap-4">
+                <Label htmlFor="name" className="text-right">
+                  Name
+                </Label>
+                <Input
+                  id="name"
+                  value={newUser.name}
+                  onChange={(e) => setNewUser({ ...newUser, name: e.target.value })}
+                  className="col-span-3"
+                  placeholder="John Doe"
+                />
+              </div>
+              <div className="grid grid-cols-4 items-center gap-4">
+                <Label htmlFor="password" className="text-right">
+                  Password
+                </Label>
+                <Input
+                  id="password"
+                  type="password"
+                  value={newUser.password}
+                  onChange={(e) => setNewUser({ ...newUser, password: e.target.value })}
+                  className="col-span-3"
+                  placeholder="********"
+                />
+              </div>
+              <div className="grid grid-cols-4 items-center gap-4">
+                <Label htmlFor="email" className="text-right">
+                  Email
+                </Label>
+                <Input
+                  id="email"
+                  type="email"
+                  value={newUser.email}
+                  onChange={(e) => setNewUser({ ...newUser, email: e.target.value })}
+                  className="col-span-3"
+                  placeholder="john.doe@example.com"
+                />
+              </div>
+              <div className="grid grid-cols-4 items-center gap-4">
+                <Label htmlFor="role" className="text-right">
+                  Role
+                </Label>
+                <Select
+                  value={newUser.role as string}
+                  onValueChange={(value: UserRole) => setNewUser({ ...newUser, role: value })}
+                >
+                  <SelectTrigger className="col-span-3">
+                    <SelectValue placeholder="Select role" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {userRoles.map((role) => (
+                      <SelectItem key={role} value={role}>
+                        {role.split('_').map(word => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase()).join(' ')}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              {newUser.role === 'AGENCY_PARTNER' && (
+                <div className="grid grid-cols-4 items-center gap-4">
+                  <Label htmlFor="agency" className="text-right">
+                    Agency
+                  </Label>
+                  <Select
+                    value={newUser.agencyId || ""}
+                    onValueChange={(value) => setNewUser({ ...newUser, agencyId: value })}
+                  >
+                    <SelectTrigger className="col-span-3">
+                      <SelectValue placeholder="Select agency" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {agencies.map((agency) => (
+                        <SelectItem key={agency.id} value={agency.id}>
+                          {agency.name || agency.id}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              )}
+            </div>
+            <DialogFooter>
+              <Button variant="outline" onClick={() => setCreateUserDialogOpen(false)}>
+                Cancel
+              </Button>
+              <Button onClick={handleCreateUser} disabled={isCreating}>
+                {isCreating ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : null}
+                Create User
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
       </div>
   );
 };

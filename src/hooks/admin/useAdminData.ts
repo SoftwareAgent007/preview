@@ -61,13 +61,14 @@ export const useUpdateOwnerRole = () => {
   );
 };
 
-export type AssignGuildVariables = { ownerId: string; payload: AssignGuildDto };
+export type AssignGuildVariables = { id: string; payload: AssignGuildDto };
 export const useAssignGuildToOwner = () => {
   const queryClient = useQueryClient();
-  return useModifyBuilder<OwnerGuild, AssignGuildVariables>(
-    ({ ownerId }) => `/admin/owners/${ownerId}/guilds`,
+  return useModifyBuilder<AssignGuildVariables>(
+    ({ id }) => `/admin/owners/${id}/guilds`,
     {
       method: 'POST',
+      body: (variables) => variables.payload,
       includeGuildId: false,
       onSuccess: (_, variables) => {
         queryClient.invalidateQueries(ADMIN_QUERY_KEYS.ownerGuilds(variables.ownerId));
@@ -79,7 +80,7 @@ export const useAssignGuildToOwner = () => {
 export type RemoveGuildVariables = { ownerId: string; guildId: string };
 export const useRemoveGuildFromOwner = () => {
   const queryClient = useQueryClient();
-  return useModifyBuilder<SuccessResponse, RemoveGuildVariables>(
+  return useModifyBuilder<RemoveGuildVariables>(
     ({ ownerId, guildId }) => `/admin/owners/${ownerId}/guilds/${guildId}`,
     {
       method: 'DELETE',
@@ -111,11 +112,12 @@ export const useGetGuildsForOwner = (ownerId: string | null | undefined) => {
 export type ToggleGuildVariables = { guildId: string; payload: ToggleGuildStateDto };
 export const useToggleGuildActivityState = () => {
   const queryClient = useQueryClient();
-  return useModifyBuilder<Guild, ToggleGuildVariables>(
-    ({ guildId }) => `/admin/guilds/${guildId}/active`,
+  return useModifyBuilder<ToggleGuildVariables>(
+    ({ guildId, payload }) => `/admin/guilds/${guildId}/active`,
     {
       method: 'PATCH',
       includeGuildId: false,
+      body: (variables) => variables.payload,
       onSuccess: (updatedGuild, variables) => {
         queryClient.invalidateQueries(ADMIN_QUERY_KEYS.guilds);
         queryClient.setQueryData<Guild[] | undefined>(ADMIN_QUERY_KEYS.guilds, (oldData) =>
@@ -311,7 +313,8 @@ export const useAssignGuildToAgency = () => {
       includeGuildId: false,
       body: ({ guildId }) => ({ guildId }),
       onSuccess: (_, variables) => {
-        queryClient.invalidateQueries(ADMIN_QUERY_KEYS.agencyGuilds(variables.agencyId));
+        queryClient.invalidateQueries(ADMIN_QUERY_KEYS.agencies);
+        queryClient.invalidateQueries(ADMIN_QUERY_KEYS.ownerGuilds(variables.userId));
       },
     }
   );
@@ -403,6 +406,33 @@ export const useDeleteUserMutation = () => {
         queryClient.setQueryData<User[] | undefined>(ADMIN_QUERY_KEYS.users, (oldData) =>
           oldData?.filter(user => user.id !== variables.userId)
         );
+      },
+    }
+  );
+};
+
+export type CreateUserVariables = { 
+  payload: {
+    email: string;
+    name: string;
+    role: OwnerRole;
+    password: string;
+    agencyId?: string;
+    guildId?: string;
+  }
+};
+
+export const useCreateUserMutation = () => {
+  const queryClient = useQueryClient();
+  return useModifyBuilder<Owner, CreateUserVariables>(
+    () => `/auth/register`,
+    {
+      method: 'POST',
+      includeGuildId: false,
+      body: (variables) => variables.payload,
+      onSuccess: () => {
+        queryClient.invalidateQueries(ADMIN_QUERY_KEYS.owners);
+        queryClient.invalidateQueries(ADMIN_QUERY_KEYS.agencies);
       },
     }
   );

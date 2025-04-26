@@ -3,11 +3,11 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { useGetAllOwners, useGetAllGuilds, useUpdateOwnerRole, useAssignGuildToOwner, useRemoveGuildFromOwner, useToggleGuildActivityState, useGetAllAgencies, useCreateAgency, useUpdateAgency, useDeleteAgency, useAssignGuildToAgency, useRemoveGuildFromAgency, useAssignOwnerToAgency, useRemoveOwnerFromAgency, useGetGuildsForOwner } from "@/hooks/admin/useAdminData";
+import { useGetAllOwners, useGetAllGuilds, useUpdateOwnerRole, useAssignGuildToOwner, useRemoveGuildFromOwner, useToggleGuildActivityState, useGetAllAgencies, useCreateAgency, useUpdateAgency, useDeleteAgency, useAssignGuildToAgency, useRemoveGuildFromAgency, useAssignOwnerToAgency, useRemoveOwnerFromAgency, useGetGuildsForOwner, useCreateUserMutation } from "@/hooks/admin/useAdminData";
 import { toast } from "@/hooks/use-toast";
 import { Owner, Guild, User, Agency } from "@/types/dataTypes";
 import { motion } from "framer-motion";
-import { Edit, Trash2, Check, X } from "lucide-react";
+import { Edit, Trash2, Check, X, Loader2 } from "lucide-react";
 import React, { useEffect, useState, useMemo, useCallback } from "react";
 import GuildsManagement from "./components/GuildsManagement";
 import AgencyStructure from "./components/OrganizationStructure";
@@ -19,6 +19,7 @@ import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
 import { nanoid } from 'nanoid';
 import { OwnerRole } from "@/hooks/admin/admin.types";
+import { Power, PowerOff } from "lucide-react";
 
 const CLONE_SUFFIX = () => nanoid(6); // Generates a unique suffix
 
@@ -66,6 +67,7 @@ const AdminPanel = () => {
 	const deleteAgencyMutation = useDeleteAgency();
 	const assignGuildToAgencyMutation = useAssignGuildToAgency();
 	const removeGuildFromAgencyMutation = useRemoveGuildFromAgency();
+	const createUserMutation = useCreateUserMutation();
 
 	const [users, setUsers] = useState<User[]>([]);
 	const [agencies, setAgencies] = useState<Agency[]>([]);
@@ -261,7 +263,7 @@ const handleUserUpdate = (updatedUser: User) => {
 	};
 
 	const handleAssignGuildToAgency = (agencyId: string, guildId: string) => {
-		assignGuildToAgencyMutation.mutate({ agencyId, guildId }, {
+		assignGuildToAgencyMutation.mutate({ agencyId, guildId, userId: selectedUserIdForGuildView }, {
 			onSuccess: () => {
 				const guild = guilds.find(g => g.id === guildId);
 				if (!guild) return;
@@ -447,7 +449,7 @@ const handleAssignUserToAgency = (userId: string, agencyId: string) => {
 	};
 
 	const handleGuildUpdate = (updatedGuild: Guild) => {
-		toggleGuildActivityState.mutate(updatedGuild, {
+		toggleGuildActivityState.mutate({ guildId: updatedGuild.id, payload: { active: updatedGuild.active }  }, {
 			onSuccess: () => {
 				setGuilds(prev => prev.map(guild =>
 					guild.id === updatedGuild.id ? updatedGuild : guild
@@ -593,6 +595,7 @@ const handleDragEnd = (result: DropResult) => {
 			));
 
 			// Update the original guild in the guilds list to include the new agencyId
+			// but KEEP the guild in the guilds list for reuse with other agencies
 			setGuilds(prev => prev.map(g => 
 				g.id === guildId 
 					? { ...g, agencyIds: [...(g.agencyIds || []), agencyId] }
@@ -746,37 +749,19 @@ const handleDragEnd = (result: DropResult) => {
 	}
 };
 
-	const getAvailableGuildsForUser = useCallback((userId: string | null): Guild[] => {
-		console.log('getAvailableGuildsForUser', userId,'guildsForOwner', guildsForOwner);
-		if (!userId) return [];
-		const accessibleGuildIds = userGuildAccess[userId] || [];
-		return guilds.filter(guild => accessibleGuildIds.includes(guild.id));
-	}, [userGuildAccess, guilds]);
-
-	const availableGuildsForSelectedUser = useMemo(
-		() => getAvailableGuildsForUser(selectedUserIdForGuildView),
-		[selectedUserIdForGuildView, getAvailableGuildsForUser]
-	);
-
 	const allManageableUsers = useMemo(() => {
-		// Handle case when agencies is undefined or null
 		const agencyUsers = agencies?.flatMap(a => 
-			// Handle case when users array might be undefined
 			(a.owners || []).map(u => ({
 				...u,
 				agencyId: a.id
 			}))
 		) || [];
 		
-		// Handle case when users might be undefined
 		const combined = [...(users || []), ...agencyUsers];
-		
-		// Handle case when user.id might be undefined and prevent sorting errors
 		const uniqueUsers = Array.from(
 			new Map(combined.filter(user => user && user.id).map(user => [user.id, user])).values()
 		);
 		
-		// Handle case when name might be undefined during sort
 		return uniqueUsers.sort((a, b) => {
 			if (!a.name && !b.name) return 0;
 			if (!a.name) return 1;
@@ -784,6 +769,29 @@ const handleDragEnd = (result: DropResult) => {
 			return a.name.localeCompare(b.name);
 		});
 	}, [users, agencies]);
+
+	const getAvailableGuildsForUser = useCallback((userId: string | null): Guild[] => {
+		if (!userId) return [];
+		const user = allManageableUsers.find(u => u.id === userId);
+		if (!user) return [];
+		if (user.role === 'ADMIN') return guilds;
+		if (user.role === 'CLIENT') return guildsForOwner || [];
+		if (user.role === 'AGENCY_PARTNER') {
+			const agencyId = user.agencyId;
+			if (!agencyId) return [];
+			const agency = agencies.find(a => a.id === user.agencyId);
+			if (!agency) return [];
+			console.log('agency.agencyGuilds',agency.agencyGuilds);
+			return agency.agencyGuilds || [];
+		}
+		return [];
+	}, [allManageableUsers, agencies, guilds]);
+
+	const availableGuildsForSelectedUser = useMemo(
+		() => getAvailableGuildsForUser(selectedUserIdForGuildView),
+		[selectedUserIdForGuildView, getAvailableGuildsForUser]
+	);
+
 
 	const handleStartEditingRestrictions = (userId: string) => {
 		const user = allManageableUsers.find(u => u.id === userId);
@@ -880,19 +888,93 @@ const handleDragEnd = (result: DropResult) => {
 		}));
 	};
 
+	const handleToggleGuildAccess = (guildId: string, isAccessible: boolean) => {
+		if (!selectedUserIdForGuildView) return;
+		if (isAccessible) {
+			assignGuildToOwner.mutate({ id: selectedUserIdForGuildView, payload: { guildId } }, {
+				onSuccess: () => {
+					toast({
+						title: "Guild Access Granted",
+						description: "Guild access has been granted to the user.",
+					});
+				},
+				onError: () => {
+					toast({
+						title: "Error",
+						description: "Failed to grant guild access.",
+						variant: "destructive",
+					});
+				}
+			});
+		} else {
+			removeGuildFromOwner.mutate({ ownerId: selectedUserIdForGuildView, guildId }, {
+				onSuccess: () => {
+					toast({
+						title: "Guild Access Revoked",
+						description: "Guild access has been revoked from the user.",
+					});
+				},
+				onError: () => {
+					toast({
+						title: "Error",
+						description: "Failed to revoke guild access.",
+						variant: "destructive",
+					});
+				}
+			});
+		}
+	};
+
 	const selectedUser = useMemo(() => {
 		return allManageableUsers.find(u => u.id === selectedUserIdForGuildView);
 	}, [selectedUserIdForGuildView, allManageableUsers]);
 
 	const guildsForEditingPartner = useMemo(() => {
-		if (!selectedUser || selectedUser.role !== 'AGENCY_PARTNER') return [];
+		if (!selectedUser || selectedUser.role !== 'AgencyPartner') return [];
 		const partnerAgencyId = selectedUser.agencyId;
-		console.log('guilds', guilds);
 		return guilds.filter(g => g.agencyId === partnerAgencyId);
 	}, [selectedUser, guilds]);
 
+	const handleCreateUser = async (userData: {
+		email: string;
+		name: string;
+		role: OwnerRole;
+		password: string;
+		agencyId?: string;
+		guildId?: string;
+	}) => {
+		createUserMutation.mutate({ payload: userData }, {
+			onSuccess: (newUser) => {
+				// Add the new user to the local state
+				setUsers(prev => [newUser, ...prev]);
+				
+				// If the user is assigned to an agency, update that agency's users list
+				if (userData.agencyId) {
+					setAgencies(prev => prev.map(agency => {
+						if (agency.id === userData.agencyId) {
+							return { 
+								...agency, 
+								owners: [...agency.owners, newUser] 
+							};
+						}
+						return agency;
+					}));
+				}
+				
+				toast({
+					title: "User created",
+					description: `Successfully created user "${userData.name}"`,
+				});
+			}
+		});
+	};
+
 	if (isLoading) {
-		return <div>Loading...</div>;
+		return (
+			<div className="flex items-center justify-center h-64">
+				<Loader2 className="w-8 h-8 animate-spin text-blue-500" />
+			</div>
+		);
 	}
 
 	return (
@@ -962,6 +1044,8 @@ const handleDragEnd = (result: DropResult) => {
 							onAssignGuild={handleAssignGuildToUser}
 							onRemoveGuild={handleRemoveGuildFromUser}
 							onRestrictGuilds={handleRestrictUserGuilds}
+							onCreateUser={handleCreateUser}
+							onReorderUsers={() => {}}
 						/>
 					</Card>
 
@@ -977,7 +1061,6 @@ const handleDragEnd = (result: DropResult) => {
 								<Select
 									value={selectedUserIdForGuildView ?? ""}
 									onValueChange={(value) => {
-										console.log('selected user for guild id view', value);
 										setSelectedUserIdForGuildView(value || null);
 										if (isEditingRestrictions) {
 											handleCancelEditingRestrictions();
@@ -1002,7 +1085,7 @@ const handleDragEnd = (result: DropResult) => {
 
 							{!selectedUserIdForGuildView || !selectedUser ? (
 								<p className="text-sm text-muted-foreground pt-2">Select a user to see their available guilds.</p>
-							) : isEditingRestrictions && selectedUser.role === 'AGENCY_PARTNER' ? (
+							) : isEditingRestrictions && selectedUser.role === 'AgencyPartner' ? (
 								<div className="p-4 border rounded-md bg-muted/30 space-y-3">
 									<p className="text-sm font-medium">Select guilds <span className="font-semibold">{selectedUser.name}</span> can access:</p>
 									<div className="space-y-2 max-h-48 overflow-y-auto pr-2 border-t border-b py-3 my-2">
@@ -1033,12 +1116,12 @@ const handleDragEnd = (result: DropResult) => {
 									</div>
 								</div>
 							) : (
-								<div className="pt-2 space-y-30">
+								<div className="pt-2 space-y-3">
 									<div className="flex justify-between items-center mb-2 min-h-[32px]">
 										<h4 className="font-medium text-base">
 											{selectedUser.role === 'Client' ? 'Assigned Guild:' : 'Accessible Guilds:'}
 										</h4>
-										{selectedUser?.role === 'AGENCY_PARTNER' && guildsForEditingPartner.length > 0 && (
+										{selectedUser?.role === 'AgencyPartner' && guildsForEditingPartner.length > 0 && (
 											<Button variant="outline" size="sm" onClick={() => handleStartEditingRestrictions(selectedUser.id)}>
 												<Edit className="h-3.5 w-3.5 mr-1.5" />
 												Edit Restrictions
@@ -1062,9 +1145,27 @@ const handleDragEnd = (result: DropResult) => {
 											case 'AGENCY_PARTNER':
 												return guildsForOwner?.length || 0 > 0 ? (
 													<div className="flex flex-wrap gap-2">
-														{guildsForOwner?.map(guild => (
-															<Badge key={guild.id} variant="secondary">{guild.name}</Badge>
-														))}
+														{availableGuildsForSelectedUser.map(guild => {
+															const isAccessible = guildsForOwner?.some(g => g.id === guild.id);
+															return (
+																<Badge 
+																	key={guild.id} 
+																	variant={isAccessible ? "secondary" : "outline"}
+																	className={isAccessible ? "" : "text-muted-foreground opacity-70"}
+																>
+																	{guild.name}
+																	<Button
+																		variant="ghost"
+																		size="sm"
+																		className="ml-2 p-0 h-4 w-4"
+																		onClick={() => handleToggleGuildAccess(guild.id, !isAccessible)}
+																		aria-label={isAccessible ? `Revoke access to ${guild.name}` : `Grant access to ${guild.name}`}
+																	>
+																		{isAccessible ? <Power className="h-3 w-3" /> : <PowerOff className="h-3 w-3" />}
+																	</Button>
+																</Badge>
+															);
+														})}
 													</div>
 												) : (
 													<p className="text-sm text-muted-foreground">No guilds currently accessible based on agency assignment and restrictions.</p>

@@ -5,7 +5,7 @@ export const ROUTES = {
   LOGIN: "/login",
   REGISTER: "/register",
   FORGOT_PASSWORD: "/forgot-password",
-  ASSIGN_GUILD: "/assign-guild",
+  // ASSIGN_GUILD: "/assign-guild",
 
   // Dashboard routes
   DASHBOARD: "/",

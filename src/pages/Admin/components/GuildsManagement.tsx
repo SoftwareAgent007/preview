@@ -100,6 +100,11 @@ const GuildsManagement = ({
     }
   };
 
+  const handleToggleActive = (guild: Guild) => {
+    const updatedGuild = { ...guild, active: !guild.active };
+    onUpdate(updatedGuild);
+  };
+
   const handleDelete = async (guild: Guild) => {
     try {
       const success = await onDelete(guild.id);
@@ -249,10 +254,14 @@ const GuildsManagement = ({
                               </TooltipProvider>
                             </TableCell>
                             <TableCell>
-                              <Badge variant={guild.active ? "success" : "secondary"} className={cn(
-                                "flex items-center gap-1 w-fit",
-                                !guild.active && "bg-gray-200 text-gray-700"
-                              )}>
+                              <Badge 
+                                variant="secondary" 
+                                className={cn(
+                                  "flex items-center gap-1 w-fit cursor-pointer",
+                                  guild.active ? "bg-green-100 text-green-800" : "bg-gray-200 text-gray-700"
+                                )}
+                                onClick={() => handleToggleActive(guild)}
+                              >
                                 {guild.active ? <Power className="h-3 w-3" /> : <PowerOff className="h-3 w-3" />}
                                 {guild.active ? "Active" : "Inactive"}
                               </Badge>

@@ -89,10 +89,10 @@ function App() {
                     <Route path="/forgot-password" element={<ForgotPassword />} />
                   </Route>
                   
-                  {/* Semi-protected route - requires auth but no guild */}
+                  {/* Semi-protected route - requires auth but no guild
                   <Route element={<ProtectedRoute allowNoGuild />}>
                     <Route path="/assign-guild" element={<AssignGuild />} />
-                  </Route>
+                  </Route> */}
 
                   {/* Protected routes - require both auth and guild */}
                   <Route element={<ProtectedRoute />}>

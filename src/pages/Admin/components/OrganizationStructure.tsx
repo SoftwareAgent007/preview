@@ -109,7 +109,7 @@ const AgencyStructure = ({
         <h2 className="text-2xl font-bold mb-4">Agency Management</h2>
         <Dialog open={isAddAgencyModalOpen} onOpenChange={setIsAddAgencyModalOpen}>
           <DialogTrigger asChild>
-            <Button className="bg-gradient-to-r from-blue-500 to-blue-600 text-white font-medium shadow-sm hover:shadow-md transition-all duration-200 rounded-md" size="sm">
+            <Button className="bg-blue-500 text-white font-medium shadow-sm hover:shadow-md transition-all duration-200 rounded-md" size="sm">
               <Plus className="mr-2 h-4 w-4" /> Add Agency
             </Button>
           </DialogTrigger>
