@@ -5,13 +5,9 @@ import Header from "./Header";
 import Sidebar from "./Sidebar";
 import { Toaster } from "@/components/ui/toaster";
 
-interface DashboardLayoutProps {
-  children: ReactNode;
-}
-
 const SIDEBAR_WIDTH = 128;
 
-const DashboardLayout = ({ children }: DashboardLayoutProps) => {
+const DashboardLayout = () => {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
 
   return (
@@ -81,7 +77,6 @@ const DashboardLayout = ({ children }: DashboardLayoutProps) => {
           className="flex-1 overflow-y-auto bg-gray-50 p-6"
           layout
         >
-          {children}
           <Outlet/>
         </motion.main>
       </motion.div>

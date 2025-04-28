@@ -96,7 +96,7 @@ function App() {
 
                   {/* Protected routes - require both auth and guild */}
                   <Route element={<ProtectedRoute />}>
-                    <Route element={<DashboardLayout children/>}>
+                    <Route element={<DashboardLayout/>}>
                       {/* Routes accessible to all authenticated users */}
                       <Route path="/" element={<Dashboard />}/>
                       <Route path="keyword-analytics" element={<KeywordAnalytics />} />
