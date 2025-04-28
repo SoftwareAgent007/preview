@@ -1061,6 +1061,7 @@ const handleDragEnd = (result: DropResult) => {
 								<Select
 									value={selectedUserIdForGuildView ?? ""}
 									onValueChange={(value) => {
+										console.log('selected user for guild id view', value);
 										setSelectedUserIdForGuildView(value || null);
 										if (isEditingRestrictions) {
 											handleCancelEditingRestrictions();
@@ -1085,7 +1086,7 @@ const handleDragEnd = (result: DropResult) => {
 
 							{!selectedUserIdForGuildView || !selectedUser ? (
 								<p className="text-sm text-muted-foreground pt-2">Select a user to see their available guilds.</p>
-							) : isEditingRestrictions && selectedUser.role === 'AgencyPartner' ? (
+							) : isEditingRestrictions && selectedUser.role === 'AGENCY_PARTNER' ? (
 								<div className="p-4 border rounded-md bg-muted/30 space-y-3">
 									<p className="text-sm font-medium">Select guilds <span className="font-semibold">{selectedUser.name}</span> can access:</p>
 									<div className="space-y-2 max-h-48 overflow-y-auto pr-2 border-t border-b py-3 my-2">
@@ -1121,7 +1122,7 @@ const handleDragEnd = (result: DropResult) => {
 										<h4 className="font-medium text-base">
 											{selectedUser.role === 'Client' ? 'Assigned Guild:' : 'Accessible Guilds:'}
 										</h4>
-										{selectedUser?.role === 'AgencyPartner' && guildsForEditingPartner.length > 0 && (
+										{selectedUser?.role === 'AGENCY_PARTNER' && guildsForEditingPartner.length > 0 && (
 											<Button variant="outline" size="sm" onClick={() => handleStartEditingRestrictions(selectedUser.id)}>
 												<Edit className="h-3.5 w-3.5 mr-1.5" />
 												Edit Restrictions
