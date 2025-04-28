@@ -157,8 +157,8 @@ const ManageUserModal: React.FC<Props> = ({
                 <DialogHeader>
                     <DialogTitle>{mode === MODAL_MODE.CREATE ? "Add New User" : "Update user information"}</DialogTitle>
                     <DialogDescription>
-                        {mode === MODAL_MODE.CREATE ? "Create a new user account." : "Change an existing user account"}
-                        Fill in the required information below.
+                        <p>{mode === MODAL_MODE.CREATE ? "Create a new user account. " : "Change an existing user account."}</p>
+                        <p>Fill in the required information below.</p>
                     </DialogDescription>
                 </DialogHeader>
                 <div className="grid gap-4 py-4">

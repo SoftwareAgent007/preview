@@ -279,7 +279,7 @@ const UserManagementTable = ({
                 agencies={agencies}
                 onUpdate={onUpdate}
                 onClose={() => setModal({
-                    mode: MODAL_MODE.CREATE,
+                    ...modal,
                     isOpen: false,
                     userData: null,
                 })}
