@@ -282,7 +282,6 @@ export const useDeleteAgency = () => {
       method: 'DELETE',
       includeGuildId: false,
       onSuccess: (_, variables) => {
-        console.log("useDeleteAgency onSuccess", variables);
         queryClient.invalidateQueries(ADMIN_QUERY_KEYS.agencies);
         queryClient.invalidateQueries(ADMIN_QUERY_KEYS.agencyById(variables.agencyId));
         queryClient.removeQueries(ADMIN_QUERY_KEYS.agencyById(variables.agencyId));

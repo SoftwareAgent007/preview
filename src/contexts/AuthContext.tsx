@@ -101,7 +101,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       };
       
       setUser(userData);
-      console.log('userData', userData);
       
       // Only set guildId if the user has guilds
       if (userData.guildIds && userData.guildIds.length > 0) {

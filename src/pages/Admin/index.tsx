@@ -780,7 +780,6 @@ const handleDragEnd = (result: DropResult) => {
 			if (!agencyId) return [];
 			const agency = agencies.find(a => a.id === user.agencyId);
 			if (!agency) return [];
-			console.log('agency.agencyGuilds',agency.agencyGuilds);
 			return agency.agencyGuilds || [];
 		}
 		return [];
@@ -1060,7 +1059,6 @@ const handleDragEnd = (result: DropResult) => {
 								<Select
 									value={selectedUserIdForGuildView ?? ""}
 									onValueChange={(value) => {
-										console.log('selected user for guild id view', value);
 										setSelectedUserIdForGuildView(value || null);
 										if (isEditingRestrictions) {
 											handleCancelEditingRestrictions();

@@ -14,7 +14,6 @@ const RoleProtectedRoute = ({
   const { user, isLoading } = useAuth();
 
   
-  console.log(user, allowedRoles, user?.role);
   if (!user || !allowedRoles.includes(user.role)) {
     return <Navigate to={redirectPath} replace />;
   }

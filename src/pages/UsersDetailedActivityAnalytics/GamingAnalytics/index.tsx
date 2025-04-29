@@ -65,9 +65,6 @@ const GamingAnalytics = () => {
   });
 
   useEffect(() => {
-    console.log('basicStats',basicStats)
-  },[basicStats])
-  useEffect(() => {
     if (gameReport) {
       setBasicStats({
         totalPlayers: gameReport.totalPlayers,

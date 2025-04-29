@@ -1,9 +1,6 @@
-import { useEffect, useState } from "react";
-import { motion } from "framer-motion";
-import { Card } from "@/components/ui/card";
-import { PopularGame } from "@/types/dataTypes";
 import ErrorComponent from "@/components/common/errorModel";
 import { Button } from "@/components/ui/button";
+import { Card } from "@/components/ui/card";
 import {
   Select,
   SelectContent,
@@ -12,8 +9,10 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { useGamingStats } from "@/hooks/analytics/useGamingAnalytics";
+import { PopularGame } from "@/types/dataTypes";
+import { AnimatePresence, motion } from "framer-motion";
 import { Expand } from "lucide-react";
-import { AnimatePresence } from "framer-motion";
+import { useState } from "react";
 import ReactDOM from "react-dom";
 
 const colors = ["#4F46E5", "#F59E0B", "#10B981"];
@@ -143,10 +142,6 @@ const TopGamesList = () => {
     page: currentPage,
     limit: pageSize,
   });
-
-  useEffect(() => {
-    console.log('popularGames',popularGames);
-  }, [popularGames]);
 
   const totalPages = Math.ceil((pagination.popularGames.total || 0) / pageSize);
 

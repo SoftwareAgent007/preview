@@ -64,8 +64,6 @@ const ManageUserModal: React.FC<Props> = ({
                                               userData
                                           }) => {
 
-console.log("userData", userData);
-
     const [formData, setFormData] = React.useState<UserFormData>(() => ({
         ...userData,
         name: userData?.name ?? "",

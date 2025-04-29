@@ -53,11 +53,9 @@ const AgencyStructure = ({
   const [deleteError, setDeleteError] = React.useState<string>("");
 
   useEffect(() => {
-    console.log('agencies',agencies);
   }, [agencies]);
 
   const handleAddAgency = () => {
-    console.log('newAgencyData', newAgencyData);
     onAddAgency({
       name: newAgencyData.name,
       description: newAgencyData.description,
@@ -71,7 +69,6 @@ const AgencyStructure = ({
   };
 
   const handleEditAgency = (agencyId: string, newName: string, newDescription: string) => {
-    console.log('agencies',agencies);
     const agency = agencies.find(a => a.id === agencyId);
     if (!agency) return;
 

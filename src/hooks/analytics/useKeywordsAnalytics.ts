@@ -195,7 +195,6 @@ export const useKeywordTrend = (
     (guildId) => 
       `/message-match/trend?guildId=${guildId}&startDate=${dates.startDate}&endDate=${dates.endDate}&viewType=${viewType}&limit=${limit}${keyword ? `&keywords[]=${keyword}` : ''}`,
   );
-  console.log('trendData',trendData?.data);
 
   return { trendData: trendData?.data ?? [], isTrendLoading };
 };
