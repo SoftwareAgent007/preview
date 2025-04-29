@@ -274,7 +274,7 @@ const AgencyStructure = ({
                       )}
                       {agency.agencyGuilds?.map((guild, index) => (
                         
-                        <Draggable key={guild.id} draggableId={'agency-guilds-'+guild.id} index={index}>
+                        <Draggable key={guild.id} draggableId={`agency-guilds-${agency.id}-${guild.id}`} index={index}>
                           {(provided, snapshot) => (
                             <div
                               ref={provided.innerRef}

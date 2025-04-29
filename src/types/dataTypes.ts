@@ -394,7 +394,7 @@ export interface KeywordTrendResponse {
   data: KeywordTrendDataPoint[];
 }
 
-export type UserRole = 'Admin' | 'AgencyPartner' | 'Client';
+export type UserRole = 'ADMIN' | 'AGENCY_PARTNER' | 'CLIENT';
 
 export interface User {
   id: string;

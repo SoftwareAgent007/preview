@@ -15,7 +15,7 @@ import {
   ToggleGuildStateDto,
   OwnerRole,
 } from './admin.types';
-import { Agency as AgencyDto } from "@/types/dataTypes";
+import { Agency as AgencyDto, User } from "@/types/dataTypes";
 
 
 const ADMIN_QUERY_KEYS = {
@@ -282,6 +282,7 @@ export const useDeleteAgency = () => {
       method: 'DELETE',
       includeGuildId: false,
       onSuccess: (_, variables) => {
+        console.log("useDeleteAgency onSuccess", variables);
         queryClient.invalidateQueries(ADMIN_QUERY_KEYS.agencies);
         queryClient.invalidateQueries(ADMIN_QUERY_KEYS.agencyById(variables.agencyId));
         queryClient.removeQueries(ADMIN_QUERY_KEYS.agencyById(variables.agencyId));
@@ -364,6 +365,7 @@ export const useRemoveOwnerFromAgency = () => {
       method: 'DELETE',
       includeGuildId: false,
       onSuccess: (updatedOwner, variables) => {
+        queryClient.invalidateQueries(ADMIN_QUERY_KEYS.agencies);
         queryClient.invalidateQueries(ADMIN_QUERY_KEYS.owners);
         queryClient.setQueryData<Owner[] | undefined>(ADMIN_QUERY_KEYS.owners, (oldData) =>
           oldData?.map(owner => owner.id === variables.ownerId ? updatedOwner : owner)
@@ -378,15 +380,24 @@ export const useRemoveOwnerFromAgency = () => {
 export type UpdateUserVariables = { userId: string; payload: Partial<User> };
 export const useUpdateUserMutation = () => {
   const queryClient = useQueryClient();
+  // TData = User (expected API response), TVariables = UpdateUserVariables (input to mutation)
   return useModifyBuilder<User, UpdateUserVariables>(
-    ({ userId }) => `/admin/users/${userId}`,
+    // URL builder function receives TVariables
+    (variables: UpdateUserVariables) => `/admin/users/${variables.userId}`,
     {
       method: 'PATCH',
       includeGuildId: false,
-      onSuccess: (updatedUser, variables) => {
+      // onSuccess receives (data: TData, variables: TVariables)
+      onSuccess: (updatedUser: User, variables: UpdateUserVariables) => {
+        // Invalidate query to refetch in the background
         queryClient.invalidateQueries(ADMIN_QUERY_KEYS.users);
-        queryClient.setQueryData<User[] | undefined>(ADMIN_QUERY_KEYS.users, (oldData) =>
-          oldData?.map(user => user.id === variables.userId ? updatedUser : user)
+        // Optimistically update the query cache
+        queryClient.setQueryData<User[] | undefined>(
+          ADMIN_QUERY_KEYS.users,
+          (oldData): User[] | undefined => // Explicit return type for updater
+            oldData?.map((user: User) => // Explicit type for user in map
+              user.id === variables.userId ? updatedUser : user
+            )
         );
       },
     }

@@ -10,7 +10,7 @@ import {
 import {Label} from "@/components/ui/label.tsx";
 import {Input} from "@/components/ui/input.tsx";
 import {Select, SelectContent, SelectItem, SelectTrigger, SelectValue} from "@/components/ui/select.tsx";
-import {Agency, UserRole} from "@/types/dataTypes.ts";
+import {Agency, User, UserRole} from "@/types/dataTypes.ts";
 import {Button} from "@/components/ui/button.tsx";
 import {Loader2} from "lucide-react";
 import {toast} from "@/hooks/use-toast.ts";
@@ -36,18 +36,19 @@ type Props = {
     mode: MODAL_MODE.CREATE
 }
 
-type UserFormData = {
+interface UserFormData extends User {
     name: string
     email: string
     password: string
-    role: string
-    agencyId?: string,
+    role: UserRole
+    agencyId: string,
 }
 const defaultFormData = {
     name: "",
     email: "",
     password: "",
     role: "CLIENT",
+    agencyId: "",
 }
 
 
@@ -63,7 +64,10 @@ const ManageUserModal: React.FC<Props> = ({
                                               userData
                                           }) => {
 
+console.log("userData", userData);
+
     const [formData, setFormData] = React.useState<UserFormData>(() => ({
+        ...userData,
         name: userData?.name ?? "",
         email: userData?.email ?? "",
         password: userData?.password ?? "",
@@ -76,6 +80,7 @@ const ManageUserModal: React.FC<Props> = ({
     useEffect(() => {
         if (userData) {
             setFormData({
+                ...userData,
                 name: userData.name ?? "",
                 email: userData.email ?? "",
                 password: userData.password ?? "",
@@ -125,7 +130,6 @@ const ManageUserModal: React.FC<Props> = ({
                 ...formData,
                 agencyId: formData.role !== 'ADMIN' ? formData.agencyId : undefined,
             };
-            console.log("updatedUser", updatedUser);
             await onUpdate!(updatedUser);
             toast({
                 title: "User updated",
@@ -171,7 +175,6 @@ const ManageUserModal: React.FC<Props> = ({
                             value={formData.name ?? ""}
                             onChange={(e) => setFormData({...formData, name: e.target.value})}
                             className="col-span-3"
-                            disabled={mode === MODAL_MODE.UPDATE}
                             placeholder="John Doe"
                             autoFocus={false}
                             autoComplete="off"
@@ -188,7 +191,6 @@ const ManageUserModal: React.FC<Props> = ({
                             onChange={(e) => setFormData({...formData, password: e.target.value})}
                             className="col-span-3"
                             placeholder="********"
-                            disabled={mode === MODAL_MODE.UPDATE}
                             autoFocus={false}
                             autoComplete="new-password"
                         />
@@ -204,7 +206,6 @@ const ManageUserModal: React.FC<Props> = ({
                             onChange={(e) => setFormData({...formData, email: e.target.value})}
                             className="col-span-3"
                             placeholder="john.doe@example.com"
-                            disabled={mode === MODAL_MODE.UPDATE}
                             autoFocus={false}
                             autoComplete="off"
                         />

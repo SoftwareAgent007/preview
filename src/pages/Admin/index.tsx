@@ -553,13 +553,12 @@ const handleDragEnd = (result: DropResult) => {
 
 	const srcId = source.droppableId;
 	const dstId = destination.droppableId;
-
 	if (type === 'guild') {
 		// Extract the base guild ID, handling different draggable ID formats
 		const guildId = draggableId.includes('guilds-table-') 
 			? draggableId.replace('guilds-table-', '')
 			: draggableId.includes('agency-guilds-') 
-				? draggableId.replace('agency-guilds-', '')
+				? draggableId.split('-').pop() || ''
 				: baseGuildId(draggableId);
 				
 		const guild = guilds.find(g => g.id === guildId);

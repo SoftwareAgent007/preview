@@ -8,9 +8,10 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { motion } from "framer-motion";
 import { DateRange } from "react-day-picker";
-import { Download, ChevronLeft, ChevronRight, Loader2 } from 'lucide-react';
-import { useAuditLogs, LogActionType, AuditLog } from '@/hooks/analytics/useAuditLogs';
+import { Download, ChevronLeft, ChevronRight, Loader2, Calendar } from 'lucide-react';
+import { useAuditLogs, LogActionType, AdminAction } from '@/hooks/analytics/useAuditLogs';
 import { format } from 'date-fns';
+import { Checkbox } from "@/components/ui/checkbox";
 
 const AuditLogs = () => {
   const [searchTerm, setSearchTerm] = useState("");
@@ -20,6 +21,7 @@ const AuditLogs = () => {
   const [selectedOwnerId, setSelectedOwnerId] = useState<string>("all");
   const [currentPage, setCurrentPage] = useState(1);
   const [perPage, setPerPage] = useState(10);
+  const [expandAllDetails, setExpandAllDetails] = useState(false);
 
   const dateFilters = useMemo(() => {
     if (!dateRange) return {};
@@ -45,25 +47,18 @@ const AuditLogs = () => {
     meta,
     isLoading,
     error,
-    // refetch, // refetch seems unused
     actionTypes,
     targetTypes,
     admins,
     exportLogs
   } = useAuditLogs(filters);
 
-  // This function seems unused as owner info is now directly in the log object
-  // const getAdminName = (id: string) => {
-  //   const admin = admins.find(a => a.id === id);
-  //   return admin ? admin?.name : "Unknown";
-  // };
-
   const filteredLogs = useMemo(() => {
-    if (!logs) return []; // Handle case where logs might be initially undefined
+    if (!logs) return []; 
     if (!searchTerm.trim()) return logs;
 
     const term = searchTerm.toLowerCase();
-    return logs.filter((log: AuditLog) =>
+    return logs.filter((log: AdminAction) =>
       log.id.toLowerCase().includes(term) ||
       log.targetId.toLowerCase().includes(term) ||
       (log.owner?.name && log.owner.name.toLowerCase().includes(term)) ||
@@ -78,22 +73,17 @@ const AuditLogs = () => {
   const formatDetails = (details: Record<string, any> | undefined | null) => {
     if (!details) return "-";
     try {
-      // Check if details is already a string (might happen with certain API responses)
       if (typeof details === 'string') {
         try {
-          // Try parsing if it's a JSON string
           const parsed = JSON.parse(details);
           return JSON.stringify(parsed, null, 2);
         } catch (parseError) {
-          // If parsing fails, return the original string
           return details;
         }
       }
-      // If it's an object, stringify it
       if (typeof details === 'object') {
         return JSON.stringify(details, null, 2);
       }
-      // Otherwise, return it as is (or a placeholder)
       return String(details);
     } catch (e) {
       console.error("Error formatting details:", e);
@@ -106,14 +96,11 @@ const AuditLogs = () => {
     try {
       const date = typeof timestamp === 'string' ? new Date(timestamp) : timestamp;
       if (isNaN(date.getTime())) {
-        // Keep original string if date is invalid, might be intentional
         return String(timestamp);
       }
-      // More human-readable format
       return format(date, 'MMM d, yyyy, h:mm:ss a');
     } catch (e) {
       console.error("Error formatting timestamp:", e);
-      // Fallback to original value on error
       return String(timestamp);
     }
   };
@@ -133,7 +120,7 @@ const AuditLogs = () => {
     >
       <div className="mx-auto" style={{ maxWidth: `${import.meta.env.VITE_MAX_WIDTH || 1200}px` }}>
         <Card className="p-6 mb-6">
-          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-7 gap-4 items-end">
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 items-end">
             <div className="col-span-1 sm:col-span-2 md:col-span-3 lg:col-span-4 xl:col-span-1">
               <Input
                 placeholder="Search logs..."
@@ -191,7 +178,7 @@ const AuditLogs = () => {
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="all">All Authors</SelectItem>
-                {admins?.map(admin => (
+                {admins && admins.length > 0 && admins.map(admin => (
                   <SelectItem key={admin.id} value={admin.id}>
                     {admin.name || `ID: ${admin.id}`}
                   </SelectItem>
@@ -201,7 +188,7 @@ const AuditLogs = () => {
 
             <Select
               value={perPage.toString()}
-              onValueChange={(value) => { setPerPage(parseInt(value)); setCurrentPage(1); }} // Reset to page 1 on perPage change
+              onValueChange={(value) => { setPerPage(parseInt(value)); setCurrentPage(1); }}
             >
               <SelectTrigger>
                 <SelectValue placeholder="Items per page" />
@@ -214,15 +201,29 @@ const AuditLogs = () => {
               </SelectContent>
             </Select>
 
+            
             <Button
               variant="outline"
               className="flex items-center gap-2"
               onClick={exportLogs}
-              disabled={isLoading || !logs || logs.length === 0} // Disable if loading or no logs
+              disabled={isLoading || !logs || logs.length === 0}
             >
               <Download className="h-4 w-4" />
               Export Report
             </Button>
+            <div className="flex w-full h-full items-center justify-start space-x-2">
+              <Checkbox 
+                id="expandDetails" 
+                checked={expandAllDetails}
+                onCheckedChange={(checked) => setExpandAllDetails(checked as boolean)}
+              />
+              <label 
+                htmlFor="expandDetails" 
+                className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+              >
+                Expand All Details
+              </label>
+            </div>
           </div>
         </Card>
 
@@ -232,7 +233,7 @@ const AuditLogs = () => {
               <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
               <span className="ml-2 text-muted-foreground">Loading logs...</span>
             </div>
-          ) : error ? (
+          ) : error?.message ? (
             <div className="text-center py-16 text-destructive">
               Error loading logs: {error.message || "Please try again later."}
             </div>
@@ -256,11 +257,28 @@ const AuditLogs = () => {
                 <TableBody>
                   {filteredLogs.map((log) => (
                     <TableRow key={log.id}>
-                      <TableCell>{formatTimestamp(log.createdAt)}</TableCell>
+                      <TableCell>
+                        <div className="flex items-center gap-2">
+                          <Calendar className="h-4 w-4 text-gray-500" />
+                          <div>
+                            <div className="text-gray-500">{new Date(log.createdAt).toLocaleDateString('en-US', {
+                              year: 'numeric',
+                              month: 'short',
+                              day: 'numeric'
+                            })}</div>
+                            <div className="text-md font-bold text-gray-500">
+                              {new Date(log.createdAt).toLocaleTimeString('en-US', {
+                                hour: '2-digit',
+                                minute: '2-digit',
+                                second: '2-digit'
+                              })}
+                            </div>
+                          </div>
+                        </div>
+                      </TableCell>
                       <TableCell>
                         <div className="flex items-center gap-2">
                           <div>
-                            {/* Use optional chaining for name */}
                             <div className="font-medium">{log.owner?.name || "Unknown User"}</div>
                             <div className="text-sm text-gray-500">{log.ownerId}</div>
                           </div>
@@ -269,10 +287,41 @@ const AuditLogs = () => {
                       <TableCell>{formatActionType(log.actionType)}</TableCell>
                       <TableCell>{log.targetId || "-"}</TableCell>
                       <TableCell>{log.targetType || "-"}</TableCell>
-                      <TableCell>
-                        <pre className="text-xs whitespace-pre-wrap max-w-[200px] overflow-auto bg-gray-100 p-1 rounded">
-                          {formatDetails(log.details)}
-                        </pre>
+                      <TableCell className="details">
+                        <div className="relative group">
+                          {expandAllDetails ? (
+                            <div className="p-2 bg-gray-50 rounded text-xs">
+                              {Object.entries(log.details).map(([key, value]) => (
+                                <div key={key} className="mb-1">
+                                  <span className="font-medium">{key}:</span>{" "}
+                                  <span className="text-gray-700">{typeof value === 'object' ? JSON.stringify(value) : String(value)}</span>
+                                </div>
+                              ))}
+                            </div>
+                          ) : (
+                            <>
+                              <Button 
+                                variant="ghost" 
+                                size="sm" 
+                                className="text-xs px-2 py-1 h-auto"
+                              >
+                                View Details
+                              </Button>
+                              <div className="absolute z-50 hidden group-hover:block right-0 w-64 p-2 bg-white border rounded-md shadow-lg">
+                                <div className="max-h-60 overflow-auto">
+                                  <div className="text-xs p-2 bg-gray-50 rounded">
+                                    {Object.entries(log.details).map(([key, value]) => (
+                                      <div key={key} className="mb-1">
+                                        <span className="font-medium">{key}:</span>{" "}
+                                        <span className="text-gray-700">{typeof value === 'object' ? JSON.stringify(value) : String(value)}</span>
+                                      </div>
+                                    ))}
+                                  </div>
+                                </div>
+                              </div>
+                            </>
+                          )}
+                        </div>
                       </TableCell>
                     </TableRow>
                   ))}
@@ -281,7 +330,7 @@ const AuditLogs = () => {
               {meta && meta.total > 0 && (
                 <div className="mt-4 flex flex-col sm:flex-row items-center justify-between gap-4">
                   <div>
-                    Showing {meta.page > 0 ? (meta.page - 1) * meta.perPage + 1 : 0} to {Math.min(meta.page * meta.perPage, meta.total)} of {meta.total} entries
+                    Showing {meta.currentPage > 0 ? (meta.currentPage - 1) * meta.perPage + 1 : 0} to {Math.min(meta.currentPage * meta.perPage, meta.total)} of {meta.total} entries
                   </div>
                   {meta.totalPages > 1 && (
                     <div className="flex items-center space-x-1 sm:space-x-2">
@@ -294,18 +343,17 @@ const AuditLogs = () => {
                         <ChevronLeft className="h-4 w-4" />
                         <span className="sr-only sm:not-sr-only sm:ml-1">Prev</span>
                       </Button>
-                      {/* Simplified Pagination Logic */}
                       {(() => {
                         const totalPages = meta.totalPages;
                         const pageNumbers = [];
-                        const maxPagesToShow = 5; // Max buttons including ellipsis
+                        const maxPagesToShow = 5;
 
                         if (totalPages <= maxPagesToShow) {
                           for (let i = 1; i <= totalPages; i++) {
                             pageNumbers.push(i);
                           }
                         } else {
-                          pageNumbers.push(1); // Always show first page
+                          pageNumbers.push(1);
                           let startPage = Math.max(2, currentPage - 1);
                           let endPage = Math.min(totalPages - 1, currentPage + 1);
 
@@ -327,7 +375,7 @@ const AuditLogs = () => {
                             pageNumbers.push('...');
                           }
 
-                          pageNumbers.push(totalPages); // Always show last page
+                          pageNumbers.push(totalPages);
                         }
 
                         return pageNumbers.map((pageNum, index) =>
