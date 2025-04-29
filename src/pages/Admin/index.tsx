@@ -465,8 +465,8 @@ const handleAssignUserToAgency = (userId: string, agencyId: string) => {
 	};
 
 	const handleAgencyAssignment = (user: Omit<User, 'agency' | 'ownerGuilds' | 'createdAt' | 'updatedAt'>, targetAgencyId: string) => {
-		if (user.role !== 'AgencyPartner') {
-			updateOwnerRole.mutate({ id: user.id, payload: { role: OwnerRole.AGENCY_PARTNER } }, {
+		if (user.role !== 'AGENCY_PARTNER') {
+			updateOwnerRole.mutate({ id: user.id, payload: { role: OwnerRole.AGENCY_PARTNER, agencyId: targetAgencyId } }, {
 				onSuccess: () => {
 					handleAssignUserToAgency(user.id, targetAgencyId);
 					toast({
@@ -720,15 +720,15 @@ const handleDragEnd = (result: DropResult) => {
 			}
 		}
 	}
-
 	if (type === 'user') {
-		const userId = draggableId.replace(/-[^-]*$/, '');
+		// Extract the UUID part which is always 36 characters long
+		const userId = draggableId.substring(0, 36);
 		const user = allManageableUsers.find(u => u.id === userId) as Omit<User, 'agency' | 'ownerGuilds' | 'createdAt' | 'updatedAt'>;
 		if (!user) return;
 
 		if (srcId.startsWith('agency-users-') && dstId === 'users-table') {
 			const sourceAgencyId = srcId.replace('agency-users-', '');
-			updateOwnerRole.mutate({ id: userId, payload: { role: OwnerRole.CLIENT } }, {
+			updateOwnerRole.mutate({ id: userId, payload: { role: OwnerRole.CLIENT, agencyId: sourceAgencyId } }, {
 				onSuccess: () => {
 					handleRemoveUserFromAgency(userId, sourceAgencyId);
 				}
@@ -780,6 +780,7 @@ const handleDragEnd = (result: DropResult) => {
 			if (!agencyId) return [];
 			const agency = agencies.find(a => a.id === user.agencyId);
 			if (!agency) return [];
+			console.log('agency.agencyGuilds',agency.agencyGuilds);
 			return agency.agencyGuilds || [];
 		}
 		return [];
@@ -889,7 +890,7 @@ const handleDragEnd = (result: DropResult) => {
 	const handleToggleGuildAccess = (guildId: string, isAccessible: boolean) => {
 		if (!selectedUserIdForGuildView) return;
 		if (isAccessible) {
-			assignGuildToOwner.mutate({ id: selectedUserIdForGuildView, payload: { guildId } }, {
+			assignGuildToOwner.mutate({ ownerId: selectedUserIdForGuildView, payload: { guildId } }, {
 				onSuccess: () => {
 					toast({
 						title: "Guild Access Granted",

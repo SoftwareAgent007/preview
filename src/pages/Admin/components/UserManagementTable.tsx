@@ -282,7 +282,6 @@ const UserManagementTable = ({
     );
 
     return (
-        <DragDropContext onDragEnd={handleDragEnd}>
             <div className="flex flex-col">
                 <div className="flex justify-between items-center mb-2">
                     {!isInModal && (<div>
@@ -440,7 +439,6 @@ const UserManagementTable = ({
                     onReorderUsers={onReorderUsers}
                 />
             </div>
-        </DragDropContext>
     );
 };
 

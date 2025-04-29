@@ -61,11 +61,11 @@ export const useUpdateOwnerRole = () => {
   );
 };
 
-export type AssignGuildVariables = { id: string; payload: AssignGuildDto };
+export type AssignGuildVariables = { ownerId: string; payload: AssignGuildDto };
 export const useAssignGuildToOwner = () => {
   const queryClient = useQueryClient();
   return useModifyBuilder<AssignGuildVariables>(
-    ({ id }) => `/admin/owners/${id}/guilds`,
+    ({ ownerId }) => `/admin/owners/${ownerId}/guilds`,
     {
       method: 'POST',
       body: (variables) => variables.payload,
